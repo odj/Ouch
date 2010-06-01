@@ -1,3 +1,9 @@
+-- Project !Ouch
+-- No license selected yet-- project still under development
+
+-- Orion D. Jankowski
+-- 2010-May-24
+
 {-# LANGUAGE RecordWildCards, CPP #-}
 module Ouch.Structure.Atom (
       Atom(..)

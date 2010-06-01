@@ -1,3 +1,13 @@
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- Project !Ouch
+-- No license selected yet-- project still under development
+
+-- Orion D. Jankowski
+-- 2010-May-24
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
 -- This file is needed to terminate recursive import relationships 
 
 module Ouch.Structure.Atom where
