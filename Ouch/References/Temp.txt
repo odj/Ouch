@@ -1,0 +1,25 @@
+let c1 = Element 6 6 [] []
+let c2 = Element 6 6 [] []
+let c3 = Element 6 6 [] []
+let m1 = Small [c1, c2, c3]
+:m 
+
+let pm = makeMoleculeFromSmiles "CCCCCCC"
+let pm' = fillMoleculeValence pm
+molecularFormula pm'
+
+
+let m = makeMoleculeFromSmiles "C#N"
+let m1 = fillMoleculeValence m
+let f = (\(Right a) -> a)
+let atoms = atomList $ f m
+let n = atoms !! 1
+let bonds = bondList n
+let pi = bonds !! 1
+
+:l Main.hs
+let s = "[C]CC"
+parseSmiles s
+
+
+
