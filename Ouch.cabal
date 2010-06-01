@@ -1,0 +1,33 @@
+Name:                Ouch
+
+Version:             0.0
+
+License:             Not yet determined
+
+License-file:        LICENSE
+
+Author:              Orion Jankowski
+
+Maintainer:          odj@me.com
+
+Category:            Cheminformatics
+
+Synopsis:            A cheminformatics library
+
+Description:         
+
+Homepage:            We don't have one
+
+Tested-With:         GHC==6.10.4
+
+Build-Type:          Simple
+
+Build-Depends:       base>=3 && <4, TDFA
+
+Data-Files:          README
+
+Exposed-modules:     
+
+extensions:          CPP
+
+ghc-options:         
