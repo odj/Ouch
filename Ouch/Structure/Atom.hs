@@ -57,6 +57,7 @@ data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
      deriving (Show, Eq, Ord)
 
 data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
+              | Closure {labelNumber::Integer, bondType::NewBond}
               | Class {classNumber::Integer}
               | Chiral {chirality::Chirality}
               | GeoIsomer {geoIsomer::Geometry}
@@ -79,7 +80,7 @@ data Bond = Sigma {bondsTo::Atom}
           | Antibond {bondsTo::Atom}
           | Any {bondsTo::Atom}
 
-data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq)
+data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
 
 connectAtomsWithBond :: Atom -> Atom -> NewBond -> (Atom, Atom)

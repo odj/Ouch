@@ -7,7 +7,6 @@
 -- 2010-May-24
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-
 Orion-Jankowskis-MacBook-Pro:Ouch odj$ ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
@@ -39,4 +38,3 @@ Test SHOULD FAIL:	FAILED	-with output: OK || should get: Not OK
 Test SHOULD FAIL:	FAILED	-with error string:	OK Error
 .......................................................
 *Main> 
-
