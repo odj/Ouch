@@ -91,16 +91,16 @@ numberOfHeavyAtoms m = case m of
           num a = fromIntegral $ length $ heavy a
 
 -- Fills valence with hydrogens and lone-pairs to give neutral species
--- If cannot fill, or valence is already complete, returns molecule unchanged 
--- as LEFT value.  Otherwise, new molecule is returned as RIGHT value
+-- If valence is already complete, returns molecule unchanged 
+-- If cannot fill because of an error, returns error string.
 fillMoleculeValence :: PerhapsMolecule -> PerhapsMolecule
 fillMoleculeValence pm = case pm of
     Left {} -> pm
     Right m -> case m of
         Small {atomList=atoms} -> Right $ newMolecule atoms
-        Markush     -> Left "Can't fill valence on Markush."
-        Polymer     -> Left "Can't fill valence on Polymer."
-        Biologic    -> Left "Can't fill valence on Biologic."
+        Markush     -> Left "Can't fill valence on a Markush."
+        Polymer     -> Left "Can't fill valence on a Polymer."
+        Biologic    -> Left "Can't fill valence on a Biologic."
         where newAtomTuple a = List.map (\a -> fillValence a []) a
               newAtomsList a = (List.map fst $ newAtomTuple a) ++ (foldl (++) [] (List.map snd $ newAtomTuple a))
               newMolecule a = Small $ newAtomsList a
@@ -116,6 +116,9 @@ molecularWeight pm = case pm of
         Biologic    -> Left "No MW for Biologic"
         where mw a = foldl (+) 0.0 $ List.map atomMW a
 
+-- exactMass
+-- This is a distribution of masses according to natural isotopic abundance, normalized to 100
+-- This is the normal way in which mass-spec people report mass distribution fractions
 exactMass :: PerhapsMolecule -> Either String [(Integer, Double)]
 exactMass m = undefined
 
