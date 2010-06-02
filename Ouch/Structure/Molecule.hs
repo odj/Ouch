@@ -11,7 +11,7 @@
 module Ouch.Structure.Molecule 
     (
        Molecule(..)
-     , PartialMolecule(..)
+     , PerhapsMolecule(..)
      , addAtom
      , addMolecule
      , numberOfAtoms
@@ -43,7 +43,7 @@ data Molecule = Small {atomList::[Atom]}
 -- might encounter an error later on.  When an error is encountered, stop construction
 -- and propogate error message to a function that actually cares.  Used mostly in
 -- INPUT module
-type PartialMolecule =  (Either String Molecule) 
+type PerhapsMolecule =  (Either String Molecule) 
 
 -- addAtom
 -- Default sigma-bonds to top atom on the list
@@ -55,7 +55,7 @@ addAtom m a = case m of
     Polymer            -> m
     Biologic           -> m
 
-connectMoleculesAtIndicesWithBond :: Molecule -> Int -> Molecule -> Int -> NewBond -> PartialMolecule
+connectMoleculesAtIndicesWithBond :: Molecule -> Int -> Molecule -> Int -> NewBond -> PerhapsMolecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right $ Small {atomList=(a1b ++ [newAtom1] ++ a1e ++ a2b ++ [newAtom2] ++ a2e)}
     where atom1 = (atomList m1) !! i1
           atom2 = (atomList m2) !! i2
@@ -93,7 +93,7 @@ numberOfHeavyAtoms m = case m of
 -- Fills valence with hydrogens and lone-pairs to give neutral species
 -- If cannot fill, or valence is already complete, returns molecule unchanged 
 -- as LEFT value.  Otherwise, new molecule is returned as RIGHT value
-fillMoleculeValence :: PartialMolecule -> PartialMolecule
+fillMoleculeValence :: PerhapsMolecule -> PerhapsMolecule
 fillMoleculeValence pm = case pm of
     Left {} -> pm
     Right m -> case m of
@@ -106,7 +106,7 @@ fillMoleculeValence pm = case pm of
               newMolecule a = Small $ newAtomsList a
 
 
-molecularWeight :: PartialMolecule -> Either String Double
+molecularWeight :: PerhapsMolecule -> Either String Double
 molecularWeight pm = case pm of
     Left m  -> Left m
     Right m -> case m of
@@ -116,22 +116,22 @@ molecularWeight pm = case pm of
         Biologic    -> Left "No MW for Biologic"
         where mw a = foldl (+) 0.0 $ List.map atomMW a
 
-exactMass :: PartialMolecule -> Either String [(Integer, Double)]
+exactMass :: PerhapsMolecule -> Either String [(Integer, Double)]
 exactMass m = undefined
 
-numberOfHydrogenBondDonors :: PartialMolecule -> Either String Integer
+numberOfHydrogenBondDonors :: PerhapsMolecule -> Either String Integer
 numberOfHydrogenBondDonors m = Right (0::Integer)
 
-numberOfHydrogenBondAcceptors :: PartialMolecule -> Either String Integer
+numberOfHydrogenBondAcceptors :: PerhapsMolecule -> Either String Integer
 numberOfHydrogenBondAcceptors m = Right (0::Integer)
 
-numberOfRings :: PartialMolecule -> Either String Integer
+numberOfRings :: PerhapsMolecule -> Either String Integer
 numberOfRings m = Right (0::Integer)
 
-numberOfRotatableBonds :: PartialMolecule -> Either String Integer
+numberOfRotatableBonds :: PerhapsMolecule -> Either String Integer
 numberOfRotatableBonds m = Right (0::Integer)
 
-molecularFormula :: PartialMolecule -> Either String String
+molecularFormula :: PerhapsMolecule -> Either String String
 molecularFormula pm = case pm of
     Left s      -> Left s
     Right mol   -> case mol of 

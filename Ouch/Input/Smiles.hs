@@ -43,12 +43,12 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 -- Right if successful
 -- Left if error somewhere, with brief error description
 -- This functions kicks off the recursive interpretations
-makeMoleculeFromSmiles::String -> PartialMolecule
+makeMoleculeFromSmiles::String -> PerhapsMolecule
 makeMoleculeFromSmiles smi = case chop of 
-    Smile {}        -> growPartialMoleculeAtIndexWithString newAtom 0 nextSmile 
+    Smile {}        -> growPerhapsMoleculeAtIndexWithString newAtom 0 nextSmile 
     -- A well-formed smile should never start with a substructure, but if it does, we connect the next 
     -- atom or substructure to it's beginning (which may or may not be permitted chemically)
-    SubSmile {}     -> growPartialMoleculeAtIndexWithString newSubstructure 0 nextSmile  
+    SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newSubstructure 0 nextSmile  
     SmilesError {}  -> (Left $ "Error trying to parse the Smiles string: " ++ (smi))
     where chop = nextChoppedSmile smi
           thisSmile = smile chop
@@ -56,8 +56,8 @@ makeMoleculeFromSmiles smi = case chop of
           newAtom = makeAtomMoleculeFromChop chop
           newSubstructure = makeMoleculeFromSmiles thisSmile
           
-connectPartialMoleculesAtIndicesWithBond::PartialMolecule -> Int -> PartialMolecule -> Int -> NewBond -> PartialMolecule
-connectPartialMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
+connectPerhapsMoleculesAtIndicesWithBond::PerhapsMolecule -> Int -> PerhapsMolecule -> Int -> NewBond -> PerhapsMolecule
+connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
     case pm1 of 
         Left {} -> pm1
         Right m1 -> case pm2 of
@@ -74,22 +74,22 @@ connectPartialMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                                 Just n -> (fromIntegral n > i2) && (i2 >= 0)
                                 Nothing -> False
 
--- growPartialMoleculeWithString
+-- growPerhapsMoleculeWithString
 -- Adds continuation of smiles string at the end of the molecule being built
-growPartialMoleculeAtIndexWithString :: PartialMolecule -> Int -> String -> PartialMolecule
-growPartialMoleculeAtIndexWithString pm i smi 
+growPerhapsMoleculeAtIndexWithString :: PerhapsMolecule -> Int -> String -> PerhapsMolecule
+growPerhapsMoleculeAtIndexWithString pm i smi 
     | smi == ""  = pm
     | otherwise  = case pm of
     Right {} -> case chop of
-            Smile {}        -> growPartialMoleculeAtIndexWithString newMolecule1 newIndex nextSmile 
-            SubSmile {}     -> growPartialMoleculeAtIndexWithString newMolecule2 i nextSmile
+            Smile {}        -> growPerhapsMoleculeAtIndexWithString newMolecule1 newIndex nextSmile 
+            SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newMolecule2 i nextSmile
             SmilesError {}  -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
             where chop = nextChoppedSmile smi
                   nextSmile = smiles chop
                   newAtom = makeAtomMoleculeFromChop chop
                   newSubStructure = makeMoleculeFromSmiles (smile chop)
-                  newMolecule1 = connectPartialMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
-                  newMolecule2 = connectPartialMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
+                  newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
+                  newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
                   -- We just made this thing, so there shouldn't be any errors, right?
                   newIndex = case newMolecule1 of Right m1 -> (fromIntegral $ fromJust $ numberOfAtoms m1)-1          
     Left {} -> pm    
@@ -100,7 +100,7 @@ growPartialMoleculeAtIndexWithString pm i smi
 -- makeMoleculeFromSmiles
 -- Right if successful
 -- Left if error somewhere, with brief error description
-makeAtomMoleculeFromChop::ChoppedSmile -> PartialMolecule
+makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromChop nb    | a == ""        =  (Left "ERROR: Tried to make atom from empty string.")
                                | a == "C"       =  (Right $ Small [Element 6 0 [] markSet1])
                                | a == "N"       =  (Right $ Small [Element 7 0 [] markSet1])
