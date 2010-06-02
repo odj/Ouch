@@ -481,7 +481,7 @@ instance Eq Bond where
         
 instance Show Atom where
     show a = case a of
-          Element i _ b _ ->  name i ++ show b
+          Element i _ b m ->  name i ++ show b ++ " " ++ show m
           LonePair {} -> "LP"
           Electron {} -> "•"
           Unfilled {} -> ""

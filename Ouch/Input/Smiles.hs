@@ -102,21 +102,23 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 -- Left if error somewhere, with brief error description
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromChop nb    | a == ""        =  (Left "ERROR: Tried to make atom from empty string.")
-                               | a == "C"       =  (Right $ Small [Element 6 0 [] markSet1])
-                               | a == "N"       =  (Right $ Small [Element 7 0 [] markSet1])
-                               | a == "O"       =  (Right $ Small [Element 8 0 [] markSet1])
-                               | a == "H"       =  (Right $ Small [Element 1 0 [] markSet1])
+                               | a == "C"       =  (Right $ Small [Element 6 0 [] markSetAll])
+                               | a == "N"       =  (Right $ Small [Element 7 0 [] markSetAll])
+                               | a == "O"       =  (Right $ Small [Element 8 0 [] markSetAll])
+                               | a == "H"       =  (Right $ Small [Element 1 0 [] markSetAll])
                                
-                               | a == "P"       =  (Right $ Small [Element 15 0 [] markSet1])
-                               | a == "S"       =  (Right $ Small [Element 16 0 [] markSet1])
-                               | a == "F"       =  (Right $ Small [Element 9 0 [] markSet1])
-                               | a == "B"       =  (Right $ Small [Element 5 0 [] markSet1])
-                               | a == "BR"       =  (Right $ Small [Element 35 0 [] markSet1])
-                               | a == "CL"       =  (Right $ Small [Element 17 0 [] markSet1])
-                               | a == "I"       =  (Right $ Small [Element 53 0 [] markSet1])
-                               | a == "*"       =  (Right $ Small [Unspecified [] markSet1]) -- Wildcard Atom
+                               | a == "P"       =  (Right $ Small [Element 15 0 [] markSetAll])
+                               | a == "S"       =  (Right $ Small [Element 16 0 [] markSetAll])
+                               | a == "F"       =  (Right $ Small [Element 9 0 [] markSetAll])
+                               | a == "B"       =  (Right $ Small [Element 5 0 [] markSetAll])
+                               | a == "BR"      =  (Right $ Small [Element 35 0 [] markSetAll])
+                               | a == "CL"      =  (Right $ Small [Element 17 0 [] markSetAll])
+                               | a == "I"       =  (Right $ Small [Element 53 0 [] markSetAll])
+                               | a == "*"       =  (Right $ Small [Unspecified [] markSetAll]) -- Wildcard Atom
                                | otherwise      =  (Left  $ "ERROR: Atom not recognized for symbol: " ++ a)
-                               where markSet1 = Set.singleton (if (isUpper $ head (smile nb)) then AromaticAtom else Null)
+                               where markSetType = Set.singleton (if (isLower $ head (smile nb)) then AromaticAtom else Null)
+                                     markSetClass = Set.empty 
+                                     markSetAll = Set.union markSetType (mark nb)
                                      a = [toUpper c | c <- (smile nb)] 
 
 
@@ -164,7 +166,7 @@ nextChoppedSmile s
          -- This is a very simple parse of ring closure markers.  
          -- Does not accomodate "%" notation (yet)
          markerNumbers = List.map (\a -> read a::Integer) $ foldr (\acc x -> [acc] : x) [] l2
-         markerSet = Set.fromList $ List.map Label markerNumbers
+         markerSet = Set.fromList $ List.map (\mn -> Closure {labelNumber=mn, bondType=Single})  markerNumbers 
 
 
 
