@@ -64,7 +64,7 @@ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right $ Small {atomList=(a1b +
           (newAtom1, newAtom2) = connectAtomsWithBond atom1 atom2 b 
           
 -- addMolecule
--- Combines to molecules and connects bond-markers if required
+-- Combines two molecules and connects bond-markers if required
 -- Otherwise, adds as disconnected structure
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = undefined
