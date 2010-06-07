@@ -57,7 +57,13 @@ tests = [
          , TestData {function=testMolForm, input="CCl", description="Test Smiles-MF 24", outcome="CH3Cl"}
          , TestData {function=testMolForm, input="CF", description="Test Smiles-MF 25", outcome="CH3F"}
          , TestData {function=testMolForm, input="OS(=O)(=O)O", description="Test Smiles-MF 26", outcome="H2O4S"}    
-         , TestData {function=testMolForm, input="CC(=O)CC(=O)OC", description="Test Smiles-MF 27", outcome="C5H8O3"}    
+         , TestData {function=testMolForm, input="CC(=O)CC(=O)OC", description="Test Smiles-MF 27", outcome="C5H8O3"}
+         , TestData {function=testMolForm, input="C1CC1", description="Test Smiles-MF 28", outcome="C3H6"}
+         , TestData {function=testMolForm, input="C1CCCC1", description="Test Smiles-MF 29", outcome="C5H10"}
+         , TestData {function=testMolForm, input="C2CCCC2", description="Test Smiles-MF 30", outcome="C5H10"}
+         , TestData {function=testMolForm, input="C3CCC3", description="Test Smiles-MF 31", outcome="C4H8"}
+         , TestData {function=testMolForm, input="C1CC=CC1", description="Test Smiles-MF 32", outcome="C5H8"}
+         , TestData {function=testMolForm, input="C1CC1CC", description="Test Smiles-MF 33", outcome="C5H10"}    
          
          , TestData {function=testMolWt, input="C", description="Test Smiles-MW 1", outcome="160"}
          , TestData {function=testMolWt, input="CC", description="Test Smiles-MW 2", outcome="300"}
@@ -85,7 +91,13 @@ tests = [
          , TestData {function=testMolWt, input="CCl", description="Test Smiles-MW 24", outcome="504"}
          , TestData {function=testMolWt, input="CF", description="Test Smiles-MW 25", outcome="340"}
          , TestData {function=testMolWt, input="OS(=O)(=O)O", description="Test Smiles-MW 26", outcome="980"}
-         , TestData {function=testMolWt, input="CC(=O)CC(=O)OC", description="Test Smiles-MW 27", outcome="1161"}           
+         , TestData {function=testMolWt, input="CC(=O)CC(=O)OC", description="Test Smiles-MW 27", outcome="1161"}
+         , TestData {function=testMolWt, input="C1CC1", description="Test Smiles-MW 28", outcome="420"}
+         , TestData {function=testMolWt, input="C1CCCC1", description="Test Smiles-MW 29", outcome="701"}
+         , TestData {function=testMolWt, input="C2CCCC2", description="Test Smiles-MW 30", outcome="701"}
+         , TestData {function=testMolWt, input="C3CCC3", description="Test Smiles-MW 31", outcome="561"}
+         , TestData {function=testMolWt, input="C1CC=CC1", description="Test Smiles-MW 32", outcome="681"}  
+         , TestData {function=testMolWt, input="C1CC1CC", description="Test Smiles-MW 33", outcome="701"}         
         ]
 
 performTests :: [TestData] -> String

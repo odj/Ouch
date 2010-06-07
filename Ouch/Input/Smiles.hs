@@ -69,7 +69,7 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
         Right m1 -> case pm2 of
             Left {} -> pm2
             Right m2  | errorTest == False    -> (Left ("Could not connect molecules at index: " ++ (show i1) ++ " " ++ (show i2)))
-                      | otherwise             -> connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
+                      | otherwise             ->cyclizePerhapsMolecule $ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
                       where errorTest = (test1 && test2)
                             n1 = numberOfAtoms m1
                             n2 = numberOfAtoms m2
@@ -104,7 +104,7 @@ cyclizePerhapsMolecule pm = case pm of
     Right m  -> case m of
         Small {}       -> case tpl of 
                             Nothing       -> pm
-                            Just (a1, a2) -> connectPerhapsMoleculesAtIndicesWithBond pm a1 pm a2 Single
+                            Just (a1, a2) -> cyclizePerhapsMoleculeAtIndexesWithBond pm a1 a2 Single
         Markush  {}    -> Left "Can't cyclize on a Markush."
         Polymer  {}    -> Left "Can't cyclize on a Polymer."
         Biologic {}    -> Left "Can't cyclize on a Biologic."
@@ -113,14 +113,15 @@ cyclizePerhapsMolecule pm = case pm of
               splitMk = List.map fst $ List.map (Set.partition isClosure) markers
               hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
                   where labelSet1 = List.map labelNumber (Set.toList ms1)
-                        labelSet2 = List.map labelNumber (Set.toList ms1)          
+                        labelSet2 = List.map labelNumber (Set.toList ms2)          
               firstClosure = List.findIndex (/=Set.empty) splitMk
               tpl = case firstClosure of 
                   Nothing -> Nothing
                   Just atom1 -> case secondClosure of
                       Nothing -> Nothing
                       Just atom2 -> Just (atom1, atom2)
-                      where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk
+                      where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
+                            splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
 
 
               
