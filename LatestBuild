@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
-Mon Jun  7 11:17:58 PDT 2010
+Mon Jun  7 11:26:15 PDT 2010
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
