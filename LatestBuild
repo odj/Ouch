@@ -9,7 +9,7 @@
 -------------------------------------------------------------------------------
 
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
-Mon Jun  7 11:26:15 PDT 2010
+Mon Jun  7 12:15:30 PDT 2010
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
@@ -39,5 +39,9 @@ Loading package regex-tdfa-1.1.2 ... linking ... done.
 Test SHOULD FAIL:	FAILED	-with output: OK || should get: Not OK
 
 Test SHOULD FAIL:	FAILED	-with error string:	OK Error
-.......................................................
+.................................
+Test Smiles-MF 33:	FAILED	-with output: C5H7 || should get: C5H10
+................................
+Test Smiles-MW 33:	FAILED	-with output: 671 || should get: 701
+
 *Main> 

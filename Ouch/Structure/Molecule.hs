@@ -60,7 +60,16 @@ addAtom m a = case m of
 
 
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> PerhapsMolecule
-cyclizeMoleculeAtIndexesWithBond m i1 i2 b = Right m
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b = Right $ Small {atomList=updateList2}
+    where atom1 = (atomList m) !! i1
+          atom2 = (atomList m) !! i2
+          (newAtom1, newAtom2) = connectAtomsWithBond atom1 atom2 b
+          (a1b, a1e) = (take i1 (atomList m), drop (i1+1) (atomList m))
+          updateList1 = a1b ++ [newAtom1] ++ a1e
+          (a2b, a2e) = (take i2 updateList1, drop (i2+1) updateList1)
+          updateList2 = a2b ++ [newAtom2] ++ a2e
+          
+          
 
 connectMoleculesAtIndicesWithBond :: Molecule -> Int -> Molecule -> Int -> NewBond -> PerhapsMolecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right $ Small {atomList=(a1b ++ [newAtom1] ++ a1e ++ a2b ++ [newAtom2] ++ a2e)}
