@@ -14,9 +14,11 @@ module Ouch.Input.Smiles (
    , makeAtomMoleculeFromChop
    , findNextSubSmile
    , parseSmiles
+   , cyclizePerhapsMolecule
    , chop
    ) where
        
+import Control.Applicative       
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Text.Regex.TDFA ((=~))
@@ -77,9 +79,52 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                             test2 = case n2 of
                                 Just n -> (fromIntegral n > i2) && (i2 >= 0)
                                 Nothing -> False
+
+cyclizePerhapsMoleculeAtIndexesWithBond :: PerhapsMolecule -> Int -> Int -> NewBond -> PerhapsMolecule
+cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b = 
+    case pm of 
+        Left {} -> pm
+        Right m   | errorTest == False    -> (Left ("Could not connect molecules at index: " ++ (show i1) ++ " " ++ (show i2)))
+                  | otherwise             -> cyclizeMoleculeAtIndexesWithBond m i1 i2 b
+                  where errorTest = (test1 && test2)
+                        n = numberOfAtoms m
+                        test1 = case n of
+                            Just n -> (fromIntegral n > i1) && (i1 >= 0)
+                            Nothing -> False
+                        test2 = case n of
+                            Just n -> (fromIntegral n > i2) && (i2 >= 0)
+                            Nothing -> False
+                            
+                            
 -- cyclizePerhapsMolecule
--- 
+-- Find all matching closure instances and cyclize on matched pairs.
 cyclizePerhapsMolecule :: PerhapsMolecule -> PerhapsMolecule
+cyclizePerhapsMolecule pm = case pm of
+    Left {}  -> pm
+    Right m  -> case m of
+        Small {}       -> case tpl of 
+                            Nothing       -> pm
+                            Just (a1, a2) -> connectPerhapsMoleculesAtIndicesWithBond pm a1 pm a2 Single
+        Markush  {}    -> Left "Can't cyclize on a Markush."
+        Polymer  {}    -> Left "Can't cyclize on a Polymer."
+        Biologic {}    -> Left "Can't cyclize on a Biologic."
+        where markers       = List.map markerSet $ atomList m
+              isClosure mk  = case mk of Closure {} -> True ; _ -> False
+              splitMk = List.map fst $ List.map (Set.partition isClosure) markers
+              hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
+                  where labelSet1 = List.map labelNumber (Set.toList ms1)
+                        labelSet2 = List.map labelNumber (Set.toList ms1)          
+              firstClosure = List.findIndex (/=Set.empty) splitMk
+              tpl = case firstClosure of 
+                  Nothing -> Nothing
+                  Just atom1 -> case secondClosure of
+                      Nothing -> Nothing
+                      Just atom2 -> Just (atom1, atom2)
+                      where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk
+
+
+              
+              
 
 
 -- growPerhapsMoleculeWithString

@@ -25,6 +25,8 @@ module Ouch.Structure.Molecule
      , numberOfRotatableBonds
      , molecularFormula
      , connectMoleculesAtIndicesWithBond
+     , moleculeFromPerhapsMolecule
+     , cyclizeMoleculeAtIndexesWithBond
      ) where
 
 import Ouch.Structure.Atom
@@ -38,6 +40,7 @@ data Molecule = Small {atomList::[Atom]}
                 | Markush {}
                 | Polymer {}
                 | Biologic {}
+                deriving (Eq)
 
 -- Use this data structure when a molecule is still being constructed and
 -- might encounter an error later on.  When an error is encountered, stop construction
@@ -54,6 +57,10 @@ addAtom m a = case m of
     Markush            -> m
     Polymer            -> m
     Biologic           -> m
+
+
+cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> PerhapsMolecule
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b = Right m
 
 connectMoleculesAtIndicesWithBond :: Molecule -> Int -> Molecule -> Int -> NewBond -> PerhapsMolecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right $ Small {atomList=(a1b ++ [newAtom1] ++ a1e ++ a2b ++ [newAtom2] ++ a2e)}
@@ -157,8 +164,11 @@ molecularFormula pm = case pm of
         Polymer     -> Left "No molecular formula defined for Polymer"
         Biologic    -> Left "No molecular formula defined for Biologic"
 
-
-
+-- A function to aid in debugging
+moleculeFromPerhapsMolecule :: PerhapsMolecule -> Molecule
+moleculeFromPerhapsMolecule pm =  case pm of
+    Right m -> m
+    
 
 
 instance Show Molecule where
@@ -168,7 +178,7 @@ instance Show Molecule where
        Polymer     -> "Is a polymer"
        Biologic    -> "Is a Biologic"
 
-
+{-
 instance Eq Molecule where
     a == b = True --Obviously that needs fixing!
-
+-}

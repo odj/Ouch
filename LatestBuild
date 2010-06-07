@@ -8,9 +8,9 @@
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
-Orion-Jankowskis-MacBook-Pro:Ouch odj$ date
-Wed Jun  2 14:22:37 PDT 2010
-Orion-Jankowskis-MacBook-Pro:Ouch odj$ ghci
+[ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
+Mon Jun  7 11:17:58 PDT 2010
+[ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
 Loading package integer-gmp ... linking ... done.

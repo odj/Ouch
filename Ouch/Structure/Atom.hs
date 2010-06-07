@@ -49,6 +49,7 @@ data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::
             | Unfilled {bondList::[Bond], markerSet::(Set Marker)}
             | Unspecified {bondList::[Bond], markerSet::(Set Marker)}   --Wildcard atom for smiles symbol *
             | Open {bondList::[Bond], markerSet::(Set Marker)}
+            deriving (Eq)
          
 data Chirality = Levo | Dextro 
      deriving (Show, Eq, Ord)
@@ -79,6 +80,7 @@ data Bond = Sigma {bondsTo::Atom}
           | Ionic {bondsTo::Atom}
           | Antibond {bondsTo::Atom}
           | Any {bondsTo::Atom}
+          deriving (Eq)
 
 data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
@@ -475,9 +477,6 @@ instance Show Bond where
         Ionic atom -> "Ionic"
         Antibond atom -> "AntiBond"
 
-
-instance Eq Bond where
-    a == b = True
         
 instance Show Atom where
     show a = case a of
@@ -486,12 +485,17 @@ instance Show Atom where
           Electron {} -> "•"
           Unfilled {} -> ""
           where name b = fromJust $ Map.lookup b atomicSymbols
-
+{-
 -- Instance Eq and instance Ord are going to be where all the action is.
 -- Everything broken until then!
 instance Eq Atom where
     a == b = True
 
+instance Eq Bond where
+    a == b = True
+
+-}
+    
 instance Ord Atom where
     a > b = True
     a < b = False
