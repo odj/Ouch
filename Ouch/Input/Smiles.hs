@@ -56,6 +56,10 @@ makeMoleculeFromSmiles smi = case chop of
           newAtom = makeAtomMoleculeFromChop chop
           newSubstructure = makeMoleculeFromSmiles thisSmile
           
+-- connectPerhapsMoleculesAtIndicesWithBond
+-- Takes two 'PerhapsMolecules' and connects them with a 'NewBond' at their
+-- respective indices.  Return an error if indices or PerhapsMolecules are
+-- invalide.
 connectPerhapsMoleculesAtIndicesWithBond::PerhapsMolecule -> Int -> PerhapsMolecule -> Int -> NewBond -> PerhapsMolecule
 connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
     case pm1 of 
@@ -73,6 +77,10 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                             test2 = case n2 of
                                 Just n -> (fromIntegral n > i2) && (i2 >= 0)
                                 Nothing -> False
+-- cyclizePerhapsMolecule
+-- 
+cyclizePerhapsMolecule :: PerhapsMolecule -> PerhapsMolecule
+
 
 -- growPerhapsMoleculeWithString
 -- Adds continuation of smiles string at the end of the molecule being built
