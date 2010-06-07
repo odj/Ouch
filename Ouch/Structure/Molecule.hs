@@ -60,10 +60,18 @@ addAtom m a = case m of
 
 
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> PerhapsMolecule
-cyclizeMoleculeAtIndexesWithBond m i1 i2 b = Right $ Small {atomList=updateList2}
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b 
+    | errorTest = Right $ Small {atomList=updateList2}
+    | otherwise = Left "Could not cyclize molecule"
     where atom1 = (atomList m) !! i1
           atom2 = (atomList m) !! i2
-          (newAtom1, newAtom2) = connectAtomsWithBond atom1 atom2 b
+          markerLabel = getMatchingClosureNumber atom1 atom2 
+          errorTest = case markerLabel of
+              Nothing -> False
+              Just label -> True
+          label = (\(Just l) -> l) markerLabel  -- This should not evaluate if 'Nothing' because of the guards
+          (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureMarker atom1 label)
+                                 (removeClosureMarker atom2 label) b
           (a1b, a1e) = (take i1 (atomList m), drop (i1+1) (atomList m))
           updateList1 = a1b ++ [newAtom1] ++ a1e
           (a2b, a2e) = (take i2 updateList1, drop (i2+1) updateList1)

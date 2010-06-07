@@ -30,6 +30,8 @@ module Ouch.Structure.Atom (
     , connectAtomsWithBond
     , getBondList
     , atomicSymbolForAtom
+    , getMatchingClosureNumber
+    , removeClosureMarker
     ) where
 
 import Data.Maybe
@@ -70,7 +72,7 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Skip
               | Comment {comment::String}
               | Null  -- This is a dummy value for functions that append marker list for simplicity.
-              deriving (Show, Eq, Ord)
+              deriving (Show, Ord)
 
 data Bond = Sigma {bondsTo::Atom}
           | Pi {bondsTo::Atom} 
@@ -459,6 +461,19 @@ isSigmaBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+removeClosureMarker :: Atom -> Integer -> Atom
+removeClosureMarker a i = a{markerSet = (Set.delete deleteMarker $ markerSet a)} 
+    where deleteMarker = Closure i Single
+
+getMatchingClosureNumber :: Atom -> Atom -> Maybe Integer
+getMatchingClosureNumber a1 a2 = firstCommonMarker
+    where markers1 = fst $ Set.partition isClosure (markerSet a1)
+          markers2 = fst $ Set.partition isClosure (markerSet a2)
+          intersectionSet = Set.intersection markers1 markers2
+          isClosure mk  = case mk of Closure {} -> True ; _ -> False
+          firstCommonMarker = if (Set.null intersectionSet) 
+                              then Nothing 
+                              else Just $ labelNumber (Set.findMin intersectionSet)
 
 getBondList :: Atom -> [Bond]
 getBondList a = case a of
@@ -477,7 +492,51 @@ instance Show Bond where
         Ionic atom -> "Ionic"
         Antibond atom -> "AntiBond"
 
+-- This is really ugly, but need to equate closure markers easily, disregarding bond info.
+-- This is because closure bond type only needs to be defined on one end of the molecule,
+-- and therefore might not match the other closure atom in a valid smile.
+instance Eq Marker where
+    a == b = case a of 
+        Closure {labelNumber=l1, bondType=b1} -> case b of 
+            Closure {labelNumber=l2, bondType=b2} -> if (l1 == l2) then True else False
+            _ -> False
+        Class {classNumber=l1} -> case b of 
+            Class {classNumber=l2} -> if (l1 == l2) then True else False    
+            _ -> False 
+        Chiral {chirality=l1} -> case b of 
+            Chiral {chirality=l2} -> if (l1 == l2) then True else False
+            _ -> False
+        GeoIsomer {geoIsomer=l1} -> case b of 
+            GeoIsomer {geoIsomer=l2} -> if (l1 == l2) then True else False
+            _ -> False
+        AromaticAtom -> case b of 
+            AromaticAtom -> True
+            _ -> False
+        Traversed -> case b of 
+            Traversed -> True   
+            _ -> False 
+        Substructure {substructureNumber=l1} -> case b of 
+            Substructure {substructureNumber=l2} -> if (l1 == l2) then True else False
+            _ -> False
+        ValenceError {valenceError=l1} -> case b of 
+            ValenceError {valenceError=l2} -> if (l1 == l2) then True else False
+            _ -> False
+        InRing {ringNumber=l1} -> case b of 
+            InRing {ringNumber=l2} -> if (l1 == l2) then True else False  
+            _ -> False   
+        Skip -> case b of 
+            Skip -> True
+            _ -> False
+        Comment {comment=l1} -> case b of 
+            Comment {comment=l2} -> if (l1 == l2) then True else False    
+            _ -> False
+        Null -> case b of 
+            Null -> True 
+            _ -> False
+        _ -> case b of
+            _  -> False      
         
+
 instance Show Atom where
     show a = case a of
           Element i _ b m ->  name i ++ show b ++ " " ++ show m
