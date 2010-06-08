@@ -47,6 +47,7 @@ module Ouch.Structure.Atom (
     , atomicSymbolForAtom
     , getMatchingClosureNumber
     , removeClosureMarker
+    , getMatchingClosureBondType
     ) where
 
 import Data.Maybe
@@ -514,7 +515,16 @@ getMatchingClosureNumber a1 a2 = firstCommonMarker
                               then Nothing 
                               else Just $ labelNumber (Set.findMin intersectionSet)
 
-
+{------------------------------------------------------------------------------}
+getMatchingClosureBondType :: Atom -> Atom -> NewBond
+getMatchingClosureBondType a1 a2 = newClosureBond
+  where markers1 = fst $ Set.partition isClosure (markerSet a1)
+        markers2 = fst $ Set.partition isClosure (markerSet a2)
+        intersectionSet = Set.intersection markers1 markers2
+        isClosure mk  = case mk of Closure {} -> True ; _ -> False
+        newClosureBond    = if (Set.null intersectionSet) 
+                            then NoBond 
+                            else bondType (Set.findMax intersectionSet)
 
 {------------------------------------------------------------------------------}
 getBondList :: Atom -> [Bond]

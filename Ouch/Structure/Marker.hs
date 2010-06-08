@@ -46,7 +46,7 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Skip
               | Comment {comment::String}
               | Null  -- This is a dummy value for functions that append marker list for simplicity.
-              deriving (Show, Ord)
+              deriving (Show)
 
 {------------------------------------------------------------------------------}
 data Chirality = Levo | Dextro 
@@ -106,8 +106,76 @@ instance Eq Marker where
           _ -> False
       _ -> case b of
           _  -> False      
-{-
+
 instance Ord Marker where
-  a > b = True
-  a < b = True
-  -}
+   compare a b =  case a of 
+          Closure {labelNumber=l1, bondType=b1} -> case b of 
+              Closure {labelNumber=l2, bondType=b2} -> a
+                  where a | (l1 == l2) = EQ
+                          | (l1 > l2)  = GT
+                          | (l1 < l2)  = LT
+                          | otherwise  = EQ
+              _ -> LT
+          Class {classNumber=l1} -> case b of 
+              Class {classNumber=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT
+          Chiral {chirality=l1} -> case b of 
+              Chiral {chirality=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT
+          GeoIsomer {geoIsomer=l1} -> case b of 
+              GeoIsomer {geoIsomer=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT
+          AromaticAtom -> case b of 
+              AromaticAtom -> EQ
+              _ -> LT
+          Traversed -> case b of 
+              Traversed -> EQ   
+              _ -> LT 
+          Substructure {substructureNumber=l1} -> case b of 
+              Substructure {substructureNumber=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT
+          ValenceError {valenceError=l1} -> case b of 
+              ValenceError {valenceError=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT
+          InRing {ringNumber=l1} -> case b of 
+              InRing {ringNumber=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _ -> LT   
+          Skip -> case b of 
+              Skip -> EQ
+              _ -> LT
+          Comment {comment=l1} -> case b of 
+              Comment {comment=l2} -> a
+                    where a | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ  
+              _ -> LT
+          Null -> case b of 
+              Null -> EQ 
+              _ -> LT
+          _ -> case b of
+              _  -> LT

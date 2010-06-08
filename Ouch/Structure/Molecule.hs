@@ -105,7 +105,8 @@ cyclizePerhapsMolecule pm = case pm of
     Right m  -> case m of
         Small {}       -> case tpl of 
                             Nothing       -> pm
-                            Just (a1, a2) -> cyclizePerhapsMoleculeAtIndexesWithBond pm a1 a2 Single
+                            Just (a1, a2) -> cyclizePerhapsMoleculeAtIndexesWithBond pm a1 a2 bond
+                                where  bond = getMatchingClosureBondType ((atomList m)!!a1) ((atomList m)!!a2)
         Markush  {}    -> Left "Can't cyclize on a Markush."
         Polymer  {}    -> Left "Can't cyclize on a Polymer."
         Biologic {}    -> Left "Can't cyclize on a Biologic."
