@@ -25,11 +25,11 @@
 
 module Ouch.Structure.Bond (
       Bond(..)
-    , NewBond(..)
     ) where
     
 -- This line terminates recursive import sequences        
 import {-# SOURCE #-} Ouch.Structure.Atom
+import Ouch.Structure.Marker
 
 
 {------------------------------------------------------------------------------}
@@ -45,9 +45,7 @@ data Bond = Sigma {bondsTo::Atom}
           | Antibond {bondsTo::Atom}
           | Any {bondsTo::Atom}
 
-data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
-  
       
 {------------------------------------------------------------------------------}
 {-------------------------------Typeclass Intances-----------------------------}

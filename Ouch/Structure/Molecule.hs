@@ -46,6 +46,7 @@ module Ouch.Structure.Molecule
 
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
+import Ouch.Structure.Marker
 import Ouch.Data.Atom
 import Data.Either
 import Data.Maybe

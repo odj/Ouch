@@ -29,6 +29,7 @@ module Ouch.Input.Smiles (
    , makeAtomMoleculeFromChop
    , findNextSubSmile
    , parseSmiles
+   , parseClosureMarkers
    , chop
    ) where
        
@@ -36,6 +37,7 @@ module Ouch.Input.Smiles (
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
+import Ouch.Structure.Marker
 import Text.Regex.TDFA ((=~))
 import Data.Maybe
 import Data.Char
@@ -165,7 +167,7 @@ nextChoppedSmile s
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
          (l1, l2, l3)       = s2 =~ "([0-9]+)"::(String, String, String)    -- Get atom closure marker info
-         (lb1, lb2, lb3)    = s2 =~ "([0-9]+)"::(String, String, String)    -- Get atom closure bond info
+         (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
          (a1, a2, a3)       = s2 =~ "([A-Za-z]+)"::(String, String, String) -- Atom only, remove bond comments, etc
          (ss1, ss2, ss3)    = findNextSubSmile s 1
          (bb1, bb2, bb3)    = ss2 =~ "([A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles
@@ -182,8 +184,21 @@ nextChoppedSmile s
              | otherwise              = Single
          -- This is a very simple parse of ring closure markers.  
          -- Does not accomodate "%" notation (yet)
-         markerNumbers = List.map (\a -> read a::Integer) $ foldr (\acc x -> [acc] : x) [] l2
-         markerSet = Set.fromList $ List.map (\mn -> Closure {labelNumber=mn, bondType=Single})  markerNumbers 
+         markerSet = Set.fromList $ parseClosureMarkers lb2 []
+         -- markerNumbers = List.map (\a -> read a::Integer) $ foldr (\acc x -> [acc] : x) [] l2
+         -- markerSet = Set.fromList $ List.map (\mn -> Closure {labelNumber=mn, bondType=Single})  markerNumbers 
+
+parseClosureMarkers :: String -> [Marker] -> [Marker]
+parseClosureMarkers [] ml = ml
+parseClosureMarkers s ml = parseClosureMarkers s3 ((Closure {labelNumber=closureNumber, bondType=nb}):ml)
+    where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
+          (_, n, _)    = s =~ "([0-9])"::(String, String, String)
+          (_, nbs, _)  = s2 =~ "^[-=#\\.]"::(String, String, String)
+          nb | nbs == "-" = Single
+             | nbs == "=" = Double
+             | nbs == "#" = Triple
+             | otherwise = Single
+          closureNumber = read n::Integer
 
 -- findNextSubSmile
 {------------------------------------------------------------------------------}

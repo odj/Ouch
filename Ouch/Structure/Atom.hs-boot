@@ -28,8 +28,6 @@
 module Ouch.Structure.Atom where
 
 data Atom
-data Chirality
-data Geometry
-
-
 instance Eq Atom
+instance Show Atom 
+instance Ord Atom
