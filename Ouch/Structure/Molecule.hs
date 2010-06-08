@@ -62,7 +62,7 @@ data Molecule = Small {atomList::[Atom]}
                 | Markush {}
                 | Polymer {}
                 | Biologic {}
-                deriving (Eq)
+                
 
 -- Use this data structure when a molecule is still being constructed and
 -- might encounter an error later on.  When an error is encountered, stop construction
@@ -325,7 +325,12 @@ moleculeFromPerhapsMolecule :: PerhapsMolecule -> Molecule
 moleculeFromPerhapsMolecule pm =  case pm of
     Right m -> m
     
-
+    
+    
+    
+{------------------------------------------------------------------------------}
+{-------------------------------Typeclass Intances-----------------------------}
+{------------------------------------------------------------------------------}
 instance Show Molecule where
     show m = case m of
        Small {atomList=atoms} -> "Is a small molecule with atoms: " ++ show atoms
@@ -333,7 +338,7 @@ instance Show Molecule where
        Polymer     -> "Is a polymer"
        Biologic    -> "Is a Biologic"
 
-{-
+{------------------------------------------------------------------------------}
 instance Eq Molecule where
     a == b = True --Obviously that needs fixing!
--}
+

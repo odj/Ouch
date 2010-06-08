@@ -63,6 +63,7 @@ import qualified Data.List as List
 -- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
 -- Bond list is all bond FROM atom.  
 -- Marker list is used to aid in graph traversing and other functions.
+{------------------------------------------------------------------------------}
 data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set Marker)}
             | LonePair {bondList::[Bond], markerSet::(Set Marker)}
             | Electron {bondList::[Bond], markerSet::(Set Marker)}
@@ -70,6 +71,7 @@ data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::
             | Unspecified {bondList::[Bond], markerSet::(Set Marker)}   --Wildcard atom for smiles symbol *
             | Open {bondList::[Bond], markerSet::(Set Marker)}
 
+{------------------------------------------------------------------------------}
 data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Closure {labelNumber::Integer, bondType::NewBond}
               | Class {classNumber::Integer}
@@ -86,13 +88,18 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               deriving (Show, Ord)
 
          
+
+{------------------------------------------------------------------------------}
 data Chirality = Levo | Dextro 
      deriving (Show, Eq, Ord)
 
+
+{------------------------------------------------------------------------------}
 data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
      deriving (Show, Eq, Ord)
 
-
+-- connectAtomsWithBond
+{------------------------------------------------------------------------------}
 connectAtomsWithBond :: Atom -> Atom -> NewBond -> (Atom, Atom)
 connectAtomsWithBond a1 a2 b = (aa1, aa2) where
       aa1 = case a1 of
@@ -135,6 +142,7 @@ connectAtomsWithBond a1 a2 b = (aa1, aa2) where
 -- Return atom and list containing second atom.  List is empty if
 -- function cannot add bond.   
 -- What chemcial error checking should be done here??
+{------------------------------------------------------------------------------}
 sigmaBondToAtom :: Atom -> Atom -> (Atom, [Atom])
 sigmaBondToAtom a1 a2 = (aa1, [aa2])
     where
@@ -165,18 +173,22 @@ sigmaBondToAtom a1 a2 = (aa1, [aa2])
 -- Create a new pi bond between two atoms.
 -- Return atom and list containing second atom.  List is empty if
 -- function cannot add bond.
+{------------------------------------------------------------------------------}
 piBondToAtom :: Atom -> [Atom] -> (Atom, [Atom])
 piBondToAtom a1 a2 = undefined
+
 
 -- addElectron
 -- Create a new radical centered on the atom.
 -- Return atom and list containing new radical.
+{------------------------------------------------------------------------------}
 addElectron :: Atom -> [Atom] -> (Atom, [Atom])
 addElectron a = undefined
 
 -- addLonePair
 -- Create a new lone-pair centered on the atom.
 -- Return atom and list containing new lone-pair.
+{------------------------------------------------------------------------------}
 addLonePair :: Atom -> [Atom] -> (Atom, [Atom])
 addLonePair a as 
    | (nb < val)    = (a', (as' ++ as))
@@ -189,6 +201,7 @@ addLonePair a as
 
 
 
+{------------------------------------------------------------------------------}
 addHydrogen :: Atom -> [Atom] -> (Atom, [Atom]) 
 addHydrogen a as 
     | (nb < val)    = (a', (as' ++ as))
@@ -202,24 +215,34 @@ addHydrogen a as
 -- addUnfilled
 -- Create a new unfilled orbital centered on the atom.
 -- Return atom and list containing new unfilled orbital.
+{------------------------------------------------------------------------------}
 addUnfilled :: Atom -> [Atom] -> (Atom, [Atom])
 addUnfilled a = undefined
+  
+  
    
 -- checkValence
 -- Verify valence rules are met.  True is what you want.
+{------------------------------------------------------------------------------}
 checkValence :: Atom -> Bool
 checkValence a = True
 
+
+
 -- getError
 -- Returns a description of the valence problem, if one exists
+{------------------------------------------------------------------------------}
 getError :: Atom -> Maybe String
 getError a = Nothing
+
+
 
 -- fillValence
 -- Populate free valences with hydrogens/lone-pairs.  Return new atom plus an
 -- atom list containing all the hydrogens added (adding to second arg).  
 -- Lone pairs (i.e. for Nitrgen atoms) and empty orbitals (i.e. on Boron)
 -- are also added and incuded in the list.
+{------------------------------------------------------------------------------}
 fillValence :: Atom -> [Atom] -> (Atom, [Atom])
 fillValence a as  
        -- Everything filled, nothing to do.  Return original
@@ -241,13 +264,18 @@ fillValence a as
            (aLP, asLP)  = addLonePair a as
     
 
+
 -- getExactMass
 -- Returns zero for things like electrons and lone-pairs
+{------------------------------------------------------------------------------}
 atomExactMass :: Atom -> [(Integer, Double)]
 atomExactMass a = undefined
 
+
+
 -- getMW
 -- Returns the isotope averaged molecular weight of the atom
+{------------------------------------------------------------------------------}
 atomMW :: Atom -> Double
 atomMW a = case a of
    Element  {} -> mw $ lookupValue (atomicNumber a)
@@ -260,6 +288,7 @@ atomMW a = case a of
                 Just d -> d
                 Nothing -> 0
 
+{------------------------------------------------------------------------------}
 atomicSymbolForAtom::Atom -> String
 atomicSymbolForAtom a = case a of
     Element {} -> symbol $ lookupValue (atomicNumber a)
@@ -279,6 +308,7 @@ atomicSymbolForAtom a = case a of
 -- First value is the number of normal bonds.  Second value is the number 
 -- of lone-pairs.  A negative value for the second number indicates unfilled
 -- sp3 (i.e. for Boron).
+{------------------------------------------------------------------------------}
 valence :: Atom -> (Integer, Integer)
 valence a = case a of
    Element  {} -> (bonds (atomicNumber a), lp (atomicNumber a))
@@ -364,15 +394,19 @@ valence a = case a of
     
 -- isHeavyAtom
 -- Returns True for anything that has mass and is not a Hydrogen Atom
+{------------------------------------------------------------------------------}
 isHeavyAtom :: Atom -> Bool
 isHeavyAtom a = case a of
    Element i _ _ _ -> i > 1
    LonePair {} -> False
    Electron {} -> False
    Unfilled {} -> False
+  
+  
    
 -- isElement
 -- Returns TRUE if atom is a "real" element
+{------------------------------------------------------------------------------}
 isElement :: Atom -> Bool
 isElement a = case a of
   Element i _ _ _ -> True
@@ -383,10 +417,14 @@ isElement a = case a of
 -- numberOfBonds
 -- Returns number of covalent connections to other atoms in the molecule 
 -- graph (i.e. one sigma and two pi bonds count as a 'one' bond)
+{------------------------------------------------------------------------------}
 numberOfBonds :: Atom -> Integer
 numberOfBonds a = fromIntegral $ length $ getBondList a
 
 
+
+
+{------------------------------------------------------------------------------}
 numberOfBondsToAtoms :: Atom -> Integer
 numberOfBondsToAtoms a = case a of
     Element z n b _ -> nt b
@@ -395,6 +433,9 @@ numberOfBondsToAtoms a = case a of
     Unfilled b m -> nt b
     where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToAtom b 
 
+
+
+{------------------------------------------------------------------------------}
 numberOfAromaticBondsToAtoms :: Atom -> Integer
 numberOfAromaticBondsToAtoms a = case a of
     Element z n b _ -> nt b
@@ -403,14 +444,20 @@ numberOfAromaticBondsToAtoms a = case a of
     Unfilled b m -> nt b
     where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAromaticBondToAtom b    
 
+
+
 -- currentValence
 -- Aromatic bonds count as ONE bond, no matter how many there are.  Aromatic atoms that are
 -- incorrectly indicated but not part of a ring system are effectively "radical" system, but
 -- will not be explicitely depicted as such in the data structure.  Aromatic atoms that are
 -- not directly connected to any other aromatic atom will be considered ?? what exactly???
+{------------------------------------------------------------------------------}
 currentValence :: Atom ->  Integer
 currentValence a = undefined
 
+
+
+{------------------------------------------------------------------------------}
 isAnyBondToAtom :: Bond -> Bool
 isAnyBondToAtom b = case b of
     Sigma atom -> isElement atom
@@ -422,6 +469,9 @@ isAnyBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+
+
+{------------------------------------------------------------------------------}
 isDeltaBondToAtom :: Bond -> Bool
 isDeltaBondToAtom b = case b of
     Sigma atom -> False
@@ -433,6 +483,9 @@ isDeltaBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+
+
+{------------------------------------------------------------------------------}
 isAromaticBondToAtom :: Bond -> Bool
 isAromaticBondToAtom b = case b of
     Sigma atom -> False
@@ -444,6 +497,9 @@ isAromaticBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+
+
+{------------------------------------------------------------------------------}
 isPiBondToAtom :: Bond -> Bool
 isPiBondToAtom b = case b of
     Sigma atom -> False
@@ -455,6 +511,8 @@ isPiBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+
+{------------------------------------------------------------------------------}
 isSigmaBondToAtom :: Bond -> Bool
 isSigmaBondToAtom b = case b of
     Sigma atom -> isElement atom
@@ -466,10 +524,15 @@ isSigmaBondToAtom b = case b of
     Antibond atom -> False
     Any atom -> True
 
+
+{------------------------------------------------------------------------------}
 removeClosureMarker :: Atom -> Integer -> Atom
 removeClosureMarker a i = a{markerSet = (Set.delete deleteMarker $ markerSet a)} 
     where deleteMarker = Closure i Single
 
+
+
+{------------------------------------------------------------------------------}
 getMatchingClosureNumber :: Atom -> Atom -> Maybe Integer
 getMatchingClosureNumber a1 a2 = firstCommonMarker
     where markers1 = fst $ Set.partition isClosure (markerSet a1)
@@ -480,6 +543,9 @@ getMatchingClosureNumber a1 a2 = firstCommonMarker
                               then Nothing 
                               else Just $ labelNumber (Set.findMin intersectionSet)
 
+
+
+{------------------------------------------------------------------------------}
 getBondList :: Atom -> [Bond]
 getBondList a = case a of
     Element _ _ b _ -> b
@@ -488,10 +554,15 @@ getBondList a = case a of
     Unfilled b _ -> b
 
 
+{------------------------------------------------------------------------------}
+{-------------------------------Typeclass Intances-----------------------------}
+{------------------------------------------------------------------------------}
+
 
 -- This is really ugly, but need to equate closure markers easily, disregarding bond info.
 -- This is because closure bond type only needs to be defined on one end of the molecule,
 -- and therefore might not match the other closure atom in a valid smile.
+{------------------------------------------------------------------------------}
 instance Eq Marker where
     a == b = case a of 
         Closure {labelNumber=l1, bondType=b1} -> case b of 
@@ -533,7 +604,7 @@ instance Eq Marker where
         _ -> case b of
             _  -> False      
         
-
+{------------------------------------------------------------------------------}
 instance Show Atom where
     show a = case a of
           Element i _ b m ->  name i ++ show b ++ " " ++ show m
@@ -544,10 +615,12 @@ instance Show Atom where
 
 -- Instance Eq and instance Ord are going to be where all the action is.
 -- Everything broken until then!
+{------------------------------------------------------------------------------}
 instance Eq Atom where
     a == b = True
 
     
+{------------------------------------------------------------------------------}
 instance Ord Atom where
     a > b = True
     a < b = False

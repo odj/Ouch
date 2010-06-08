@@ -32,6 +32,10 @@ module Ouch.Structure.Bond (
 import {-# SOURCE #-} Ouch.Structure.Atom
 
 
+{------------------------------------------------------------------------------}
+{-------------------------------Date Types-------------------------------------}
+{------------------------------------------------------------------------------}
+
 data Bond = Sigma {bondsTo::Atom}
           | Pi {bondsTo::Atom} 
           | Aromatic {bondsTo::Atom}
@@ -44,7 +48,10 @@ data Bond = Sigma {bondsTo::Atom}
 data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
   
-          
+      
+{------------------------------------------------------------------------------}
+{-------------------------------Typeclass Intances-----------------------------}
+{------------------------------------------------------------------------------}    
 instance Show Bond where
   show b = case b of
       Sigma atom -> "Sigma"
