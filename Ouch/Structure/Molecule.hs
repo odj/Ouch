@@ -120,7 +120,7 @@ cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b =
                             Nothing -> False
                         -- This method does the actual work
                         cyclizeMoleculeAtIndexesWithBond m i1 i2 b 
-                            | errorTest = Right $ Small {atomList=updateList2}
+                            | errorTest = cyclizePerhapsMolecule (Right $ Small {atomList=updateList2})
                             | otherwise = Left "Could not cyclize molecule"
                             where atom1 = (atomList m) !! i1
                                   atom2 = (atomList m) !! i2
