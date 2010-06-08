@@ -28,8 +28,7 @@ module Ouch.Structure.Atom (
       Atom(..)
     , Chirality(..)
     , Marker(..)
-    , Bond(..)
-    , NewBond(..)
+    , Geometry(..)
     , sigmaBondToAtom
     , addHydrogen
     , piBondToAtom
@@ -55,11 +54,11 @@ module Ouch.Structure.Atom (
 
 import Data.Maybe
 import Ouch.Data.Atom
-
+import Ouch.Structure.Bond
 
 import Data.Set as Set
-import Data.Map as Map
-import Data.List as List
+import qualified Data.Map as Map
+import qualified Data.List as List
 
 -- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
 -- Bond list is all bond FROM atom.  
@@ -70,13 +69,6 @@ data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::
             | Unfilled {bondList::[Bond], markerSet::(Set Marker)}
             | Unspecified {bondList::[Bond], markerSet::(Set Marker)}   --Wildcard atom for smiles symbol *
             | Open {bondList::[Bond], markerSet::(Set Marker)}
-            deriving (Eq)
-         
-data Chirality = Levo | Dextro 
-     deriving (Show, Eq, Ord)
-
-data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
-     deriving (Show, Eq, Ord)
 
 data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Closure {labelNumber::Integer, bondType::NewBond}
@@ -93,22 +85,16 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Null  -- This is a dummy value for functions that append marker list for simplicity.
               deriving (Show, Ord)
 
-data Bond = Sigma {bondsTo::Atom}
-          | Pi {bondsTo::Atom} 
-          | Aromatic {bondsTo::Atom}
-          | Delta {bondsTo::Atom}
-          | Hbond {bondsTo::Atom}
-          | Ionic {bondsTo::Atom}
-          | Antibond {bondsTo::Atom}
-          | Any {bondsTo::Atom}
-          deriving (Eq)
+         
+data Chirality = Levo | Dextro 
+     deriving (Show, Eq, Ord)
 
-data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
+data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
+     deriving (Show, Eq, Ord)
 
 
 connectAtomsWithBond :: Atom -> Atom -> NewBond -> (Atom, Atom)
-connectAtomsWithBond a1 a2 b = (aa1, aa2)
-  where
+connectAtomsWithBond a1 a2 b = (aa1, aa2) where
       aa1 = case a1 of
           Element  {} ->  Element     { atomicNumber=(atomicNumber a1)
                                       , neutronNumber=(neutronNumber a1)
@@ -501,15 +487,7 @@ getBondList a = case a of
     Electron b _ -> b
     Unfilled b _ -> b
 
-instance Show Bond where
-    show b = case b of
-        Sigma atom -> "Sigma"
-        Pi atom -> "Pi"
-        Aromatic atom -> "Aromatic"
-        Delta atom -> "Delta"
-        Hbond atom -> "Hydrogen"
-        Ionic atom -> "Ionic"
-        Antibond atom -> "AntiBond"
+
 
 -- This is really ugly, but need to equate closure markers easily, disregarding bond info.
 -- This is because closure bond type only needs to be defined on one end of the molecule,
@@ -563,16 +541,12 @@ instance Show Atom where
           Electron {} -> "•"
           Unfilled {} -> ""
           where name b = fromJust $ Map.lookup b atomicSymbols
-{-
+
 -- Instance Eq and instance Ord are going to be where all the action is.
 -- Everything broken until then!
 instance Eq Atom where
     a == b = True
 
-instance Eq Bond where
-    a == b = True
-
--}
     
 instance Ord Atom where
     a > b = True

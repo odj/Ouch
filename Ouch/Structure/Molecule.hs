@@ -45,11 +45,12 @@ module Ouch.Structure.Molecule
      ) where
 
 import Ouch.Structure.Atom
+import Ouch.Structure.Bond
 import Ouch.Data.Atom
 import Data.Either
 import Data.Maybe
-import Data.Map as Map
-import Data.List as List
+import qualified Data.Map as Map
+import qualified Data.List as List
 import Data.Set as Set
 import Control.Applicative 
 

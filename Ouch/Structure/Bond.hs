@@ -23,10 +23,39 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-module Ouch.Structure.Bond  where
+module Ouch.Structure.Bond (
+      Bond(..)
+    , NewBond(..)
+    ) where
     
 -- This line terminates recursive import sequences        
-import Ouch.Structure.Atom
+import {-# SOURCE #-} Ouch.Structure.Atom
 
 
-            
+data Bond = Sigma {bondsTo::Atom}
+          | Pi {bondsTo::Atom} 
+          | Aromatic {bondsTo::Atom}
+          | Delta {bondsTo::Atom}
+          | Hbond {bondsTo::Atom}
+          | Ionic {bondsTo::Atom}
+          | Antibond {bondsTo::Atom}
+          | Any {bondsTo::Atom}
+
+data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
+
+  
+          
+instance Show Bond where
+  show b = case b of
+      Sigma atom -> "Sigma"
+      Pi atom -> "Pi"
+      Aromatic atom -> "Aromatic"
+      Delta atom -> "Delta"
+      Hbond atom -> "Hydrogen"
+      Ionic atom -> "Ionic"
+      Antibond atom -> "AntiBond"
+  
+ 
+instance Eq Bond where
+  a == b = True
+          

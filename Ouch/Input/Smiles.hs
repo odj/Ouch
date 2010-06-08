@@ -35,11 +35,12 @@ module Ouch.Input.Smiles (
       
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
+import Ouch.Structure.Bond
 import Text.Regex.TDFA ((=~))
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
-import Data.List as List
+import qualified Data.List as List
 import Control.Applicative 
 
 

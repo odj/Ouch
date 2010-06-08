@@ -24,7 +24,7 @@
 ------------------------------------------------------------------------------}
 
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
-Mon Jun  7 15:47:32 PDT 2010
+Tue Jun  8 09:18:00 PDT 2010
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
@@ -32,14 +32,15 @@ Loading package integer-gmp ... linking ... done.
 Loading package base ... linking ... done.
 Loading package ffi-1.0 ... linking ... done.
 Prelude> :l Main.hs 
-[1 of 7] Compiling Ouch.Data.Atom   ( Ouch/Data/Atom.hs, interpreted )
-[2 of 7] Compiling Ouch.Structure.Atom ( Ouch/Structure/Atom.hs, interpreted )
-[3 of 7] Compiling Ouch.Structure.Bond ( Ouch/Structure/Bond.hs, interpreted )
-[4 of 7] Compiling Ouch.Structure.Molecule ( Ouch/Structure/Molecule.hs, interpreted )
-[5 of 7] Compiling Ouch.Input.Smiles ( Ouch/Input/Smiles.hs, interpreted )
-[6 of 7] Compiling Ouch.Test.Methods ( Ouch/Test/Methods.hs, interpreted )
-[7 of 7] Compiling Main             ( Main.hs, interpreted )
-Ok, modules loaded: Ouch.Test.Methods, Ouch.Structure.Molecule, Ouch.Structure.Atom, Ouch.Structure.Bond, Ouch.Input.Smiles, Ouch.Data.Atom, Main.
+[1 of 8] Compiling Ouch.Data.Atom   ( Ouch/Data/Atom.hs, interpreted )
+[2 of 8] Compiling Ouch.Structure.Atom[boot] ( Ouch/Structure/Atom.hs-boot, interpreted )
+[3 of 8] Compiling Ouch.Structure.Bond ( Ouch/Structure/Bond.hs, interpreted )
+[4 of 8] Compiling Ouch.Structure.Atom ( Ouch/Structure/Atom.hs, interpreted )
+[5 of 8] Compiling Ouch.Structure.Molecule ( Ouch/Structure/Molecule.hs, interpreted )
+[6 of 8] Compiling Ouch.Input.Smiles ( Ouch/Input/Smiles.hs, interpreted )
+[7 of 8] Compiling Ouch.Test.Methods ( Ouch/Test/Methods.hs, interpreted )
+[8 of 8] Compiling Main             ( Main.hs, interpreted )
+Ok, modules loaded: Ouch.Test.Methods, Ouch.Structure.Molecule, Ouch.Structure.Atom, Ouch.Structure.Atom, Ouch.Structure.Bond, Ouch.Input.Smiles, Ouch.Data.Atom, Main.
 *Main> main
 Loading package array-0.3.0.0 ... linking ... done.
 Loading package syb-0.1.0.2 ... linking ... done.
@@ -54,5 +55,5 @@ Loading package regex-tdfa-1.1.2 ... linking ... done.
 Test SHOULD FAIL:	FAILED	-with output: OK || should get: Not OK
 
 Test SHOULD FAIL:	FAILED	-with error string:	OK Error
-...................................................................
-*Main>
+.........................................................................
+*Main> 
