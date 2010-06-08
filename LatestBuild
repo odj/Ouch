@@ -24,7 +24,7 @@
 ------------------------------------------------------------------------------}
 
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
-Tue Jun  8 11:52:37 PDT 2010
+Tue Jun  8 12:23:27 PDT 2010
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
@@ -56,9 +56,5 @@ Loading package regex-tdfa-1.1.2 ... linking ... done.
 Test SHOULD FAIL:	FAILED	-with output: OK || should get: Not OK
 
 Test SHOULD FAIL:	FAILED	-with error string:	OK Error
-.....................................
-Test Smiles-MF 37:	FAILED	-with error string:	Could not cyclize molecule
-....................................
-Test Smiles-MW 37:	FAILED	-with error string:	Could not cyclize molecule
-
+...........................................................................
 *Main>
