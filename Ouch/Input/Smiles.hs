@@ -166,7 +166,6 @@ nextChoppedSmile s
    | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=Set.union markerSet (Set.singleton $ Comment s2)}
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
-         (l1, l2, l3)       = s2 =~ "([0-9]+)"::(String, String, String)    -- Get atom closure marker info
          (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
          (a1, a2, a3)       = s2 =~ "([A-Za-z]+)"::(String, String, String) -- Atom only, remove bond comments, etc
          (ss1, ss2, ss3)    = findNextSubSmile s 1
@@ -185,8 +184,6 @@ nextChoppedSmile s
          -- This is a very simple parse of ring closure markers.  
          -- Does not accomodate "%" notation (yet)
          markerSet = Set.fromList $ parseClosureMarkers lb2 []
-         -- markerNumbers = List.map (\a -> read a::Integer) $ foldr (\acc x -> [acc] : x) [] l2
-         -- markerSet = Set.fromList $ List.map (\mn -> Closure {labelNumber=mn, bondType=Single})  markerNumbers 
 
 parseClosureMarkers :: String -> [Marker] -> [Marker]
 parseClosureMarkers [] ml = ml
