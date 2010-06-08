@@ -1,12 +1,27 @@
+{-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
--------------------------------------------------------------------------------
--- Project !Ouch
--- No license selected yet-- project still under development
+    Smiles - a module to parse smiles strings
+    
+    Copyright (c) 2010 Orion D. Jankowski
+    
+    This file is part of Ouch, a chemical informatics toolkit
+    written entirely in Haskell.
 
--- Orion D. Jankowski
--- 2010-May-24
+    Ouch is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Ouch is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Ouch.  If not, see <http://www.gnu.org/licenses/>.
+
 -------------------------------------------------------------------------------
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------}
 
 module Ouch.Input.Smiles (
      nextChoppedSmile
@@ -27,6 +42,13 @@ import Data.Set as Set
 import Data.List as List
 import Control.Applicative 
 
+
+
+{------------------------------------------------------------------------------}
+{-------------------------------Date Types-------------------------------------}
+{------------------------------------------------------------------------------}
+
+
 -- NewBond
 -- We package each smile-parsing step as a "NewBond" data type to make
 -- it convenient for different functions to determine what they should do without
@@ -37,14 +59,18 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
                   | SmilesError {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}  --
                   deriving (Show, Eq)
 
--- We do not include aromatic bonds here because they are not specified by 
--- labels, but by atom case or pure inference.
+
+
+{------------------------------------------------------------------------------}
+{-------------------------------Functions--------------------------------------}
+{------------------------------------------------------------------------------}
 
 
 -- makeMoleculeFromSmiles
 -- Right if successful
 -- Left if error somewhere, with brief error description
 -- This functions kicks off the recursive interpretations
+{------------------------------------------------------------------------------}
 makeMoleculeFromSmiles::String -> PerhapsMolecule
 makeMoleculeFromSmiles smi = case chop of 
     Smile {}        -> growPerhapsMoleculeAtIndexWithString newAtom 0 nextSmile 
@@ -63,6 +89,7 @@ makeMoleculeFromSmiles smi = case chop of
 
 -- growPerhapsMoleculeWithString
 -- Adds continuation of smiles string at the end of the molecule being built
+{------------------------------------------------------------------------------}
 growPerhapsMoleculeAtIndexWithString :: PerhapsMolecule -> Int -> String -> PerhapsMolecule
 growPerhapsMoleculeAtIndexWithString pm i smi 
     | smi == ""  = pm
@@ -87,6 +114,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 -- makeMoleculeFromSmiles
 -- Right if successful
 -- Left if error somewhere, with brief error description
+{------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromChop nb    | a == ""        =  (Left "ERROR: Tried to make atom from empty string.")
                                | a == "C"       =  (Right $ Small [Element 6 0 [] markSetAll])
@@ -112,6 +140,7 @@ makeAtomMoleculeFromChop nb    | a == ""        =  (Left "ERROR: Tried to make a
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
+{------------------------------------------------------------------------------}
 parseSmiles :: String -> (String, String, String)
 parseSmiles s = s =~ pat::(String, String, String)
     -- Need a more general format to recognize two-letter elements (or maybe just enumerate them?) 
@@ -125,9 +154,8 @@ parseSmiles s = s =~ pat::(String, String, String)
                           
 
 -- nextSmilesSubstring
--- Function strips atom/bond info into a new type. 
--- String residual in unmodified (smiles), while atom string (smile) is suitable
--- for parsing by  
+-- Function strips atom/bond info into a new type.  
+{------------------------------------------------------------------------------}
 nextChoppedSmile :: String -> ChoppedSmile 
 nextChoppedSmile s
    | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=(Set.singleton $ Comment s2)}
@@ -155,8 +183,8 @@ nextChoppedSmile s
          markerNumbers = List.map (\a -> read a::Integer) $ foldr (\acc x -> [acc] : x) [] l2
          markerSet = Set.fromList $ List.map (\mn -> Closure {labelNumber=mn, bondType=Single})  markerNumbers 
 
-
-
+-- findNextSubSmile
+{------------------------------------------------------------------------------}
 findNextSubSmile::String -> Int -> (String, String, String)
 findNextSubSmile s i | (length s) >= i && (open == closed)  = ("", s2', s3)
                      | (length s) > i                       = findNextSubSmile s (i + 1)
@@ -170,41 +198,10 @@ findNextSubSmile s i | (length s) >= i && (open == closed)  = ("", s2', s3)
 
 
 
--- GHCI debugging function
+--  debugging function
+{------------------------------------------------------------------------------}
 chop :: String -> String
 chop [] = ""
 chop a = (show nb) ++ "\n" ++ chop (smiles nb)
    where nb = nextChoppedSmile a
 
-
-
------------
--- Some old stuff from the graveyard
-{-
-
-parseSmiles :: String -> (String, String, String)
-parseSmiles s = s =~ (a ++ b ++ c ++ d ++ e)::(String, String, String)
-    where (a, b, c, d, e) = findRecursionLevelPattern startPattern s 1
-          startPattern =  ( "([=#]*.[0-9]*[@]*|^[\\(][^\\)^\\(]*"
-                          , "([\\(][^\\)]"
-                          , "*"
-                          , "[^\\(]*[\\)])"
-                          , "[^\\)]*[\\)])"
-                          )
-
-
-
-
-findRecursionLevelPattern::(String, String, String, String, String) -> String -> Int -> (String, String, String, String, String) 
-findRecursionLevelPattern (fr, inf, c, inb, b) s i
-        | open == closed      = (fr, inf, c, inb, b)
-        | i > (length s)      = (fr, inf, c, inb, b)   -- Not a well formed SMILES.  Should throw error.
-        | otherwise           = findRecursionLevelPattern (fr ++ inf, innerFront, center, innerBack, inb ++ b) s (i+1)
-            where innerFront = "([\\(][^\\)]"
-                  center     = "*"
-                  innerBack  = "[^\\)]*[\\)])*"
-                  (s1, s2, s3) = s =~ (fr ++ inf ++ c ++ inb ++ b)::(String, String, String)
-                  open = sum [1 | c <- s2, c=='(']
-                  closed = sum [1 | c <- s2, c==')']
-
--}
