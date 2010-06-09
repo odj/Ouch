@@ -1,33 +1,19 @@
 Name:                Ouch
-
-Version:             0.0
-
-License:             Not yet determined
-
+Version:             0.0.1
+License:             GPL
 License-file:        COPYING
-
 Author:              Orion Jankowski
-
 Maintainer:          Orion Jankowski odj@me.com
-
+Copyright:           Orion Jankowski 2010
 Category:            Cheminformatics
-
 Synopsis:            A cheminformatics library
-
-Description:         
-
+Description:         A work in progress...
 Homepage:            We don't have one
-
+Stability:           Unstable
 Tested-With:         GHC==6.10.4
-
 Build-Type:          Simple
-
-Build-Depends:       base>=3 && <4, TDFA
-
+Build-Depends:       base >= 3 && < 5, containers, regex-tdfa
 Data-Files:          README
-
-Exposed-modules:     
-
+Exposed-modules:     Ouch.Test.Methods
 extensions:          CPP
-
 ghc-options:         
