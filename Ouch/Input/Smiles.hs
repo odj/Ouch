@@ -155,7 +155,6 @@ parseSmiles s = s =~ pat::(String, String, String)
                     , ")"
                     ]
                           
-
 -- nextSmilesSubstring
 -- Function strips atom/bond info into a new type.  
 {------------------------------------------------------------------------------}
