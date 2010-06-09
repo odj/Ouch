@@ -80,7 +80,7 @@ makeMoleculeFromSmiles smi = case chop of
     -- A well-formed smile should never start with a substructure, but if it does, we connect the next 
     -- atom or substructure to it's beginning (which may or may not be permitted chemically)
     SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newSubstructure 0 nextSmile  
-    SmilesError {}  -> (Left $ "Error trying to parse the Smiles string: " ++ (smi))
+    SmilesError {}  -> (Left $ "Error trying to parse the Smiles string: " ++ smi)
     where chop = nextChoppedSmile smi
           thisSmile = smile chop
           nextSmile = smiles chop
@@ -108,7 +108,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
                   newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
                   newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
                   -- We just made this thing, so there shouldn't be any errors, right?
-                  newIndex = case newMolecule1 of Right m1 -> (fromIntegral $ fromJust $ numberOfAtoms m1)-1          
+                  newIndex = case newMolecule1 of Right m1 -> fromIntegral (fromJust $ numberOfAtoms m1) - 1          
     Left {} -> pm    
 
 
@@ -119,25 +119,25 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 -- Left if error somewhere, with brief error description
 {------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
-makeAtomMoleculeFromChop nb    | a == ""        =  (Left "ERROR: Tried to make atom from empty string.")
-                               | a == "C"       =  (Right $ Small [Element 6 0 [] markSetAll])
-                               | a == "N"       =  (Right $ Small [Element 7 0 [] markSetAll])
-                               | a == "O"       =  (Right $ Small [Element 8 0 [] markSetAll])
-                               | a == "H"       =  (Right $ Small [Element 1 0 [] markSetAll])
+makeAtomMoleculeFromChop nb    | a == ""        =  Left "ERROR: Tried to make atom from empty string."
+                               | a == "C"       =  Right $ Small [Element 6 0 [] markSetAll]
+                               | a == "N"       =  Right $ Small [Element 7 0 [] markSetAll]
+                               | a == "O"       =  Right $ Small [Element 8 0 [] markSetAll]
+                               | a == "H"       =  Right $ Small [Element 1 0 [] markSetAll]
                                
-                               | a == "P"       =  (Right $ Small [Element 15 0 [] markSetAll])
-                               | a == "S"       =  (Right $ Small [Element 16 0 [] markSetAll])
-                               | a == "F"       =  (Right $ Small [Element 9 0 [] markSetAll])
-                               | a == "B"       =  (Right $ Small [Element 5 0 [] markSetAll])
-                               | a == "BR"      =  (Right $ Small [Element 35 0 [] markSetAll])
-                               | a == "CL"      =  (Right $ Small [Element 17 0 [] markSetAll])
-                               | a == "I"       =  (Right $ Small [Element 53 0 [] markSetAll])
-                               | a == "*"       =  (Right $ Small [Unspecified [] markSetAll]) -- Wildcard Atom
-                               | otherwise      =  (Left  $ "ERROR: Atom not recognized for symbol: " ++ a)
-                               where markSetType = Set.singleton (if (isLower $ head (smile nb)) then AromaticAtom else Null)
+                               | a == "P"       =  Right $ Small [Element 15 0 [] markSetAll]
+                               | a == "S"       =  Right $ Small [Element 16 0 [] markSetAll]
+                               | a == "F"       =  Right $ Small [Element 9 0 [] markSetAll]
+                               | a == "B"       =  Right $ Small [Element 5 0 [] markSetAll]
+                               | a == "BR"      =  Right $ Small [Element 35 0 [] markSetAll]
+                               | a == "CL"      =  Right $ Small [Element 17 0 [] markSetAll]
+                               | a == "I"       =  Right $ Small [Element 53 0 [] markSetAll]
+                               | a == "*"       =  Right $ Small [Unspecified [] markSetAll] -- Wildcard Atom
+                               | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
+                               where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
                                      markSetClass = Set.empty 
-                                     markSetAll = Set.union markSetType (mark nb)
-                                     a = [toUpper c | c <- (smile nb)] 
+                                     markSetAll = markSetType `union` mark nb
+                                     a = [toUpper c | c <- smile nb] 
 
 
 
@@ -160,9 +160,9 @@ parseSmiles s = s =~ pat::(String, String, String)
 {------------------------------------------------------------------------------}
 nextChoppedSmile :: String -> ChoppedSmile 
 nextChoppedSmile s
-   | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=(Set.singleton $ Comment s2)}
-   | (head s2) == '('       = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=(Set.singleton $ Comment ss2)}
-   | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=Set.union markerSet (Set.singleton $ Comment s2)}
+   | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=Set.singleton $ Comment s2}
+   | head s2 == '('       = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
+   | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `union` (Set.singleton $ Comment s2)}
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
          (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
@@ -170,7 +170,7 @@ nextChoppedSmile s
          (ss1, ss2, ss3)    = findNextSubSmile s 1
          (bb1, bb2, bb3)    = ss2 =~ "([A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles
          nb  | b2 == "."              = NoBond
-             | b2 == "" || b2 == "-"  = Single
+             | b2 `elem` ["", "-"]    = Single
              | b2 == "="              = Double
              | b2 == "#"              = Triple
              | otherwise              = Single
@@ -186,7 +186,7 @@ nextChoppedSmile s
 
 parseClosureMarkers :: String -> [Marker] -> [Marker]
 parseClosureMarkers [] ml = ml
-parseClosureMarkers s ml = parseClosureMarkers s3 ((Closure {labelNumber=closureNumber, bondType=nb}):ml)
+parseClosureMarkers s ml = parseClosureMarkers s3 (Closure {labelNumber=closureNumber, bondType=nb}:ml)
     where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
           (_, n, _)    = s =~ "([0-9])"::(String, String, String)
           (_, nbs, _)  = s2 =~ "^[-=#\\.]"::(String, String, String)
@@ -199,13 +199,13 @@ parseClosureMarkers s ml = parseClosureMarkers s3 ((Closure {labelNumber=closure
 -- findNextSubSmile
 {------------------------------------------------------------------------------}
 findNextSubSmile::String -> Int -> (String, String, String)
-findNextSubSmile s i | (length s) >= i && (open == closed)  = ("", s2', s3)
-                     | (length s) > i                       = findNextSubSmile s (i + 1)
-                     | (length s) <= i                      = ("", "", s)  -- Will trigger smiles error message
-                     | otherwise                            = ("", "", s)  -- Will trigger smiles error message
+findNextSubSmile s i | length s >= i && (open == closed)  = ("", s2', s3)
+                     | length s > i                       = findNextSubSmile s (i + 1)
+                     | length s <= i                      = ("", "", s)  -- Will trigger smiles error message
+                     | otherwise                          = ("", "", s)  -- Will trigger smiles error message
                      where s2 = take i s
                            s3 = drop i s
-                           s2' | (i > 2) = tail $ init s2 | otherwise = ""
+                           s2' | i > 2 = tail $ init s2 | otherwise = ""
                            open = sum [1 | c <- s2, c=='(']
                            closed = sum [1 | c <- s2, c==')']
 
@@ -215,6 +215,6 @@ findNextSubSmile s i | (length s) >= i && (open == closed)  = ("", s2', s3)
 {------------------------------------------------------------------------------}
 chop :: String -> String
 chop [] = ""
-chop a = (show nb) ++ "\n" ++ chop (smiles nb)
+chop a = show nb ++ "\n" ++ chop (smiles nb)
    where nb = nextChoppedSmile a
 
