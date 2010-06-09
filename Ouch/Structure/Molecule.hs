@@ -83,7 +83,7 @@ type PerhapsMolecule =  (Either String Molecule)
 {------------------------------------------------------------------------------}
 addAtom :: Molecule -> Atom -> Molecule
 addAtom m a = case m of
-    Small {atomList=(atom:atoms)} -> Small (atoms' ++ [atom'] ++ atoms)
+    Small {atomList=(atom:atoms)} -> Small (atoms' ++ atom':atoms)
          where (atom', atoms') = sigmaBondToAtom atom a
     Markush            -> m
     Polymer            -> m
@@ -158,9 +158,9 @@ cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b =
                                   (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureMarker atom1 label)
                                                          (removeClosureMarker atom2 label) b
                                   (a1b, a1e) = (take i1 (atomList m), drop (i1+1) (atomList m))
-                                  updateList1 = a1b ++ [newAtom1] ++ a1e
+                                  updateList1 = a1b ++ newAtom1:a1e
                                   (a2b, a2e) = (take i2 updateList1, drop (i2+1) updateList1)
-                                  updateList2 = a2b ++ [newAtom2] ++ a2e
+                                  updateList2 = a2b ++ newAtom2:a2e
                     
 
 
@@ -179,8 +179,9 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
           Left {} -> pm2
           Right m2  | errorTest == False    -> (Left ("Could not connect molecules at index: " ++ 
                                                (show i1) ++ " " ++ (show i2)))
-                    | otherwise             -> cyclizePerhapsMolecule 
+                    | hasClosure            -> cyclizePerhapsMolecule 
                                                $ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
+                    | otherwise             -> connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
                     where errorTest = (test1 && test2)
                           n1 = numberOfAtoms m1
                           n2 = numberOfAtoms m2
@@ -191,8 +192,11 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                               Just n -> (fromIntegral n > i2) && (i2 >= 0)
                               Nothing -> False
                           -- This method does the actual work
+                          markers       = List.foldr ((++) . Set.toList . markerSet) []  (atomList m2)
+                          isClosure mk  = case mk of Closure {} -> True ; _ -> False
+                          hasClosure = List.elem True $ List.map (isClosure) markers
                           connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right 
-                              $ Small {atomList=(a1b ++ [newAtom1] ++ a1e ++ a2b ++ [newAtom2] ++ a2e)}
+                              $ Small {atomList=(a1b ++ newAtom1:a1e ++ a2b ++ newAtom2:a2e)}
                               where atom1 = (atomList m1) !! i1
                                     atom2 = (atomList m2) !! i2
                                     (a1b, a1e) = (take i1 (atomList m1), drop (i1+1) (atomList m1))
