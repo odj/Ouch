@@ -109,7 +109,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
                   newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
                   newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
                   -- We just made this thing, so there shouldn't be any errors, right?
-                  newIndex = case newMolecule1 of Right m1 -> fromIntegral (fromJust $ numberOfAtoms m1) - 1          
+                  newIndex = case newMolecule1 of Right m1 -> Map.size (atomMap m1) - 1          
     Left {} -> pm    
 
 

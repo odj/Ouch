@@ -381,10 +381,11 @@ isHeavyAtom a = case a of
 {------------------------------------------------------------------------------}
 isElement :: Atom -> Bool
 isElement a = case a of
-  Element i _ _ _ -> True
+  Element _ _ _ _ -> True
   LonePair {} -> False
   Electron {} -> False
   Unfilled {} -> False
+
 
 -- numberOfBonds
 -- Returns number of covalent connections to other atoms in the molecule 

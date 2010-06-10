@@ -163,43 +163,9 @@ cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b =
                   
         
 
-{-
-cyclizePerhapsMoleculeAtIndexesWithBond :: PerhapsMolecule -> Int -> Int -> NewBond -> PerhapsMolecule
-cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b = 
-    case pm of 
-        Left {} -> pm
-        Right m   | errorTest == False    -> (Left ("Could not connect molecules at index: " 
-                                             ++ (show i1) ++ " " ++ (show i2)))
-                  | otherwise             -> cyclizeMoleculeAtIndexesWithBond m i1 i2 b
-                  where errorTest = (test1 && test2)
-                        n = numberOfAtoms m
-                        test1 = case n of
-                            Just n -> (fromIntegral n > i1) && (i1 >= 0)
-                            Nothing -> False
-                        test2 = case n of
-                            Just n -> (fromIntegral n > i2) && (i2 >= 0)
-                            Nothing -> False
-                        -- This method does the actual work
-                        cyclizeMoleculeAtIndexesWithBond m i1 i2 b 
-                            | errorTest = cyclizePerhapsMolecule (Right $ Small {atomMap=updateList2})
-                            | otherwise = Left "Could not cyclize molecule"
-                            where atom1 = (atomMap m) !! i1
-                                  atom2 = (atomMap m) !! i2
-                                  markerLabel = getMatchingClosureNumber atom1 atom2 
-                                  errorTest = case markerLabel of
-                                      Nothing -> False
-                                      Just label -> True
-                                   -- This should not evaluate if 'Nothing' because of the guards
-                                  label = (\(Just l) -> l) markerLabel  
-                                  (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureMarker atom1 label)
-                                                         (removeClosureMarker atom2 label) b
-                                  (a1b, a1e) = (take i1 (atomMap m), drop (i1+1) (atomMap m))
-                                  updateList1 = a1b ++ newAtom1:a1e
-                                  (a2b, a2e) = (take i2 updateList1, drop (i2+1) updateList1)
-                                  updateList2 = a2b ++ newAtom2:a2e
-                    
 
--}
+
+
 -- connectPerhapsMoleculesAtIndicesWithBond
 -- Takes two 'PerhapsMolecules' and connects them with a 'NewBond' at their
 -- respective indices.  Return an error if indices or PerhapsMolecules are
@@ -213,22 +179,10 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
       Left {} -> pm1
       Right m1 -> case pm2 of
           Left {} -> pm2
-          Right m2  | errorTest == False    -> (Left ("Could not connect molecules at index: " ++ 
-                                               (show i1) ++ " " ++ (show i2)))
-                    | hasClosure            -> cyclizePerhapsMolecule 
+          Right m2  | hasClosure            -> cyclizePerhapsMolecule 
                                                $ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
                     | otherwise             -> connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
-                    where errorTest = (test1 && test2)
-                          n1 = numberOfAtoms m1
-                          n2 = numberOfAtoms m2
-                          test1 = case n1 of
-                              Just n -> (fromIntegral n > i1) && (i1 >= 0)
-                              Nothing -> False
-                          test2 = case n2 of
-                              Just n -> (fromIntegral n > i2) && (i2 >= 0)
-                              Nothing -> False
-                          -- The 'markers' function is UGLY and probably a performace liability
-                          markers       = List.foldr ((++) . Set.toList . markerSet) [] 
+                    where markers       = List.foldr ((++) . Set.toList . markerSet) [] 
                                           $ List.map snd $ Map.toList (atomMap m2)
                           isClosure mk  = case mk of Closure {} -> True ; _ -> False
                           hasClosure = List.elem True $ List.map (isClosure) markers
@@ -250,43 +204,8 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                                     newMap2 = Map.mapKeysMonotonic (+ orginalLength) $ Map.insert i2 newAtom2 (atomMap m2)
                                     orginalLength = Map.size newMap1
                                     newMap = Map.union newMap1 newMap2
-{--
-connectPerhapsMoleculesAtIndicesWithBond::PerhapsMolecule -> Int -> 
-                                          PerhapsMolecule -> Int -> 
-                                          NewBond -> PerhapsMolecule
-connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
-  case pm1 of 
-      Left {} -> pm1
-      Right m1 -> case pm2 of
-          Left {} -> pm2
-          Right m2  | errorTest == False    -> (Left ("Could not connect molecules at index: " ++ 
-                                               (show i1) ++ " " ++ (show i2)))
-                    | hasClosure            -> cyclizePerhapsMolecule 
-                                               $ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
-                    | otherwise             -> connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
-                    where errorTest = (test1 && test2)
-                          n1 = numberOfAtoms m1
-                          n2 = numberOfAtoms m2
-                          test1 = case n1 of
-                              Just n -> (fromIntegral n > i1) && (i1 >= 0)
-                              Nothing -> True
-                          test2 = case n2 of
-                              Just n -> (fromIntegral n > i2) && (i2 >= 0)
-                              Nothing -> False
-                          -- This method does the actual work
-                          markers       = List.foldr ((++) . Set.toList . markerSet) []  (atomMap m2)
-                          isClosure mk  = case mk of Closure {} -> True ; _ -> False
-                          hasClosure = List.elem True $ List.map (isClosure) markers
-                          connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = Right 
-                              $ Small {atomMap=(a1b ++ newAtom1:a1e ++ a2b ++ newAtom2:a2e)}
-                              where atom1 = (atomMap m1) !! i1
-                                    atom2 = (atomMap m2) !! i2
-                                    (a1b, a1e) = (take i1 (atomMap m1), drop (i1+1) (atomMap m1))
-                                    (a2b, a2e) = (take i2 (atomMap m2), drop (i2+1) (atomMap m2))
-                                    (newAtom1, newAtom2) = connectAtomsWithBond atom1 atom2 b
 
---}
-          
+    
 -- addMolecule
 -- Combines two molecules and connects bond-markers if required
 -- Otherwise, adds as disconnected structure.  This is not really meant to be accessed
@@ -311,12 +230,12 @@ makeMoleculeFromAtom a = (Right $ Small {atomMap = Map.singleton 0 a }) -- atomM
 {------------------------------------------------------------------------------}
 numberOfAtoms :: Molecule -> Maybe Integer
 numberOfAtoms m = case m of
-    Small {atomMap=atoms} -> Just $ num atoms
+    Small {atomMap=atoms}  -> Just $ num atoms
     Markush                -> Nothing
     Polymer                -> Nothing
     Biologic               -> Nothing
-    where elements a = Map.filter isElement a
-          num a = fromIntegral $ Map.size $ elements a
+    where num a = fromIntegral $ Map.size $ Map.filter isElement a
+
 
 -- 
 {------------------------------------------------------------------------------}
@@ -348,15 +267,8 @@ fillMoleculeValence pm = case pm of
         Markush     -> Left "Can't fill valence on a Markush."
         Polymer     -> Left "Can't fill valence on a Polymer."
         Biologic    -> Left "Can't fill valence on a Biologic."
-        
-              
-              {--
-              newAtomTuple a = List.map (\a -> fillValence a []) a
-              newAtomList a = (List.map fst $ newAtomTuple a) ++ (foldl (++) [] (List.map snd $ newAtomTuple a))
-              newMolecule a = Small $ newAtomList a
---}
 
--- 
+ 
 {------------------------------------------------------------------------------}
 molecularWeight :: PerhapsMolecule -> Either String Double
 molecularWeight pm = case pm of
@@ -367,18 +279,6 @@ molecularWeight pm = case pm of
         Polymer     -> Left "No MW for Polymer"
         Biologic    -> Left "No MW for Biologic"
         where mw a = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] a
-
-{--
-molecularWeight :: PerhapsMolecule -> Either String Double
-molecularWeight pm = case pm of
-    Left m  -> Left m
-    Right m -> case m of
-        Small {atomList=atoms} -> Right $ mw atoms
-        Markush     -> Left "No MW for Markush"
-        Polymer     -> Left "No MW for Polymer"
-        Biologic    -> Left "No MW for Biologic"
-        where mw a = foldl (+) 0.0 $ List.map atomMW a
-        --}
 
 
 
