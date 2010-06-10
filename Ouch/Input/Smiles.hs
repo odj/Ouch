@@ -43,6 +43,7 @@ import Data.Maybe
 import Data.Char
 import Data.Set as Set
 import qualified Data.List as List
+import Data.Map as Map
 import Control.Applicative 
 
 
@@ -120,23 +121,23 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 {------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromChop nb    | a == ""        =  Left "ERROR: Tried to make atom from empty string."
-                               | a == "C"       =  Right $ Small [Element 6 0 [] markSetAll]
-                               | a == "N"       =  Right $ Small [Element 7 0 [] markSetAll]
-                               | a == "O"       =  Right $ Small [Element 8 0 [] markSetAll]
-                               | a == "H"       =  Right $ Small [Element 1 0 [] markSetAll]
+                               | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
+                               | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
+                               | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
+                               | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
                                
-                               | a == "P"       =  Right $ Small [Element 15 0 [] markSetAll]
-                               | a == "S"       =  Right $ Small [Element 16 0 [] markSetAll]
-                               | a == "F"       =  Right $ Small [Element 9 0 [] markSetAll]
-                               | a == "B"       =  Right $ Small [Element 5 0 [] markSetAll]
-                               | a == "BR"      =  Right $ Small [Element 35 0 [] markSetAll]
-                               | a == "CL"      =  Right $ Small [Element 17 0 [] markSetAll]
-                               | a == "I"       =  Right $ Small [Element 53 0 [] markSetAll]
-                               | a == "*"       =  Right $ Small [Unspecified [] markSetAll] -- Wildcard Atom
+                               | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
+                               | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
+                               | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
+                               | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
+                               | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
+                               | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
+                               | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
+                               | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
                                | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
                                where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
                                      markSetClass = Set.empty 
-                                     markSetAll = markSetType `union` mark nb
+                                     markSetAll = markSetType `Set.union` mark nb
                                      a = [toUpper c | c <- smile nb] 
 
 
@@ -162,7 +163,7 @@ nextChoppedSmile :: String -> ChoppedSmile
 nextChoppedSmile s
    | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=Set.singleton $ Comment s2}
    | head s2 == '('       = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
-   | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `union` (Set.singleton $ Comment s2)}
+   | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `Set.union` (Set.singleton $ Comment s2)}
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
          (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
