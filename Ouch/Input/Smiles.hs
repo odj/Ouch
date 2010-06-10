@@ -69,14 +69,21 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
-
 -- makeMoleculeFromSmiles
+-- Add all the "cleanup" functions here.
+{------------------------------------------------------------------------------}
+makeMoleculeFromSmiles::String -> PerhapsMolecule
+makeMoleculeFromSmiles smi = fillMoleculeValence $ makeScaffoldFromSmiles smi
+    
+    
+
+-- makeScaffoldFromSmiles
 -- Right if successful
 -- Left if error somewhere, with brief error description
 -- This functions kicks off the recursive interpretations
 {------------------------------------------------------------------------------}
-makeMoleculeFromSmiles::String -> PerhapsMolecule
-makeMoleculeFromSmiles smi = case chop of 
+makeScaffoldFromSmiles::String -> PerhapsMolecule
+makeScaffoldFromSmiles smi = case chop of 
     Smile {}        -> growPerhapsMoleculeAtIndexWithString newAtom 0 nextSmile 
     -- A well-formed smile should never start with a substructure, but if it does, we connect the next 
     -- atom or substructure to it's beginning (which may or may not be permitted chemically)
@@ -86,7 +93,7 @@ makeMoleculeFromSmiles smi = case chop of
           thisSmile = smile chop
           nextSmile = smiles chop
           newAtom = makeAtomMoleculeFromChop chop
-          newSubstructure = makeMoleculeFromSmiles thisSmile
+          newSubstructure = makeScaffoldFromSmiles thisSmile
           
 
                             
@@ -105,7 +112,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
             where chop = nextChoppedSmile smi
                   nextSmile = smiles chop
                   newAtom = makeAtomMoleculeFromChop chop
-                  newSubStructure = makeMoleculeFromSmiles (smile chop)
+                  newSubStructure = makeScaffoldFromSmiles (smile chop)
                   newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
                   newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
                   -- We just made this thing, so there shouldn't be any errors, right?
@@ -115,7 +122,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 
 
 
--- makeMoleculeFromSmiles
+-- makeScaffoldFromSmiles
 -- Right if successful
 -- Left if error somewhere, with brief error description
 {------------------------------------------------------------------------------}

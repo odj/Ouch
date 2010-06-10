@@ -24,15 +24,17 @@
 ------------------------------------------------------------------------------}
 
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] date
-Thu Jun 10 07:21:08 PDT 2010
+Thu Jun 10 16:06:55 PDT 2010
 [ odj Orion-Jankowskis-MacBook-Pro ~/Git/Ouch ] ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 Loading package ghc-prim ... linking ... done.
 Loading package integer-gmp ... linking ... done.
 Loading package base ... linking ... done.
 Loading package ffi-1.0 ... linking ... done.
-Prelude> :l Main.hs 
-[9 of 9] Compiling Main             ( Main.hs, interpreted )
+Prelude> :l main
+[7 of 9] Compiling Ouch.Input.Smiles ( Ouch/Input/Smiles.hs, interpreted )
+[8 of 9] Compiling Ouch.Test.Methods ( Ouch/Test/Methods.hs, interpreted )
+[9 of 9] Compiling Main             ( main.hs, interpreted )
 Ok, modules loaded: Ouch.Test.Methods, Ouch.Structure.Molecule, Ouch.Structure.Atom, Ouch.Structure.Atom, Ouch.Structure.Bond, Ouch.Input.Smiles, Ouch.Data.Atom, Main, Ouch.Structure.Marker.
 *Main> main
 Loading package array-0.3.0.0 ... linking ... done.
@@ -41,12 +43,17 @@ Loading package base-3.0.3.2 ... linking ... done.
 Loading package bytestring-0.9.1.5 ... linking ... done.
 Loading package containers-0.3.0.0 ... linking ... done.
 Loading package mtl-1.1.0.2 ... linking ... done.
-Loading package parsec-2.1.0.1 ... linking ... done.
+Loading package parsec-3.0.1 ... linking ... done.
 Loading package regex-base-0.93.1 ... linking ... done.
+Loading package parsec-3.1.0 ... linking ... done.
 Loading package regex-tdfa-1.1.2 ... linking ... done.
 
 Test SHOULD FAIL:	FAILED	-with output: OK || should get: Not OK
 
 Test SHOULD FAIL:	FAILED	-with error string:	OK Error
-...........................................................................
-*Main>
+......................................
+Test Smiles-MF 38:	FAILED	-with output: C6H12 || should get: C6H6
+.....................................
+Test Smiles-MW 38:	FAILED	-with output: 841 || should get: 781
+
+*Main> 

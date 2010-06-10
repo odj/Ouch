@@ -93,6 +93,7 @@ tests = [
          , TestData {function=testMolForm, input="C12CCCC1CCCC2", description="Test Smiles-MF 35", outcome="C9H16"}
          , TestData {function=testMolForm, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MF 36", outcome="C16H26"}   
          , TestData {function=testMolForm, input="C=1CCCCCC1", description="Test Smiles-MF 37", outcome="C7H12"}
+         , TestData {function=testMolForm, input="c1ccccc1", description="Test Smiles-MF 38", outcome="C6H6"}
          
          , TestData {function=testMolWt, input="C", description="Test Smiles-MW 1", outcome="160"}
          , TestData {function=testMolWt, input="CC", description="Test Smiles-MW 2", outcome="300"}
@@ -130,7 +131,8 @@ tests = [
          , TestData {function=testMolWt, input="C1.C1", description="Test Smiles-MW 34", outcome="300"}
          , TestData {function=testMolWt, input="C12CCCC1CCCC2", description="Test Smiles-MW 35", outcome="1242"}
          , TestData {function=testMolWt, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MW 36", outcome="2183"} 
-         , TestData {function=testMolWt, input="C=1CCCCCC1", description="Test Smiles-MW 37", outcome="961"}    
+         , TestData {function=testMolWt, input="C=1CCCCCC1", description="Test Smiles-MW 37", outcome="961"}  
+         , TestData {function=testMolWt, input="c1ccccc1", description="Test Smiles-MW 38", outcome="781"}  
         ]
 
 performTests :: [TestData] -> String
@@ -157,11 +159,11 @@ testFail s = Left s
 
 -- Test smiles to formula
 testMolForm::String -> Either String String
-testMolForm s = molecularFormula $ fillMoleculeValence $ makeMoleculeFromSmiles s
+testMolForm s = molecularFormula $ makeMoleculeFromSmiles s
 
 testMolWt::String -> Either String String
 testMolWt s = output
-    where eitherMolWt =  molecularWeight $ fillMoleculeValence $ makeMoleculeFromSmiles s
+    where eitherMolWt =  molecularWeight $ makeMoleculeFromSmiles s
           output = case eitherMolWt of
               Left mw   -> Left mw
               Right mw  -> Right (show $ floor (10 * mw))
