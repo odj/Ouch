@@ -293,14 +293,12 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
 -- directly.
 {------------------------------------------------------------------------------}
 addMolecule :: Molecule -> Molecule -> PerhapsMolecule
-addMolecule m1 m2 = cyclizePerhapsMolecule (Right $ Small {atomMap=newatomMap})
+addMolecule m1 m2 = cyclizePerhapsMolecule (Right $ Small {atomMap=newAtomMap})
     where newatomMap = Map.union atomMap1 atomMap2
           atomMap1 = atomMap m1
-          atomMap2 = atomMap m2
-          atomMap2' = zip [startIndex..stopIndex] atomList2
-          atomList2 = List.map snd $ Map.toList atomMap2
-          startIndex = fst $ Map.findMax atomMap1
-          stopIndex = length atomList2
+          atomMap2 = Map.mapKeysMonotonic (+startIndex) $ atomMap m2
+          startIndex = Map.size atomMap1
+          newAtomMap = Map.union atomMap1 atomMap2
    
    
 -- 
