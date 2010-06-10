@@ -91,15 +91,7 @@ addAtom m a = case m of
     Markush            -> m
     Polymer            -> m
     Biologic           -> m
-{-
-addAtom :: Molecule -> Atom -> Molecule
-addAtom m a = case m of
-    Small {atomMap=(atom:atoms)} -> Small (atoms' ++ atom':atoms)
-         where (atom', atoms') = sigmaBondToAtom atom a
-    Markush            -> m
-    Polymer            -> m
-    Biologic           -> m
--}
+
 
 -- findConnectedAtoms
 {------------------------------------------------------------------------------}
@@ -139,33 +131,7 @@ cyclizePerhapsMolecule pm = case pm of
                       where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
                             splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
 
-{-
-cyclizePerhapsMolecule :: PerhapsMolecule -> PerhapsMolecule
-cyclizePerhapsMolecule pm = case pm of
-    Left {}  -> pm
-    Right m  -> case m of
-        Small {}       -> case tpl of 
-                            Nothing       -> pm
-                            Just (a1, a2) -> cyclizePerhapsMoleculeAtIndexesWithBond pm a1 a2 bond
-                                where  bond = getMatchingClosureBondType ((atomMap m)!!a1) ((atomMap m)!!a2)
-        Markush  {}    -> Left "Can't cyclize on a Markush."
-        Polymer  {}    -> Left "Can't cyclize on a Polymer."
-        Biologic {}    -> Left "Can't cyclize on a Biologic."
-        where markers       = List.map markerSet $ atomMap m
-              isClosure mk  = case mk of Closure {} -> True ; _ -> False
-              splitMk = List.map fst $ List.map (Set.partition isClosure) markers
-              hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
-                  where labelSet1 = List.map labelNumber (Set.toList ms1)
-                        labelSet2 = List.map labelNumber (Set.toList ms2)          
-              firstClosure = List.findIndex (/=Set.empty) splitMk
-              tpl = case firstClosure of 
-                  Nothing -> Nothing
-                  Just atom1 -> case secondClosure of
-                      Nothing -> Nothing
-                      Just atom2 -> Just (atom1, atom2)
-                      where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
-                            splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
--}
+
 -- cyclizePerhapsMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 
@@ -280,7 +246,10 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                                     atom1 = (\(Just a) -> a) a1
                                     atom2 = (\(Just a) -> a) a2
                                     (newAtom1, newAtom2) = connectAtomsWithBond atom1 atom2 b
-                                    newMap = Map.insert i1 newAtom1 $ Map.insert i2 newAtom2 (atomMap m1)
+                                    newMap1 = Map.insert i1 newAtom1 (atomMap m1) 
+                                    newMap2 = Map.mapKeysMonotonic (+ orginalLength) $ Map.insert i2 newAtom2 (atomMap m2)
+                                    orginalLength = Map.size newMap1
+                                    newMap = Map.union newMap1 newMap2
 {--
 connectPerhapsMoleculesAtIndicesWithBond::PerhapsMolecule -> Int -> 
                                           PerhapsMolecule -> Int -> 
