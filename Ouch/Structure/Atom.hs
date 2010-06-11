@@ -26,10 +26,7 @@
 {-# LANGUAGE CPP #-}
 module Ouch.Structure.Atom (
       Atom(..)
-    , sigmaBondToAtom
     , addHydrogen
-    , piBondToAtom
-    , addElectron
     , addLonePair
     , addUnfilled
     , checkValence
@@ -43,7 +40,6 @@ module Ouch.Structure.Atom (
     , numberOfBonds
     , numberOfBondsToAtoms
     , connectAtomsWithBond
-    , getBondList
     , atomicSymbolForAtom
     , getMatchingClosureNumber
     , removeClosureMarker
@@ -109,53 +105,6 @@ connectAtomsWithBond a1 a2 b = (aa1, aa2) where
 
 
 
--- sigmaBondToAtom
--- Create a new sigma bond between two atoms.
--- Return atom and list containing second atom.  List is empty if
--- function cannot add bond.   
--- What chemcial error checking should be done here??
-{------------------------------------------------------------------------------}
-sigmaBondToAtom :: Atom -> Atom -> (Atom, [Atom])
-sigmaBondToAtom a1 a2 = (aa1, [aa2])
-    where
-        aa1 = case a1 of
-            Element  {} ->  Element     { atomicNumber=(atomicNumber a1)
-                                        , neutronNumber=(neutronNumber a1)
-                                        , bondList=((Sigma aa2):(bondList a1))
-                                        , markerSet=(markerSet a1)}
-            LonePair {} -> LonePair     { bondList=((bondList a1) ++ [Sigma aa2])
-                                        , markerSet=(markerSet a1)}
-            Electron {} -> Electron     { bondList=((bondList a1) ++ [Sigma aa2])
-                                        , markerSet=(markerSet a1)}
-            Unfilled {} -> Unfilled     { bondList=((bondList a1) ++ [Sigma aa2])
-                                        , markerSet=(markerSet a1)}
-        aa2 = case a2 of
-            Element  {} -> Element      { atomicNumber=(atomicNumber a2)
-                                        , neutronNumber=(neutronNumber a2)
-                                        , bondList=((Sigma aa2):(bondList a1))
-                                        , markerSet=(markerSet a2)}
-            LonePair {} -> LonePair     { bondList=((bondList a2) ++ [Sigma a1])
-                                        , markerSet=(markerSet a2)}
-            Electron {} -> Electron     { bondList=((bondList a2) ++ [Sigma a1])
-                                        , markerSet=(markerSet a2)}
-            Unfilled {} -> Unfilled     { bondList=((bondList a2) ++ [Sigma a1])
-                                        , markerSet=(markerSet a2)}
-
--- piBondToAtom
--- Create a new pi bond between two atoms.
--- Return atom and list containing second atom.  List is empty if
--- function cannot add bond.
-{------------------------------------------------------------------------------}
-piBondToAtom :: Atom -> [Atom] -> (Atom, [Atom])
-piBondToAtom a1 a2 = undefined
-
-
--- addElectron
--- Create a new radical centered on the atom.
--- Return atom and list containing new radical.
-{------------------------------------------------------------------------------}
-addElectron :: Atom -> [Atom] -> (Atom, [Atom])
-addElectron a = undefined
 
 -- addLonePair
 -- Create a new lone-pair centered on the atom.
@@ -163,9 +112,9 @@ addElectron a = undefined
 {------------------------------------------------------------------------------}
 addLonePair :: Atom -> [Atom] -> (Atom, [Atom])
 addLonePair a as 
-   | (nb < val)    = (a', (as' ++ as))
+   | (nb < val)    = (a', ([as'] ++ as))
    | otherwise     = (a, as)
-   where (a', as') = sigmaBondToAtom a (LonePair [] Set.empty)
+   where (a', as') = connectAtomsWithBond a (LonePair [] Set.empty) Single
          val  = (fst $ valence a) + (abs(snd $ valence a))
          nb   = numberOfBonds a
          
@@ -176,9 +125,9 @@ addLonePair a as
 {------------------------------------------------------------------------------}
 addHydrogen :: Atom -> [Atom] -> (Atom, [Atom]) 
 addHydrogen a as 
-    | (nb < val)    = (a', (as' ++ as))
+    | (nb < val)    = (a', ([as'] ++ as))
     | otherwise     = (a, as)
-    where (a', as') = sigmaBondToAtom a (Element 1 1 [] Set.empty)
+    where (a', as') = connectAtomsWithBond a (Element 1 1 [] Set.empty) Single
           val  = fst $ valence a
           nb   = numberOfBondsToAtoms a
     
@@ -220,6 +169,9 @@ fillValence a as
        -- Everything filled, nothing to do.  Return original
        | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
        
+       -- Fill marked aromatics with a radical
+       | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aE (asE:as)
+       
        -- Fill empty valences with hydrogen
        | nba < fst val                                 = fillValence aH asH
        
@@ -230,10 +182,13 @@ fillValence a as
        | otherwise = (a, as)
        where
            val          = valence a
-           nba          = numberOfBondsToAtoms a
+           nba          = (numberOfBondsToAtoms a) + (numberOfBondsToRadicals a)
            nb           = numberOfBonds a
            (aH, asH)    = addHydrogen a as
            (aLP, asLP)  = addLonePair a as
+           elec         = Electron [] Set.empty
+           nbrB         = (numberOfBondsToRadicals a) == 0
+           (aE, asE)    = connectAtomsWithBond a elec Single
     
 
 
@@ -386,13 +341,23 @@ isElement a = case a of
   Electron {} -> False
   Unfilled {} -> False
 
+-- isElementOrRadical
+-- Returns TRUE if atom is a "real" element
+{------------------------------------------------------------------------------}
+isElectron :: Atom -> Bool
+isElectron a = case a of
+    Element _ _ _ _ -> False
+    LonePair {} -> False
+    Electron {} -> True
+    Unfilled {} -> False
+
 
 -- numberOfBonds
 -- Returns number of covalent connections to other atoms in the molecule 
 -- graph (i.e. one sigma and two pi bonds count as a 'one' bond)
 {------------------------------------------------------------------------------}
 numberOfBonds :: Atom -> Integer
-numberOfBonds a = fromIntegral $ length $ getBondList a
+numberOfBonds a = fromIntegral $ length $ bondList a
 
 
 
@@ -406,6 +371,15 @@ numberOfBondsToAtoms a = case a of
     Unfilled b m -> nt b
     where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToAtom b 
 
+{------------------------------------------------------------------------------}
+numberOfBondsToRadicals :: Atom -> Integer
+numberOfBondsToRadicals a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b
+
 
 
 {------------------------------------------------------------------------------}
@@ -415,7 +389,7 @@ numberOfAromaticBondsToAtoms a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAromaticBondToAtom b    
+    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b    
 
 
 
@@ -441,6 +415,18 @@ isAnyBondToAtom b = case b of
     Ionic atom -> False
     Antibond atom -> False
     Any atom -> True
+    
+{------------------------------------------------------------------------------}
+isAnyBondToRadical :: Bond -> Bool
+isAnyBondToRadical b = case b of
+    Sigma atom -> isElectron atom
+    Pi _ -> False
+    Aromatic _ -> False
+    Delta _ -> False
+    Hbond _ -> False
+    Ionic _ -> False
+    Antibond _ -> False
+    Any atom -> isElectron atom
 
 
 
@@ -527,13 +513,6 @@ getMatchingClosureBondType a1 a2 = newClosureBond
                             then NoBond 
                             else bondType (Set.findMax intersectionSet)
 
-{------------------------------------------------------------------------------}
-getBondList :: Atom -> [Bond]
-getBondList a = case a of
-    Element _ _ b _ -> b
-    LonePair b _ -> b
-    Electron b _ -> b
-    Unfilled b _ -> b
 
 
 {------------------------------------------------------------------------------}
@@ -547,8 +526,8 @@ getBondList a = case a of
 instance Show Atom where
     show a = case a of
           Element i _ b m ->  name i ++ show b ++ " " ++ show m
-          LonePair {} -> "LP"
-          Electron {} -> "•"
+          LonePair b m -> "LP" ++ show b ++ " " ++ show m
+          Electron b m -> "E" ++ show b ++ " " ++ show m
           Unfilled {} -> ""
           where name b = fromJust $ Map.lookup b atomicSymbols
 

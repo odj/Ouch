@@ -53,11 +53,7 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 
 
--- NewBond
--- We package each smile-parsing step as a "NewBond" data type to make
--- it convenient for different functions to determine what they should do without
--- needing to re-parse parts of the string every single time.  In Haskell,
--- this probably doesn't make things more efficient, but it helps for DRY style compliance.
+
 data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}
                   | SubSmile {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}  --Substructures don't need a marker set
                   | SmilesError {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}  --
@@ -106,7 +102,7 @@ growPerhapsMoleculeAtIndexWithString pm i smi
     | smi == ""  = pm
     | otherwise  = case pm of
     Right {} -> case chop of
-            Smile {}        -> growPerhapsMoleculeAtIndexWithString newMolecule1 newIndex nextSmile 
+            Smile {}        -> growPerhapsMoleculeAtIndexWithString newMolecule1 (newIndex) nextSmile 
             SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newMolecule2 i nextSmile
             SmilesError {}  -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
             where chop = nextChoppedSmile smi
@@ -127,25 +123,26 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 -- Left if error somewhere, with brief error description
 {------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
-makeAtomMoleculeFromChop nb    | a == ""        =  Left "ERROR: Tried to make atom from empty string."
-                               | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
-                               | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
-                               | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
-                               | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
-                               
-                               | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
-                               | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
-                               | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
-                               | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
-                               | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
-                               | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
-                               | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
-                               | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
-                               | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
-                               where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-                                     markSetClass = Set.empty 
-                                     markSetAll = markSetType `Set.union` mark nb
-                                     a = [toUpper c | c <- smile nb] 
+makeAtomMoleculeFromChop nb   
+                       | a == ""        =  Left "ERROR: Tried to make atom from empty string."
+                       | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
+                       | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
+                       | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
+                       | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
+           
+                       | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
+                       | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
+                       | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
+                       | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
+                       | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
+                       | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
+                       | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
+                       | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
+                       | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
+                       where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
+                             markSetClass = Set.empty 
+                             markSetAll = markSetType `Set.union` mark nb
+                             a = [toUpper c | c <- smile nb] 
 
 
 
@@ -191,6 +188,8 @@ nextChoppedSmile s
          -- This is a very simple parse of ring closure markers.  
          -- Does not accomodate "%" notation (yet)
          markerSet = Set.fromList $ parseClosureMarkers lb2 []
+
+         
 
 parseClosureMarkers :: String -> [Marker] -> [Marker]
 parseClosureMarkers [] ml = ml

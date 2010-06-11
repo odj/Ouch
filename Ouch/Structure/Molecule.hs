@@ -81,16 +81,17 @@ type PerhapsMolecule =  (Either String Molecule)
 -- addAtom
 -- Default sigma-bonds to top atom on the list
 {------------------------------------------------------------------------------}
-addAtom :: Molecule -> Atom -> Molecule
-addAtom m a = case m of
-    Small {atomMap=atomM} -> Small newAtomSet
-         where (atom, newAtom:atoms) = sigmaBondToAtom topAtom a
-               (k, topAtom) = Map.findMax atomM
-               newAtomSet = Map.insert (k+1) newAtom $ Map.insert k atom atomM
-               
-    Markush            -> m
-    Polymer            -> m
-    Biologic           -> m
+addAtom :: PerhapsMolecule -> Atom -> PerhapsMolecule
+addAtom pm a = case pm of
+    Left _ -> pm
+    Right m ->  case m of 
+                Small {atomMap=atomM} -> Right $ Small newAtomSet
+                     where (atom, newAtom) = connectAtomsWithBond topAtom a Single
+                           (k, topAtom) = Map.findMax atomM
+                           newAtomSet = Map.insert (k+1) newAtom $ Map.insert k atom atomM
+                Markush            -> Left "Cannot add atom to Markush"
+                Polymer            -> Left "Cannot add atom to Markush"
+                Biologic           -> Left "Cannot add atom to Markush"
 
 
 -- findConnectedAtoms
