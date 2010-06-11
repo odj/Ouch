@@ -38,6 +38,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
+import Ouch.Data.Atom
 import Text.Regex.TDFA ((=~))
 import Data.Maybe
 import Data.Char
@@ -123,28 +124,66 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 -- Left if error somewhere, with brief error description
 {------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
-makeAtomMoleculeFromChop nb   
-                       | a == ""        =  Left "ERROR: Tried to make atom from empty string."
-                       | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
-                       | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
-                       | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
-                       | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
-           
-                       | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
-                       | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
-                       | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
-                       | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
-                       | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
-                       | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
-                       | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
-                       | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
-                       | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
-                       where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-                             markSetClass = Set.empty 
-                             markSetAll = markSetType `Set.union` mark nb
-                             a = [toUpper c | c <- smile nb] 
+makeAtomMoleculeFromChop nb = case nb of 
+    SmilesError {} -> Left $ "Could not make molecule from smile with string: " ++ smile nb
+    Smile {smile=s} -> if ((head s) == '[') then makeAtomMoleculeFromBracketChop nb else makeAtomMolecule nb
+        where makeAtomMolecule nb  | a == ""        =  Left "ERROR: Tried to make atom from empty string."
+                                   | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
+                                   | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
+                                   | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
+                                   | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
+
+                                   | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
+                                   | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
+                                   | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
+                                   | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
+                                   | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
+                                   | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
+                                   | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
+                                   | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
+                                   | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
+                                   where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
+                                         markSetClass = Set.empty 
+                                         markSetAll = markSetType `Set.union` mark nb
+                                         a = [toUpper c | c <- smile nb] 
 
 
+makeAtomMoleculeFromBracketChop::ChoppedSmile -> PerhapsMolecule
+makeAtomMoleculeFromBracketChop sb = molH
+    where s =  init $ tail (smile sb)   -- Drop the brackets
+          -- Get charge information
+          (ch1, ch2, ch3)   = s     =~ "([+-][0-9]*)"::(String, String, String)
+          (sign, int, _)    = ch2   =~ "([^+-][0-9]*)"::(String, String, String)
+          charge | int == "" = 1 | otherwise = read int::Integer
+          chargeMark | ch2 == "" = Null | sign == "-" = Charge (0 - charge) | otherwise = Charge charge 
+          
+          -- Get isotopic number
+          (n1, n2, n3)   = s     =~ "(^[0-9]*)"::(String, String, String)
+          isotope | n2 == "" = 0 | otherwise = read n2::Integer
+          
+          -- Get element symbol
+          (a1, a2, a3)   = s     =~ "([A-Z]{1}[a-z]{0,1})"::(String, String, String)
+          atomicNumber = case Map.lookup a2 atomicNumberFromSymbol of
+              Just n -> n
+              Nothing -> 0  -- This needs to generate an error
+          
+          -- Get number of extra internal hydrogens (I think this notation is studpid)
+          (h1, h2, h3)    = a3     =~ "([H]{1}[0-9]*)"::(String, String, String)
+          (nh1, nh2, nh3) = h2     =~ "([0-9]+)"::(String, String, String)
+          numberH | h2 == "" = 0 | nh2 == "" = 1 | otherwise = read nh2::Integer
+          
+          -- Get class information
+          (c1, c2, c3)       = s     =~ "([:][0-9]+)"::(String, String, String)
+          (cn1, cn2, cn3)    = c2    =~ "([0-9]+)"::(String, String, String)
+          classNumber | c2 == "" = 0 | cn2 == "" =0 | otherwise = read cn2::Integer
+          
+          -- Now make the molecule
+          mol = Right $ Small $ Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll
+          hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
+          hydrogens = take (fromIntegral numberH) $ repeat hydrogen
+          molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
+          -- markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
+          markSetAll = Set.insert (Class classNumber) (mark sb)
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
@@ -166,7 +205,8 @@ parseSmiles s = s =~ pat::(String, String, String)
 nextChoppedSmile :: String -> ChoppedSmile 
 nextChoppedSmile s
    | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=Set.singleton $ Comment s2}
-   | head s2 == '('       = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
+   | head s2 == '['         = Smile {smile=s2, smiles=s3, newBond=nb, mark=(Set.singleton $ Comment s2)}
+   | head s2 == '('         = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
    | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `Set.union` (Set.singleton $ Comment s2)}
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
@@ -189,7 +229,9 @@ nextChoppedSmile s
          -- Does not accomodate "%" notation (yet)
          markerSet = Set.fromList $ parseClosureMarkers lb2 []
 
-         
+
+
+
 
 parseClosureMarkers :: String -> [Marker] -> [Marker]
 parseClosureMarkers [] ml = ml
