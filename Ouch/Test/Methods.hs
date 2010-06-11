@@ -94,6 +94,9 @@ tests = [
          , TestData {function=testMolForm, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MF 36", outcome="C16H26"}   
          , TestData {function=testMolForm, input="C=1CCCCCC1", description="Test Smiles-MF 37", outcome="C7H12"}
          , TestData {function=testMolForm, input="c1ccccc1", description="Test Smiles-MF 38", outcome="C6H6"}
+         , TestData {function=testMolForm, input="n1cccc1", description="Test Smiles-MF 39", outcome="C4H4N"}
+         , TestData {function=testMolForm, input="cc", description="Test Smiles-MF 40", outcome="C2H4"}
+         , TestData {function=testMolForm, input="o1cccc1", description="Test Smiles-MF 41", outcome="C4H4O"}
          
          , TestData {function=testMolWt, input="C", description="Test Smiles-MW 1", outcome="160"}
          , TestData {function=testMolWt, input="CC", description="Test Smiles-MW 2", outcome="300"}
@@ -133,6 +136,9 @@ tests = [
          , TestData {function=testMolWt, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MW 36", outcome="2183"} 
          , TestData {function=testMolWt, input="C=1CCCCCC1", description="Test Smiles-MW 37", outcome="961"}  
          , TestData {function=testMolWt, input="c1ccccc1", description="Test Smiles-MW 38", outcome="781"}  
+         , TestData {function=testMolWt, input="n1cccc1", description="Test Smiles-MW 39", outcome="660"}
+         , TestData {function=testMolWt, input="cc", description="Test Smiles-MW 40", outcome="280"}
+         , TestData {function=testMolWt, input="o1cccc1", description="Test Smiles-MW 41", outcome="680"}
         ]
 
 performTests :: [TestData] -> String
