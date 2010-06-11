@@ -34,6 +34,8 @@ import {-# SOURCE #-} Ouch.Structure.Atom
         
 {------------------------------------------------------------------------------}
 data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
+              | Charge {charge::Integer}
+              | Position {position::(Double, Double, Double)}  -- x, y, z vector
               | Closure {labelNumber::Integer, bondType::NewBond}
               | Class {classNumber::Integer}
               | Chiral {chirality::Chirality}
@@ -57,7 +59,9 @@ data Chirality = Levo | Dextro
 data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
    deriving (Show, Eq, Ord)
 
-
+-- NewBond
+-- This type communicates what 'should be' rather than what 'is'.  It is a marker used in
+-- smiles parsing to help convey information before a bond is actually made.
 data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
 
@@ -68,6 +72,12 @@ data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 {------------------------------------------------------------------------------}
 instance Eq Marker where
   a == b = case a of 
+      Position {position=l1} -> case b of 
+          Position {position=l2} -> if (l1 == l2) then True else False
+          _ -> False
+      Charge {charge=l1} -> case b of 
+          Charge {charge=l2} -> if (l1 == l2) then True else False
+          _ -> False
       Closure {labelNumber=l1, bondType=b1} -> case b of 
           Closure {labelNumber=l2, bondType=b2} -> if (l1 == l2) then True else False
           _ -> False
@@ -109,6 +119,20 @@ instance Eq Marker where
 
 instance Ord Marker where
    compare a b =  case a of 
+          Charge {charge=l1} -> case b of 
+             Charge {charge=l2} -> a
+                   where a | (l1 == l2) = EQ
+                           | (l1 > l2)  = GT
+                           | (l1 < l2)  = LT
+                           | otherwise  = EQ
+             _ -> LT
+          Position {position=l1} -> case b of 
+             Position {position=l2} -> a
+                  where a | (l1 == l2) = EQ
+                          | (l1 > l2)  = GT
+                          | (l1 < l2)  = LT
+                          | otherwise  = EQ
+             _ -> LT 
           Closure {labelNumber=l1, bondType=b1} -> case b of 
               Closure {labelNumber=l2, bondType=b2} -> a
                   where a | (l1 == l2) = EQ
