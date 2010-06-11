@@ -150,7 +150,9 @@ makeAtomMoleculeFromChop nb = case nb of
 
 makeAtomMoleculeFromBracketChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromBracketChop sb = molH
-    where s =  init $ tail (smile sb)   -- Drop the brackets
+    where (s1, s2, s3)    = (smile sb) =~ "(^[\\[].*(\\]))"::(String, String, String)  -- Contents of the brackets
+          s =  init $ tail s2   -- Drop the brackets
+          
           -- Get charge information
           (ch1, ch2, ch3)   = s     =~ "([+-][0-9]*)"::(String, String, String)
           (sign, int, _)    = ch2   =~ "([^+-][0-9]*)"::(String, String, String)
@@ -183,9 +185,11 @@ makeAtomMoleculeFromBracketChop sb = molH
           mol = Right $ Small $ Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll
           hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
           hydrogens = take (fromIntegral numberH) $ repeat hydrogen
+          -- Need to fill the rest with radicals to keep the bracket designation explicit.
           molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
-          -- markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-          markSetAll = Set.insert markAromatic $ Set.insert (Class classNumber) (mark sb)
+          
+          markSetType = Set.singleton (if isLower $ head a2 then AromaticAtom else Null)
+          markSetAll = Set.union (Set.fromList $ parseClosureMarkers s3 []) $ Set.insert markAromatic $ Set.insert (Class classNumber) (mark sb) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
@@ -197,7 +201,7 @@ parseSmiles s = s =~ pat::(String, String, String)
           patList = [ "("
                     , "^[-=#\\.]*([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
                     , "|^[\\(].*" -- return the whole string for anything that STARTS with open parens
-                    , "|(^[\\[].*(\\]))"  -- return next atom segment within square brackets
+                    , "|(^[\\[].*(\\])([-=#\\.]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
                     , ")"
                     ]
                           
