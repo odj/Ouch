@@ -162,8 +162,10 @@ makeAtomMoleculeFromBracketChop sb = molH
           isotope | n2 == "" = 0 | otherwise = read n2::Integer
           
           -- Get element symbol
-          (a1, a2, a3)   = s     =~ "([A-Z]{1}[a-z]{0,1})"::(String, String, String)
-          atomicNumber = case Map.lookup a2 atomicNumberFromSymbol of
+          (a1, a2, a3)   = s     =~ "([A-Za-z]{1}[a-z]{0,1})"::(String, String, String)
+          lookupString | isLower (head a2) && (length a2) == 1 = [toUpper $ a2!!0] | otherwise = a2
+          markAromatic | isLower (head a2) && (length a2) == 1 = AromaticAtom | otherwise = Null
+          atomicNumber = case Map.lookup lookupString atomicNumberFromSymbol of  -- Need to error check here!
               Just n -> n
               Nothing -> 0  -- This needs to generate an error
           
@@ -183,7 +185,7 @@ makeAtomMoleculeFromBracketChop sb = molH
           hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           -- markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-          markSetAll = Set.insert (Class classNumber) (mark sb)
+          markSetAll = Set.insert markAromatic $ Set.insert (Class classNumber) (mark sb)
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
