@@ -41,7 +41,7 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Chiral {chirality::Chirality}
               | GeoIsomer {geoIsomer::Geometry}
               | AromaticAtom
-              | Traversed
+              | Traversed {order::Integer}
               | Substructure {substructureNumber::Integer}
               | ValenceError {valenceError::String}
               | InRing {ringNumber::Integer}
@@ -51,7 +51,7 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               deriving (Show)
 
 {------------------------------------------------------------------------------}
-data Chirality = Levo | Dextro 
+data Chirality = Levo | Dextro | UnknownChirality
    deriving (Show, Eq, Ord)
 
 
@@ -93,8 +93,8 @@ instance Eq Marker where
       AromaticAtom -> case b of 
           AromaticAtom -> True
           _ -> False
-      Traversed -> case b of 
-          Traversed -> True   
+      Traversed {} -> case b of 
+          Traversed { }-> True   
           _ -> False 
       Substructure {substructureNumber=l1} -> case b of 
           Substructure {substructureNumber=l2} -> if (l1 == l2) then True else False
@@ -140,19 +140,11 @@ instance Ord Marker where
                           | (l1 < l2)  = LT
                           | otherwise  = EQ
               _ -> LT
-          Class {classNumber=l1} -> case b of 
-              Class {classNumber=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
+          Class {} -> case b of 
+              Class {} -> EQ
               _ -> LT
-          Chiral {chirality=l1} -> case b of 
-              Chiral {chirality=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
+          Chiral {} -> case b of 
+              Chiral {} ->  EQ
               _ -> LT
           GeoIsomer {geoIsomer=l1} -> case b of 
               GeoIsomer {geoIsomer=l2} -> a
@@ -164,8 +156,8 @@ instance Ord Marker where
           AromaticAtom -> case b of 
               AromaticAtom -> EQ
               _ -> LT
-          Traversed -> case b of 
-              Traversed -> EQ   
+          Traversed {} -> case b of 
+              Traversed {} -> EQ   
               _ -> LT 
           Substructure {substructureNumber=l1} -> case b of 
               Substructure {substructureNumber=l2} -> a

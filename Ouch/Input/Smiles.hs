@@ -171,7 +171,7 @@ makeAtomMoleculeFromBracketChop sb = molH
               Just n -> n
               Nothing -> 0  -- This needs to generate an error
           
-          -- Get number of extra internal hydrogens (I think this notation is studpid)
+          -- Get number of extra internal hydrogens (I think this notation is stupid)
           (h1, h2, h3)    = a3     =~ "([H]{1}[0-9]*)"::(String, String, String)
           (nh1, nh2, nh3) = h2     =~ "([0-9]+)"::(String, String, String)
           numberH | h2 == "" = 0 | nh2 == "" = 1 | otherwise = read nh2::Integer
