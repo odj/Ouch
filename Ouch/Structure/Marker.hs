@@ -119,19 +119,11 @@ instance Eq Marker where
 
 instance Ord Marker where
    compare a b =  case a of 
-          Charge {charge=l1} -> case b of 
-             Charge {charge=l2} -> a
-                   where a | (l1 == l2) = EQ
-                           | (l1 > l2)  = GT
-                           | (l1 < l2)  = LT
-                           | otherwise  = EQ
+          Charge {} -> case b of 
+             Charge {} -> EQ
              _ -> LT
-          Position {position=l1} -> case b of 
-             Position {position=l2} -> a
-                  where a | (l1 == l2) = EQ
-                          | (l1 > l2)  = GT
-                          | (l1 < l2)  = LT
-                          | otherwise  = EQ
+          Position {} -> case b of 
+             Position {} ->  EQ
              _ -> LT 
           Closure {labelNumber=l1, bondType=b1} -> case b of 
               Closure {labelNumber=l2, bondType=b2} -> a
@@ -146,12 +138,8 @@ instance Ord Marker where
           Chiral {} -> case b of 
               Chiral {} ->  EQ
               _ -> LT
-          GeoIsomer {geoIsomer=l1} -> case b of 
-              GeoIsomer {geoIsomer=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
+          GeoIsomer {} -> case b of 
+              GeoIsomer {} -> EQ
               _ -> LT
           AromaticAtom -> case b of 
               AromaticAtom -> EQ
