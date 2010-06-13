@@ -30,14 +30,19 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
-
+import System.IO 
+import System.Environment
 import Data.Either
 import Data.Maybe
+import Data.List as List
 
 
--------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 main = do
-    putStrLn $ performTests tests
+    (n:_) <- getArgs
+    input <- readFile n
+    let (summary, errorLog) = performTests $ List.map makeTestFromString $ lines input
+    putStrLn summary
+
 -------------------------------------------------------------------------------
--------------------------------------------------------------------------------
+

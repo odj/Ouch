@@ -1,0 +1,53 @@
+testTest	OK	Test SHOULD FAIL	Not OK
+testFail	OK	Test SHOULD FAIL	OK
+testTest	OK	Testing should pass	OK
+testMolForm	C	Test Smiles-MF 1	CH4
+testMolForm	C	Test MF for smiles: C	CH4
+testMolForm	CC	Test MF for smiles: CC	C2H6
+testMolForm	CCC	Test MF for smiles: CCC	C3H8
+testMolForm	C(C)C	Test MF for smiles: C(C)C	C3H8
+testMolForm	C(C(C))	Test MF for smiles: C(C(C))	C3H8
+testMolForm	C(C(C))C	Test MF for smiles: C(C(C))C	C4H10
+testMolForm	C(C(C))(C)	Test MF for smiles: C(C(C))(C)	C4H10
+testMolForm	C(C(C))CC(C)	Test MF for smiles: C(C(C))CC(C)	C6H14
+testMolForm	C(C(C(C)(C)))	Test MF for smiles: C(C(C(C)(C)))	C5H12
+testMolForm	C(C)(C)(C)C	Test MF for smiles: C(C)(C)(C)C	C5H12
+testMolForm	C=C	Test MF for smiles: C=C	C2H4
+testMolForm	C=C=C	Test MF for smiles: C=C=C	C3H4
+testMolForm	C#C	Test MF for smiles: C#C	C2H2
+testMolForm	C#CC#C	Test MF for smiles: C#CC#C	C4H2
+testMolForm	C.C	Test MF for smiles: C.C	C2H8
+testMolForm	C-C	Test MF for smiles: C-C	C2H6
+testMolForm	C-C-C-C	Test MF for smiles: C-C-C-C	C4H10
+testMolForm	C.C.C.C	Test MF for smiles: C.C.C.C	C4H16
+testMolForm	N	Test MF for smiles: N	H3N
+testMolForm	CN	Test MF for smiles: CN	CH5N
+testMolForm	C#N	Test MF for smiles: C#N	CHN
+testMolForm	OCCN	Test MF for smiles: OCCN	C2H7NO
+testMolForm	CBr	Test MF for smiles: CBr	CH3Br
+testMolForm	CCl	Test MF for smiles: CCl	CH3Cl
+testMolForm	CF	Test MF for smiles: CF	CH3F
+testMolForm	OS(=O)(=O)O	Test MF for smiles: OS(=O)(=O)O	H2O4S
+testMolForm	CC(=O)CC(=O)OC	Test MF for smiles: CC(=O)CC(=O)OC	C5H8O3
+testMolForm	C1CC1	Test MF for smiles: C1CC1	C3H6
+testMolForm	C1CCCC1	Test MF for smiles: C1CCCC1	C5H10
+testMolForm	C2CCCC2	Test MF for smiles: C2CCCC2	C5H10
+testMolForm	C3CCC3	Test MF for smiles: C3CCC3	C4H8
+testMolForm	C1CC=CC1	Test MF for smiles: C1CC=CC1	C5H8
+testMolForm	C1CC1CC	Test MF for smiles: C1CC1CC	C5H10
+testMolForm	C1.C1	Test MF for smiles: C1.C1	C2H6
+testMolForm	C12CCCC1CCCC2	Test MF for smiles: C12CCCC1CCCC2	C9H16
+testMolForm	C123CCCC(CC5CC2)(CCC3)(CC5CC1)	Test MF for smiles: C123CCCC(CC5CC2)(CCC3)(CC5CC1)	C16H26
+testMolForm	C=1CCCCCC1	Test MF for smiles: C=1CCCCCC1	C7H12
+testMolForm	c1ccccc1	Test MF for smiles: c1ccccc1	C6H6
+testMolForm	n1cccc1	Test MF for smiles: n1cccc1	C4H4N
+testMolForm	cc	Test MF for smiles: cc	C2H4
+testMolForm	o1cccc1	Test MF for smiles: o1cccc1	C4H4O
+testMolForm	CCC(C)C(NC(=O)C(C)NC(=O)C(CC(O)=O)NC(=O)C(C)NC(=O)C(N)CC1=CC=C(O)C=C1)C(=O)NC(CC1=CC=CC=C1)C(=O)NC(C(C)O)C(=O)NC(CC(N)=O)C(=O)NC(CO)C(=O)NC(CC1=CC=C(O)C=C1)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(C(C)C)C(=O)NC(CC(C)C)C(=O)NCC(=O)NC(CCC(N)=O)C(=O)NC(CC(C)C)C(=O)NC(CO)C(=O)NC(C)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(CC(C)C)C(=O)NC(CC(C)C)C(=O)NC(CCC(N)=O)C(=O)NC(CC(O)=O)C(=O)NC(C(C)CC)C(=O)NC(CCSC)C(=O)NC(CO)C(=O)NC(CCCNC(N)=N)C(N)=O	Test MF for smiles: CCC(C)C(NC(=O)C(C)NC(=O)C(CC(O)=O)NC(=O)C(C)NC(=O)C(N)CC1=CC=C(O)C=C1)C(=O)NC(CC1=CC=CC=C1)C(=O)NC(C(C)O)C(=O)NC(CC(N)=O)C(=O)NC(CO)C(=O)NC(CC1=CC=C(O)C=C1)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(C(C)C)C(=O)NC(CC(C)C)C(=O)NCC(=O)NC(CCC(N)=O)C(=O)NC(CC(C)C)C(=O)NC(CO)C(=O)NC(C)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(CC(C)C)C(=O)NC(CC(C)C)C(=O)NC(CCC(N)=O)C(=O)NC(CC(O)=O)C(=O)NC(C(C)CC)C(=O)NC(CCSC)C(=O)NC(CO)C(=O)NC(CCCNC(N)=N)C(N)=O	C149H246N44O42S
+testMolForm	CC(C)NCCCC1(C(N)=O)C2=CC=CC=C2C2=CC=CC=C12	Test MF for smiles: CC(C)NCCCC1(C(N)=O)C2=CC=CC=C2C2=CC=CC=C12	C20H24N2O
+testMolForm	[CH2]1CCCC1	Test MF for smiles: [CH2]1CCCC1	C5H10
+testMolForm	[C:1]	Test MF for smiles: [C:1]	C
+testMolForm	[C@H]1(C)C(C)CC1	Test MF for smiles: [C@H]1(C)C(C)CC1	C6H12
+testMolForm	[CH2]=CCC	Test MF for smiles: [CH2]=CCC	C4H8
+testMolForm	[CH]#CCC	Test MF for smiles: [CH]#CCC	C4H6
+testMolForm	[CH3]-CCC	Test MF for smiles: [CH3]-CCC	C4H10

@@ -28,6 +28,7 @@ module Ouch.Test.Methods
        TestData(..)
      , tests
      , performTests
+     , makeTestFromString
      , testTest
      , testFail
      , testMolForm
@@ -39,9 +40,10 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
-
+import Data.List as List
 import Data.Either
 import Data.Maybe
+import Data.Char as Char
 
 
 -- Data structure to hold test/result pairs and descriptions.  All 'functions' should
@@ -52,6 +54,34 @@ data TestData = TestData { function :: (String -> Either String String)
                          , outcome :: String    
                          } deriving (Show)
 
+makeTestFromString :: String -> TestData
+makeTestFromString "" = TestData {function=testTest, description="Empty test", input="", outcome=""}
+makeTestFromString s = TestData {function=func, description=l2, input=l3, outcome=l4}
+    where (l1:l2:l3:l4:_) = parseAtTab s
+          func | l1 == "testTest" = testTest
+               | l1 == "testFail" = testFail
+               | l1 == "testMolForm" = testMolForm
+               | l1 == "testMolWt" = testMolWt
+               | otherwise = testTest
+
+
+performTests :: [TestData] -> (String, String)
+performTests [] = ("", "")
+performTests td = (summary, detail td results)
+    where summary = "\n++++++++++++++++++++\nPerformed " ++ show (length td) ++ " tests.\n--------------------\n"  
+                    ++ "\tPassed: " ++ show (length $ rights results) ++ "\n"
+                    ++ "\tFailed: " ++ show (length $ lefts results) ++ "\n"
+                    ++ "\n"  
+          results = List.map (\a -> (function a) (input a)) td
+          detail [] _ = ""
+          detail _ [] = ""
+          detail (t:ts) (r:rs) = case r of
+              Left s ->  "\n" ++ description t ++ ":\t" ++ "FAILED\\t-with error string:\t" ++ s ++ "\n" ++ detail ts rs
+              Right s -> if s == (outcome t)
+                         then detail ts rs
+                         else "\n" ++ description t ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome t) ++ "\n" ++ detail ts rs
+
+{--
 performTests :: [TestData] -> String
 performTests [] = ""
 performTests (x:xs) = output
@@ -61,9 +91,7 @@ performTests (x:xs) = output
            Right s -> if s == (outcome x)
                       then "." ++ performTests xs
                       else "\n" ++ description x ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome x) ++ "\n" ++ performTests xs
-
-
-
+--}                      
 
 
 -- Simple test function
@@ -85,7 +113,11 @@ testMolWt s = output
            Left mw   -> Left mw
            Right mw  -> Right (show $ floor (10 * mw))
 
-
+parseAtTab :: String -> [String]
+parseAtTab s =  case dropWhile Char.isSpace s of
+                     "" -> []
+                     s' -> w : parseAtTab s''
+                           where (w, s'') = break (=='\t') s'
 
 tests = [ 
            TestData {function=testTest, input="OK", description="Test SHOULD FAIL", outcome="Not OK"}
