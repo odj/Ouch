@@ -26,7 +26,6 @@
 module Ouch.Test.Methods 
     (
        TestData(..)
-     , tests
      , performTests
      , makeTestFromString
      , testTest
@@ -56,7 +55,7 @@ data TestData = TestData { function :: (String -> Either String String)
 
 makeTestFromString :: String -> TestData
 makeTestFromString "" = TestData {function=testTest, description="Empty test", input="", outcome=""}
-makeTestFromString s = TestData {function=func, description=l2, input=l3, outcome=l4}
+makeTestFromString s = TestData {function=func, description=l3, input=l2, outcome=l4}
     where (l1:l2:l3:l4:_) = parseAtTab s
           func | l1 == "testTest" = testTest
                | l1 == "testFail" = testFail
@@ -67,32 +66,19 @@ makeTestFromString s = TestData {function=func, description=l2, input=l3, outcom
 
 performTests :: [TestData] -> (String, String)
 performTests [] = ("", "")
-performTests td = (summary, detail td results)
-    where summary = "\n++++++++++++++++++++\nPerformed " ++ show (length td) ++ " tests.\n--------------------\n"  
-                    ++ "\tPassed: " ++ show (length $ rights results) ++ "\n"
-                    ++ "\tFailed: " ++ show (length $ lefts results) ++ "\n"
-                    ++ "\n"  
-          results = List.map (\a -> (function a) (input a)) td
-          detail [] _ = ""
-          detail _ [] = ""
-          detail (t:ts) (r:rs) = case r of
-              Left s ->  "\n" ++ description t ++ ":\t" ++ "FAILED\\t-with error string:\t" ++ s ++ "\n" ++ detail ts rs
-              Right s -> if s == (outcome t)
-                         then detail ts rs
-                         else "\n" ++ description t ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome t) ++ "\n" ++ detail ts rs
-
-{--
-performTests :: [TestData] -> String
-performTests [] = ""
-performTests (x:xs) = output
- where result = (function x) (input x)
-       output = case result of
-           Left s ->  "\n" ++ description x ++ ":\t" ++ "FAILED\\t-with error string:\t" ++ s ++ "\n" ++ performTests xs
-           Right s -> if s == (outcome x)
-                      then "." ++ performTests xs
-                      else "\n" ++ description x ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome x) ++ "\n" ++ performTests xs
---}                      
-
+performTests td = (summary, errorLog)
+   where summary = "\tPassed: " ++ show ((length $ rights results) - (length $ lines errorLog)) ++ "\n"
+                   ++ "\tFailed: " ++ show ((length $ lefts results) + (length $ lines errorLog)) ++ "\n"
+                   ++ "\n"  ++ "\n++++++++++++++++++++\nPerformed " ++ show (length td) ++ " tests.\n--------------------\n"
+         errorLog = detail td results
+         results = List.map (\a -> (function a) (input a)) td
+         detail [] _ = ""
+         detail _ [] = ""
+         detail (t:ts) (r:rs) = case r of
+             Left s ->  description t ++ ":\t" ++ "FAILED\t-with error string:\t" ++ s ++ "\n" ++ detail ts rs
+             Right s -> if s == (outcome t)
+                      then detail ts rs
+                      else description t ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome t) ++ "\n" ++ detail ts rs
 
 -- Simple test function
 testTest::String -> Either String String
@@ -119,106 +105,4 @@ parseAtTab s =  case dropWhile Char.isSpace s of
                      s' -> w : parseAtTab s''
                            where (w, s'') = break (=='\t') s'
 
-tests = [ 
-           TestData {function=testTest, input="OK", description="Test SHOULD FAIL", outcome="Not OK"}
-         , TestData {function=testFail, input="OK Error", description="Test SHOULD FAIL", outcome="OK"}
-         , TestData {function=testTest, input="OK", description="Testing should pass", outcome="OK"}
-         , TestData {function=testMolForm, input="C", description="Test Smiles-MF 1", outcome="CH4"}
-         , TestData {function=testMolForm, input="CC", description="Test Smiles-MF 2", outcome="C2H6"}
-         , TestData {function=testMolForm, input="CCC", description="Test Smiles-MF 3", outcome="C3H8"}
-         , TestData {function=testMolForm, input="C(C)C", description="Test Smiles-MF 4", outcome="C3H8"}
-         , TestData {function=testMolForm, input="C(C(C))", description="Test Smiles-MF 5", outcome="C3H8"}
-         , TestData {function=testMolForm, input="C(C(C))C", description="Test Smiles-MF 6", outcome="C4H10"}
-         , TestData {function=testMolForm, input="C(C(C))(C)", description="Test Smiles-MF 7", outcome="C4H10"}
-         , TestData {function=testMolForm, input="C(C(C))CC(C)", description="Test Smiles-MF 8", outcome="C6H14"}
-         , TestData {function=testMolForm, input="C(C(C(C)(C)))", description="Test Smiles-MF 9", outcome="C5H12"}
-         , TestData {function=testMolForm, input="C(C)(C)(C)C", description="Test Smiles-MF 10", outcome="C5H12"}
-         , TestData {function=testMolForm, input="C=C", description="Test Smiles-MF 11", outcome="C2H4"}
-         , TestData {function=testMolForm, input="C=C=C", description="Test Smiles-MF 12", outcome="C3H4"}
-         , TestData {function=testMolForm, input="C#C", description="Test Smiles-MF 13", outcome="C2H2"}
-         , TestData {function=testMolForm, input="C#CC#C", description="Test Smiles-MF 14", outcome="C4H2"}
-         , TestData {function=testMolForm, input="C.C", description="Test Smiles-MF 15", outcome="C2H8"}
-         , TestData {function=testMolForm, input="C-C", description="Test Smiles-MF 16", outcome="C2H6"}
-         , TestData {function=testMolForm, input="C-C-C-C", description="Test Smiles-MF 17", outcome="C4H10"}
-         , TestData {function=testMolForm, input="C.C.C.C", description="Test Smiles-MF 18", outcome="C4H16"}
-         , TestData {function=testMolForm, input="N", description="Test Smiles-MF 19", outcome="H3N"}
-         , TestData {function=testMolForm, input="CN", description="Test Smiles-MF 20", outcome="CH5N"}
-         , TestData {function=testMolForm, input="C#N", description="Test Smiles-MF 21", outcome="CHN"}
-         , TestData {function=testMolForm, input="OCCN", description="Test Smiles-MF 22", outcome="C2H7NO"}
-         , TestData {function=testMolForm, input="CBr", description="Test Smiles-MF 23", outcome="CH3Br"}
-         , TestData {function=testMolForm, input="CCl", description="Test Smiles-MF 24", outcome="CH3Cl"}
-         , TestData {function=testMolForm, input="CF", description="Test Smiles-MF 25", outcome="CH3F"}
-         , TestData {function=testMolForm, input="OS(=O)(=O)O", description="Test Smiles-MF 26", outcome="H2O4S"}    
-         , TestData {function=testMolForm, input="CC(=O)CC(=O)OC", description="Test Smiles-MF 27", outcome="C5H8O3"}
-         , TestData {function=testMolForm, input="C1CC1", description="Test Smiles-MF 28", outcome="C3H6"}
-         , TestData {function=testMolForm, input="C1CCCC1", description="Test Smiles-MF 29", outcome="C5H10"}
-         , TestData {function=testMolForm, input="C2CCCC2", description="Test Smiles-MF 30", outcome="C5H10"}
-         , TestData {function=testMolForm, input="C3CCC3", description="Test Smiles-MF 31", outcome="C4H8"}
-         , TestData {function=testMolForm, input="C1CC=CC1", description="Test Smiles-MF 32", outcome="C5H8"}
-         , TestData {function=testMolForm, input="C1CC1CC", description="Test Smiles-MF 33", outcome="C5H10"} 
-         , TestData {function=testMolForm, input="C1.C1", description="Test Smiles-MF 34", outcome="C2H6"}
-         , TestData {function=testMolForm, input="C12CCCC1CCCC2", description="Test Smiles-MF 35", outcome="C9H16"}
-         , TestData {function=testMolForm, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MF 36", outcome="C16H26"}   
-         , TestData {function=testMolForm, input="C=1CCCCCC1", description="Test Smiles-MF 37", outcome="C7H12"}
-         , TestData {function=testMolForm, input="c1ccccc1", description="Test Smiles-MF 38", outcome="C6H6"}
-         , TestData {function=testMolForm, input="n1cccc1", description="Test Smiles-MF 39", outcome="C4H4N"}
-         , TestData {function=testMolForm, input="cc", description="Test Smiles-MF 40", outcome="C2H4"}
-         , TestData {function=testMolForm, input="o1cccc1", description="Test Smiles-MF 41", outcome="C4H4O"}
-         , TestData {function=testMolForm, input="CCC(C)C(NC(=O)C(C)NC(=O)C(CC(O)=O)NC(=O)C(C)NC(=O)C(N)CC1=CC=C(O)C=C1)C(=O)NC(CC1=CC=CC=C1)C(=O)NC(C(C)O)C(=O)NC(CC(N)=O)C(=O)NC(CO)C(=O)NC(CC1=CC=C(O)C=C1)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(C(C)C)C(=O)NC(CC(C)C)C(=O)NCC(=O)NC(CCC(N)=O)C(=O)NC(CC(C)C)C(=O)NC(CO)C(=O)NC(C)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(CC(C)C)C(=O)NC(CC(C)C)C(=O)NC(CCC(N)=O)C(=O)NC(CC(O)=O)C(=O)NC(C(C)CC)C(=O)NC(CCSC)C(=O)NC(CO)C(=O)NC(CCCNC(N)=N)C(N)=O", description="Test Smiles-MF 42", outcome="C149H246N44O42S"}
-         , TestData {function=testMolForm, input="CC(C)NCCCC1(C(N)=O)C2=CC=CC=C2C2=CC=CC=C12", description="Test Smiles-MF 43", outcome="C20H24N2O"}
-         , TestData {function=testMolForm, input="[CH2]1CCCC1", description="Test Smiles-MF 44", outcome="C5H10"}
-         , TestData {function=testMolForm, input="[C:1]", description="Test Smiles-MF 45", outcome="C"}
- {----------------------------------------------------------------------------------------------------------}
- 
-         , TestData {function=testMolWt, input="C", description="Test Smiles-MW 1", outcome="160"}
-         , TestData {function=testMolWt, input="CC", description="Test Smiles-MW 2", outcome="300"}
-         , TestData {function=testMolWt, input="CCC", description="Test Smiles-MW 3", outcome="440"}
-         , TestData {function=testMolWt, input="C(C)C", description="Test Smiles-MW 4", outcome="440"}
-         , TestData {function=testMolWt, input="C(C(C))", description="Test Smiles-MW 5", outcome="440"}
-         , TestData {function=testMolWt, input="C(C(C))C", description="Test Smiles-MW 6", outcome="581"}
-         , TestData {function=testMolWt, input="C(C(C))(C)", description="Test Smiles-MW 7", outcome="581"}
-         , TestData {function=testMolWt, input="C(C(C))CC(C)", description="Test Smiles-MW 8", outcome="861"}
-         , TestData {function=testMolWt, input="C(C(C(C)(C)))", description="Test Smiles-MW 9", outcome="721"}
-         , TestData {function=testMolWt, input="C(C)(C)(C)C", description="Test Smiles-MW 10", outcome="721"}
-         , TestData {function=testMolWt, input="C=C", description="Test Smiles-MW 11", outcome="280"}
-         , TestData {function=testMolWt, input="C=C=C", description="Test Smiles-MW 12", outcome="400"}
-         , TestData {function=testMolWt, input="C#C", description="Test Smiles-MW 13", outcome="260"}
-         , TestData {function=testMolWt, input="C#CC#C", description="Test Smiles-MW 14", outcome="500"}
-         , TestData {function=testMolWt, input="C.C", description="Test Smiles-MW 15", outcome="320"}
-         , TestData {function=testMolWt, input="C-C", description="Test Smiles-MW 16", outcome="300"}
-         , TestData {function=testMolWt, input="C-C-C-C", description="Test Smiles-MW 17", outcome="581"}
-         , TestData {function=testMolWt, input="C.C.C.C", description="Test Smiles-MW 18", outcome="641"}
-         , TestData {function=testMolWt, input="N", description="Test Smiles-MW 19", outcome="170"}
-         , TestData {function=testMolWt, input="CN", description="Test Smiles-MW 20", outcome="310"}
-         , TestData {function=testMolWt, input="C#N", description="Test Smiles-MW 21", outcome="270"}
-         , TestData {function=testMolWt, input="OCCN", description="Test Smiles-MW 22", outcome="610"}
-         , TestData {function=testMolWt, input="CBr", description="Test Smiles-MW 23", outcome="949"}
-         , TestData {function=testMolWt, input="CCl", description="Test Smiles-MW 24", outcome="504"}
-         , TestData {function=testMolWt, input="CF", description="Test Smiles-MW 25", outcome="340"}
-         , TestData {function=testMolWt, input="OS(=O)(=O)O", description="Test Smiles-MW 26", outcome="980"}
-         , TestData {function=testMolWt, input="CC(=O)CC(=O)OC", description="Test Smiles-MW 27", outcome="1161"}
-         , TestData {function=testMolWt, input="C1CC1", description="Test Smiles-MW 28", outcome="420"}
-         , TestData {function=testMolWt, input="C1CCCC1", description="Test Smiles-MW 29", outcome="701"}
-         , TestData {function=testMolWt, input="C2CCCC2", description="Test Smiles-MW 30", outcome="701"}
-         , TestData {function=testMolWt, input="C3CCC3", description="Test Smiles-MW 31", outcome="561"}
-         , TestData {function=testMolWt, input="C1CC=CC1", description="Test Smiles-MW 32", outcome="681"}  
-         , TestData {function=testMolWt, input="C1CC1CC", description="Test Smiles-MW 33", outcome="701"}    
-         , TestData {function=testMolWt, input="C1.C1", description="Test Smiles-MW 34", outcome="300"}
-         , TestData {function=testMolWt, input="C12CCCC1CCCC2", description="Test Smiles-MW 35", outcome="1242"}
-         , TestData {function=testMolWt, input="C123CCCC(CC5CC2)(CCC3)(CC5CC1)", description="Test Smiles-MW 36", outcome="2183"} 
-         , TestData {function=testMolWt, input="C=1CCCCCC1", description="Test Smiles-MW 37", outcome="961"}  
-         , TestData {function=testMolWt, input="c1ccccc1", description="Test Smiles-MW 38", outcome="781"}  
-         , TestData {function=testMolWt, input="n1cccc1", description="Test Smiles-MW 39", outcome="660"}
-         , TestData {function=testMolWt, input="cc", description="Test Smiles-MW 40", outcome="280"}
-         , TestData {function=testMolWt, input="o1cccc1", description="Test Smiles-MW 41", outcome="680"}
-         , TestData {function=testMolWt, input="CCC(C)C(NC(=O)C(C)NC(=O)C(CC(O)=O)NC(=O)C(C)NC(=O)C(N)CC1=CC=C(O)C=C1)C(=O)NC(CC1=CC=CC=C1)C(=O)NC(C(C)O)C(=O)NC(CC(N)=O)C(=O)NC(CO)C(=O)NC(CC1=CC=C(O)C=C1)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(C(C)C)C(=O)NC(CC(C)C)C(=O)NCC(=O)NC(CCC(N)=O)C(=O)NC(CC(C)C)C(=O)NC(CO)C(=O)NC(C)C(=O)NC(CCCNC(N)=N)C(=O)NC(CCCCN)C(=O)NC(CC(C)C)C(=O)NC(CC(C)C)C(=O)NC(CCC(N)=O)C(=O)NC(CC(O)=O)C(=O)NC(C(C)CC)C(=O)NC(CCSC)C(=O)NC(CO)C(=O)NC(CCCNC(N)=N)C(N)=O", description="Test Smiles-MW 42", outcome="33578"}
-         , TestData {function=testMolWt, input="CC(C)NCCCC1(C(N)=O)C2=CC=CC=C2C2=CC=CC=C12", description="Test Smiles-MW 43", outcome="3084"}
-         , TestData {function=testMolWt, input="[CH2]1CCCC1", description="Test Smiles-MW 44", outcome="701"}
-         , TestData {function=testMolWt, input="[C:1]", description="Test Smiles-MW 45", outcome="120"}
-         , TestData {function=testMolForm, input="[C@H]1(C)C(C)CC1", description="Test Smiles-MF 46", outcome="C6H12"}
-         , TestData {function=testMolForm, input="[CH2]=CCC", description="Test Smiles-MF 47", outcome="C4H8"}
-         , TestData {function=testMolForm, input="[CH]#CCC", description="Test Smiles-MF 48", outcome="C4H6"}
-         , TestData {function=testMolForm, input="[CH3]-CCC", description="Test Smiles-MF 49", outcome="C4H10"}
-         
-        ]
 

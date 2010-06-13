@@ -41,8 +41,10 @@ import Data.List as List
 main = do
     (n:_) <- getArgs
     input <- readFile n
+    putStrLn "\nPerforming Tests....\n"
     let (summary, errorLog) = performTests $ List.map makeTestFromString $ lines input
     putStrLn summary
+    writeFile "errorLog.txt" errorLog
 
 -------------------------------------------------------------------------------
 
