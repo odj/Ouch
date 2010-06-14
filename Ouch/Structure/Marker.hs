@@ -42,6 +42,7 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | GeoIsomer {geoIsomer::Geometry}
               | AromaticAtom
               | Traversed {order::Integer}
+              | ExplicitHydrogen {numberH::Integer}
               | Substructure {substructureNumber::Integer}
               | ValenceError {valenceError::String}
               | InRing {ringNumber::Integer}

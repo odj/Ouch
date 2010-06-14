@@ -102,26 +102,19 @@ growPerhapsMoleculeAtIndexWithString :: PerhapsMolecule -> Int -> String -> Perh
 growPerhapsMoleculeAtIndexWithString pm i smi 
     | smi == ""  = pm
     | otherwise  = case pm of
-        Right m -> case chop of
-                Smile {}  -> case lup of 
-                                Just a | isHeavyAtom a -> growPerhapsMoleculeAtIndexWithString newMolecule1 (newIndex) nextSmile 
-                                       | otherwise -> growPerhapsMoleculeAtIndexWithString pm (i-1) smi
-                                Nothing -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
-                                where lup = Map.lookup i (atomMap m)
-                                
-                SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newMolecule2 i nextSmile
-                SmilesError {}  -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
-                where chop = nextChoppedSmile smi
-                      nextSmile = smiles chop
-                      newAtom = makeAtomMoleculeFromChop chop
-                      newSubStructure = makeScaffoldFromSmiles (smile chop)
-                      newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
-                      newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
-                      -- We just made this thing, so there shouldn't be any errors, right?
-                      newIndex = case newMolecule1 of Right m1 -> Map.size (atomMap m1) - 1          
-        Left {} -> pm    
-
-
+    Right {} -> case chop of
+            Smile {}        -> growPerhapsMoleculeAtIndexWithString newMolecule1 (newIndex) nextSmile 
+            SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newMolecule2 i nextSmile
+            SmilesError {}  -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
+            where chop = nextChoppedSmile smi
+                  nextSmile = smiles chop
+                  newAtom = makeAtomMoleculeFromChop chop
+                  newSubStructure = makeScaffoldFromSmiles (smile chop)
+                  newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
+                  newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
+                  -- We just made this thing, so there shouldn't be any errors, right?
+                  newIndex = case newMolecule1 of Right m1 -> Map.size (atomMap m1) - 1          
+    Left {} -> pm
 
 
 -- makeScaffoldFromSmiles
@@ -154,7 +147,7 @@ makeAtomMoleculeFromChop nb = case nb of
 
 
 makeAtomMoleculeFromBracketChop::ChoppedSmile -> PerhapsMolecule
-makeAtomMoleculeFromBracketChop sb = molH
+makeAtomMoleculeFromBracketChop sb = mol
     where (s1, s2, s3)    = (smile sb) =~ "(^[\\[].*(\\]))"::(String, String, String)  -- Contents of the brackets
           s =  init $ tail s2   -- Drop the brackets
           
@@ -180,22 +173,26 @@ makeAtomMoleculeFromBracketChop sb = molH
           (h1, h2, h3)    = a3     =~ "([H]{1}[0-9]*)"::(String, String, String)
           (nh1, nh2, nh3) = h2     =~ "([0-9]+)"::(String, String, String)
           numberH | h2 == "" = 0 | nh2 == "" = 1 | otherwise = read nh2::Integer
+          markH = ExplicitHydrogen numberH
           
           -- Get class information
           (c1, c2, c3)       = s     =~ "([:][0-9]+)"::(String, String, String)
           (cn1, cn2, cn3)    = c2    =~ "([0-9]+)"::(String, String, String)
           classNumber | c2 == "" = 0 | cn2 == "" =0 | otherwise = read cn2::Integer
+          markClass = Class classNumber
           
           -- Now make the molecule
           mol = Right $ Small $ Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll
-          hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
-          hydrogens = take (fromIntegral numberH) $ repeat hydrogen
+         -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
+          -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           -- Need to fill the rest with radicals to keep the bracket designation explicit.
-          molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
+          -- molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
           (lb1, lb2, lb3)    = s =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
           markSetType = Set.singleton (if isLower $ head a2 then AromaticAtom else Null)
-          markSetAll = Set.union (Set.fromList $ parseClosureMarkers s3 []) $ Set.insert markAromatic $ Set.insert (Class classNumber) (mark sb) 
+          
+          
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH] ++ (parseClosureMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
