@@ -182,6 +182,12 @@ makeAtomMoleculeFromBracketChop sb = mol
           classNumber | c2 == "" = 0 | cn2 == "" =0 | otherwise = read cn2::Integer
           markClass = Class classNumber
           
+          -- Get Stereochemical Information
+          scCount = List.foldr (\c n -> if (c == '@') then n+1 else n) 0 s
+          markStereo | scCount == 1 = (Chiral Levo)
+                     | scCount == 2 = (Chiral Dextro)
+                     | otherwise = Null
+
           -- Now make the molecule
           mol = Right $ Small $ Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll
          -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
@@ -193,7 +199,7 @@ makeAtomMoleculeFromBracketChop sb = mol
           markSetType = Set.singleton (if isLower $ head a2 then AromaticAtom else Null)
           
           
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH] ++ (parseClosureMarkers s3 [])) 
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo] ++ (parseClosureMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
