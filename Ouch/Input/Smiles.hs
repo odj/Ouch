@@ -206,11 +206,11 @@ parseSmiles s = s =~ pat::(String, String, String)
     -- Need a more general format to recognize two-letter elements (or maybe just enumerate them?) 
     where pat = List.foldr (++) "" patList 
           patList = [ "("
-                    , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
+                    , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
                     , "|^[(].*|(^[/][(].*)|(^[\\][(].*)" -- return the whole string for anything that STARTS with open parens
-                    , "|(^[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
-                    , "|(^[/][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[0-9])*)"
-                    , "|(^[\\][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[0-9])*)"
+                    , "|(^[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
+                    , "|(^[/][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
+                    , "|(^[\\][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
                     , ")"
                     ]
 
@@ -232,7 +232,7 @@ nextChoppedSmile s
    | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `Set.union` (Set.singleton $ Comment s2)}
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
-         (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
+         (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
          (a1, a2, a3)       = s2 =~ "([A-Za-z]+)"::(String, String, String) -- Atom only, remove bond comments, etc
 
          (ss1, ss2, ss3)    = findNextSubSmile s 1
@@ -271,7 +271,7 @@ nextChoppedSmile s
 parseClosureMarkers :: String -> [Marker] -> [Marker]
 parseClosureMarkers [] ml = ml
 parseClosureMarkers s ml = parseClosureMarkers s3 (Closure {labelNumber=closureNumber, bondType=nb}:ml)
-    where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
+    where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[/\\]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
           (_, n, _)    = s =~ "([0-9])"::(String, String, String)
           (_, nbs, _)  = s2 =~ "^[-=#\\.]"::(String, String, String)
           nb | nbs == "-" = Single
