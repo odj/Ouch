@@ -111,9 +111,7 @@ connectAtomsWithBond a1 a2 b = (aa1, aa2) where
 -- Return atom and list containing new lone-pair.
 {------------------------------------------------------------------------------}
 addLonePair :: Atom -> [Atom] -> (Atom, [Atom])
-addLonePair a as 
-   | (nb < val)    = (a', ([as'] ++ as))
-   | otherwise     = (a, as)
+addLonePair a as  = (a', ([as'] ++ as))
    where (a', as') = connectAtomsWithBond a (LonePair [] Set.empty) Single
          val  = (fst $ valence a) + (abs(snd $ valence a))
          nb   = numberOfBonds a
@@ -124,13 +122,18 @@ addLonePair a as
 
 {------------------------------------------------------------------------------}
 addHydrogen :: Atom -> [Atom] -> (Atom, [Atom]) 
-addHydrogen a as 
-    | (nb < val)    = (a', ([as'] ++ as))
-    | otherwise     = (a, as)
+addHydrogen a as = (a', ([as'] ++ as))
     where (a', as') = connectAtomsWithBond a (Element 1 1 [] Set.empty) Single
           val  = fst $ valence a
           nb   = numberOfBondsToAtoms a
     
+
+addElectron :: Atom -> [Atom] -> (Atom, [Atom]) 
+addElectron a as  = (a', ([as'] ++ as))
+  where (a', as') = connectAtomsWithBond a (Electron [] Set.empty) Single
+        val  = fst $ valence a
+        nb   = numberOfBondsToAtoms a
+
 
 
 -- addUnfilled
@@ -165,31 +168,49 @@ getError a = Nothing
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
 fillValence :: Atom -> [Atom] -> (Atom, [Atom])
-fillValence a as  
-       -- Everything filled, nothing to do.  Return original
-       | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
+fillValence a as =  
+    let val          = valence a
+        hBool        = Set.member (ExplicitHydrogen 0) (markerSet a)
+        h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (markerSet a)
+                     | otherwise = 0
+        nba          = (numberOfBondsToAtoms a) + (numberOfBondsToRadicals a)
+        nb           = numberOfBonds a
+        nbh          = numberOfBondsToHydrogens a
+        (aH, asH)    = addHydrogen a as
+        (aLP, asLP)  = addLonePair a as
+        (aEL, asEL)  = addElectron a as
+        nbrB         = (numberOfBondsToRadicals a) == 0
+        outputXH   | nbh < h                                       = fillValence aH asH
+                   | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
+                     -- Fill marked aromatics with a radical
+                   | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aEL asEL
+
+                     -- Fill empty valences with radical
+                   | nba < fst val                                 = fillValence aEL asEL
+
+                     -- Then, fill lone-pairs if needed
+                   | nb < ((fst val) + (abs(snd val)))             = fillValence aLP asLP
+
+                     -- Pattern completion
+                   | otherwise = (a, as)
+        output     | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
+                     -- Fill marked aromatics with a radical
+                   | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aEL asEL
+
+                     -- Fill empty valences with hydrogen
+                   | nba < fst val                                 = fillValence aH asH
+
+                     -- Then, fill lone-pairs if needed
+                   | nb < ((fst val) + (abs(snd val)))             = fillValence aLP asLP
+
+                     -- Pattern completion
+                   | otherwise = (a, as)
+    in if hBool then outputXH else output
+  
+   
        
-       -- Fill marked aromatics with a radical
-       | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aE (asE:as)
        
-       -- Fill empty valences with hydrogen
-       | nba < fst val                                 = fillValence aH asH
-       
-       -- Then, fill lone-pairs if needed
-       | nb < ((fst val) + (abs(snd val)))             = fillValence aLP asLP
-       
-       -- Pattern completion
-       | otherwise = (a, as)
-       where
-           val          = valence a
-           nba          = (numberOfBondsToAtoms a) + (numberOfBondsToRadicals a)
-           nb           = numberOfBonds a
-           (aH, asH)    = addHydrogen a as
-           (aLP, asLP)  = addLonePair a as
-           elec         = Electron [] Set.empty
-           nbrB         = (numberOfBondsToRadicals a) == 0
-           (aE, asE)    = connectAtomsWithBond a elec Single
-    
+
 
 
 -- getExactMass
@@ -381,6 +402,16 @@ numberOfBondsToRadicals a = case a of
     where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b
 
 
+{------------------------------------------------------------------------------}
+numberOfBondsToHydrogens :: Atom -> Integer
+numberOfBondsToHydrogens a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map (\a -> isAnyBondToElement a 1) b 
+
+
 
 {------------------------------------------------------------------------------}
 numberOfAromaticBondsToAtoms :: Atom -> Integer
@@ -428,6 +459,17 @@ isAnyBondToRadical b = case b of
     Antibond _ -> False
     Any atom -> isElectron atom
 
+{------------------------------------------------------------------------------}
+isAnyBondToElement :: Bond -> Integer -> Bool
+isAnyBondToElement b i = let an | isElement (bondsTo b) = atomicNumber (bondsTo b) | otherwise = 0 in 
+    case b of   Sigma atom -> an == i
+                Pi atom -> an == i
+                Aromatic atom -> an == i
+                Delta atom -> an == i
+                Hbond atom -> an == i
+                Ionic atom -> an == i
+                Antibond atom -> an == i
+                Any atom -> an == i
 
 
 {------------------------------------------------------------------------------}

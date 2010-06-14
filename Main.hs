@@ -22,12 +22,17 @@
 
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
+-- ghc --make -O2 -fforce-recomp -prof -auto-all -caf-all Main.hs -o a.out
+-- ghc --make -O2 -fforce-recomp Main.hs -o a.out
+-- time ./a.out tests.txt +RTS -sstderr -p -K100M
+-- 
 
 
 import Ouch.Test.Methods
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
+import Ouch.Structure.Marker 
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
 import System.IO 

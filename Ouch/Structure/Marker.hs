@@ -97,6 +97,9 @@ instance Eq Marker where
       Traversed {} -> case b of 
           Traversed { }-> True   
           _ -> False 
+      ExplicitHydrogen {} -> case b of 
+          ExplicitHydrogen {}-> True   
+          _ -> False
       Substructure {substructureNumber=l1} -> case b of 
           Substructure {substructureNumber=l2} -> if (l1 == l2) then True else False
           _ -> False
@@ -148,6 +151,9 @@ instance Ord Marker where
           Traversed {} -> case b of 
               Traversed {} -> EQ   
               _ -> LT 
+          ExplicitHydrogen {} -> case b of 
+              ExplicitHydrogen {} -> EQ   
+              _ -> LT  
           Substructure {substructureNumber=l1} -> case b of 
               Substructure {substructureNumber=l2} -> a
                     where a | (l1 == l2) = EQ

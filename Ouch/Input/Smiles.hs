@@ -204,7 +204,7 @@ parseSmiles s = s =~ pat::(String, String, String)
           patList = [ "("
                     , "^[-=#\\.]*([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
                     , "|^[\\(].*" -- return the whole string for anything that STARTS with open parens
-                    , "|(^[\\[].*(\\])([-=#\\.]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
+                    , "|(^[\\[]([+-@:a-zA-Z]|[0-9]|[^\\]])*(\\])([-=#\\.]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
                     , ")"
                     ]
                           
