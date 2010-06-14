@@ -26,6 +26,7 @@
 module Ouch.Input.Smiles (
      nextChoppedSmile
    , makeMoleculeFromSmiles
+   , makeScaffoldFromSmiles
    , makeAtomMoleculeFromChop
    , findNextSubSmile
    , parseSmiles
@@ -222,7 +223,7 @@ nextChoppedSmile s
          (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
          (a1, a2, a3)       = s2 =~ "([A-Za-z]+)"::(String, String, String) -- Atom only, remove bond comments, etc
          (ss1, ss2, ss3)    = findNextSubSmile s 1
-         (bb1, bb2, bb3)    = ss2 =~ "([A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles
+         (bb1, bb2, bb3)    = ss2 =~ "([\\[A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles
          nb  | b2 == "."              = NoBond
              | b2 `elem` ["", "-"]    = Single
              | b2 == "="              = Double
