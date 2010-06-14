@@ -57,7 +57,7 @@ data Chirality = Levo | Dextro | UnknownChirality
 
 
 {------------------------------------------------------------------------------}
-data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom}
+data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom} | ProCis | ProTrans
    deriving (Show, Eq, Ord)
 
 -- NewBond
