@@ -156,7 +156,7 @@ makeAtomMoleculeFromBracketChop sb = mol
           (ch1, ch2, ch3)   = s     =~ "([+-][0-9]*)"::(String, String, String)
           (sign, int, _)    = ch2   =~ "([^+-][0-9]*)"::(String, String, String)
           charge | int == "" = 1 | otherwise = read int::Integer
-          chargeMark | ch2 == "" = Null | sign == "-" = Charge (0 - charge) | otherwise = Charge charge 
+          markCharge | ch2 == "" = Null | sign == "-" = Charge (0 - charge) | otherwise = Charge charge 
           
           -- Get isotopic number
           (n1, n2, n3)   = s     =~ "(^[0-9]*)"::(String, String, String)
@@ -184,8 +184,8 @@ makeAtomMoleculeFromBracketChop sb = mol
           
           -- Get Stereochemical Information
           scCount = List.foldr (\c n -> if (c == '@') then n+1 else n) 0 s
-          markStereo | scCount == 1 = (Chiral Levo)
-                     | scCount == 2 = (Chiral Dextro)
+          markStereo | scCount == 1 = Null -- (Chiral Levo)
+                     | scCount == 2 = Null -- (Chiral Dextro)
                      | otherwise = Null
 
           -- Now make the molecule
@@ -195,11 +195,8 @@ makeAtomMoleculeFromBracketChop sb = mol
           -- Need to fill the rest with radicals to keep the bracket designation explicit.
           -- molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
-          (lb1, lb2, lb3)    = s =~ "([-=#\\.]{0,1}[%]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
-          markSetType = Set.singleton (if isLower $ head a2 then AromaticAtom else Null)
-          
-          
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo] ++ (parseClosureMarkers s3 [])) 
+         
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here

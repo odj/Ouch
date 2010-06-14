@@ -85,11 +85,11 @@ instance Eq Marker where
       Class {classNumber=l1} -> case b of 
           Class {classNumber=l2} -> if (l1 == l2) then True else False    
           _ -> False 
-      Chiral {chirality=l1} -> case b of 
-          Chiral {chirality=l2} -> if (l1 == l2) then True else False
+      Chiral {} -> case b of 
+          Chiral {} -> True
           _ -> False
-      GeoIsomer {geoIsomer=l1} -> case b of 
-          GeoIsomer {geoIsomer=l2} -> if (l1 == l2) then True else False
+      GeoIsomer {} -> case b of 
+          GeoIsomer {} -> True
           _ -> False
       AromaticAtom -> case b of 
           AromaticAtom -> True
@@ -153,7 +153,7 @@ instance Ord Marker where
               _ -> LT 
           ExplicitHydrogen {} -> case b of 
               ExplicitHydrogen {} -> EQ   
-              _ -> LT  
+              _ -> GT  
           Substructure {substructureNumber=l1} -> case b of 
               Substructure {substructureNumber=l2} -> a
                     where a | (l1 == l2) = EQ
