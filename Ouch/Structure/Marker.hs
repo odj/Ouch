@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Marker - a module to manage atom markers
+    AtomMarker - a module to manage atom markers
     
     Copyright (c) 2010 Orion D. Jankowski
     
@@ -25,7 +25,8 @@
 
 module Ouch.Structure.Marker (
       Chirality(..)
-    , Marker(..)
+    , AtomMarker(..)
+    , MoleculeMarker(..)
     , NewBond(..)
     , Geometry(..)
     ) where 
@@ -33,7 +34,7 @@ module Ouch.Structure.Marker (
 import {-# SOURCE #-} Ouch.Structure.Atom
         
 {------------------------------------------------------------------------------}
-data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
+data AtomMarker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Charge {charge::Integer}
               | Position {position::(Double, Double, Double)}  -- x, y, z vector
               | Closure {labelNumber::Integer, bondType::NewBond}
@@ -51,6 +52,9 @@ data Marker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Null  -- This is a dummy value for functions that append marker list for simplicity.
               deriving (Show)
 
+data MoleculeMarker =   Info {info::String}
+                      | Errors  {errors::String}   
+                      deriving (Show, Eq, Ord)
 {------------------------------------------------------------------------------}
 data Chirality = Levo | Dextro | UnknownChirality
    deriving (Show, Eq, Ord)
@@ -71,7 +75,7 @@ data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 -- This is because closure bond type only needs to be defined on one end of the molecule,
 -- and therefore might not match the other closure atom in a valid smile.
 {------------------------------------------------------------------------------}
-instance Eq Marker where
+instance Eq AtomMarker where
   a == b = case a of 
       Position {position=l1} -> case b of 
           Position {position=l2} -> if (l1 == l2) then True else False
@@ -121,7 +125,7 @@ instance Eq Marker where
       _ -> case b of
           _  -> False      
 
-instance Ord Marker where
+instance Ord AtomMarker where
    compare a b =  case a of 
           Charge {} -> case b of 
              Charge {} -> EQ

@@ -30,7 +30,7 @@ module Ouch.Input.Smiles (
    , makeAtomMoleculeFromChop
    , findNextSubSmile
    , parseSmiles
-   , parseClosureMarkers
+   , parseClosureAtomMarkers
    , chop
    ) where
        
@@ -56,9 +56,9 @@ import Control.Applicative
 
 
 
-data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}
-                  | SubSmile {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}  --Substructures don't need a marker set
-                  | SmilesError {smile::String, smiles::String, newBond::NewBond, mark::(Set Marker)}  --
+data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark::(Set AtomMarker)}
+                  | SubSmile {smile::String, smiles::String, newBond::NewBond, mark::(Set AtomMarker)}  --Substructures don't need a marker set
+                  | SmilesError {smile::String, smiles::String, newBond::NewBond, mark::(Set AtomMarker)}  --
                   deriving (Show, Eq)
 
 
@@ -71,8 +71,11 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 -- Add all the "cleanup" functions here.
 {------------------------------------------------------------------------------}
 makeMoleculeFromSmiles::String -> PerhapsMolecule
-makeMoleculeFromSmiles smi = fillMoleculeValence $ makeScaffoldFromSmiles smi
-    
+makeMoleculeFromSmiles smi = mol
+    where mol'  = fillMoleculeValence $ makeScaffoldFromSmiles smi
+          mol   = case mol' of
+                Right m  -> Right $ Small (atomMap m) $ (Info smi) `Set.insert` (molMarkerSet m) 
+                Left {}  -> mol'
     
 
 -- makeScaffoldFromSmiles
@@ -127,19 +130,19 @@ makeAtomMoleculeFromChop nb = case nb of
     SmilesError {} -> Left $ "Could not make molecule from smile with string: " ++ smile nb
     Smile {smile=s} -> if ((head s) == '[') then makeAtomMoleculeFromBracketChop nb else makeAtomMolecule nb
         where makeAtomMolecule nb  | a == ""        =  Left "ERROR: Tried to make atom from empty string."
-                                   | a == "C"       =  Right $ Small $ Map.singleton 0 $ Element 6 0 [] markSetAll
-                                   | a == "N"       =  Right $ Small $ Map.singleton 0 $ Element 7 0 [] markSetAll
-                                   | a == "O"       =  Right $ Small $ Map.singleton 0 $ Element 8 0 [] markSetAll
-                                   | a == "H"       =  Right $ Small $ Map.singleton 0 $ Element 1 0 [] markSetAll
+                                   | a == "C"       =  Right $ Small  (Map.singleton 0 $ Element 6 0 [] markSetAll) Set.empty
+                                   | a == "N"       =  Right $ Small  (Map.singleton 0 $ Element 7 0 [] markSetAll) Set.empty
+                                   | a == "O"       =  Right $ Small  (Map.singleton 0 $ Element 8 0 [] markSetAll) Set.empty
+                                   | a == "H"       =  Right $ Small  (Map.singleton 0 $ Element 1 0 [] markSetAll) Set.empty
 
-                                   | a == "P"       =  Right $ Small $ Map.singleton 0 $ Element 15 0 [] markSetAll
-                                   | a == "S"       =  Right $ Small $ Map.singleton 0 $ Element 16 0 [] markSetAll
-                                   | a == "F"       =  Right $ Small $ Map.singleton 0 $ Element 9 0 [] markSetAll
-                                   | a == "B"       =  Right $ Small $ Map.singleton 0 $ Element 5 0 [] markSetAll
-                                   | a == "BR"      =  Right $ Small $ Map.singleton 0 $ Element 35 0 [] markSetAll
-                                   | a == "CL"      =  Right $ Small $ Map.singleton 0 $ Element 17 0 [] markSetAll
-                                   | a == "I"       =  Right $ Small $ Map.singleton 0 $ Element 53 0 [] markSetAll
-                                   | a == "*"       =  Right $ Small $ Map.singleton 0 $ Unspecified [] markSetAll -- Wildcard Atom
+                                   | a == "P"       =  Right $ Small  (Map.singleton 0 $ Element 15 0 [] markSetAll) Set.empty
+                                   | a == "S"       =  Right $ Small  (Map.singleton 0 $ Element 16 0 [] markSetAll) Set.empty
+                                   | a == "F"       =  Right $ Small  (Map.singleton 0 $ Element 9 0 [] markSetAll) Set.empty
+                                   | a == "B"       =  Right $ Small  (Map.singleton 0 $ Element 5 0 [] markSetAll) Set.empty
+                                   | a == "BR"      =  Right $ Small  (Map.singleton 0 $ Element 35 0 [] markSetAll) Set.empty
+                                   | a == "CL"      =  Right $ Small  (Map.singleton 0 $ Element 17 0 [] markSetAll) Set.empty
+                                   | a == "I"       =  Right $ Small  (Map.singleton 0 $ Element 53 0 [] markSetAll) Set.empty
+                                   | a == "*"       =  Right $ Small  (Map.singleton 0 $ Unspecified [] markSetAll) Set.empty -- Wildcard Atom
                                    | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
                                    where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
                                          markSetClass = Set.empty 
@@ -190,14 +193,14 @@ makeAtomMoleculeFromBracketChop sb = mol
                      | otherwise = Null
 
           -- Now make the molecule
-          mol = Right $ Small $ Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll
+          mol = Right $ Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll) Set.empty
          -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
           -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           -- Need to fill the rest with radicals to keep the bracket designation explicit.
           -- molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
          
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureMarkers s3 [])) 
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureAtomMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
@@ -262,8 +265,8 @@ nextChoppedSmile s
                | b2' == "#"            = Triple
                | otherwise             = Single     
          
-         -- Get atom closure info and parse it, then merge with above geoMarker
-         markerSet          = Set.union markGeo (Set.fromList $ parseClosureMarkers lb2 [])
+         -- Get atom closure info and parse it, then merge with above geoAtomMarker
+         markerSet          = Set.union markGeo (Set.fromList $ parseClosureAtomMarkers lb2 [])
          (tr1, tr2, tr3)    = b =~ "(.*\\])|()"::(String, String, String)
          (lb1, lb2, lb3)    = tr3 =~ "(([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+)"::(String, String, String)
          smi                | tr2 == ""  = lb1
@@ -278,9 +281,9 @@ nextChoppedSmile s
 
 
 
-parseClosureMarkers :: String -> [Marker] -> [Marker]
-parseClosureMarkers [] ml = ml
-parseClosureMarkers s ml = parseClosureMarkers s3 (Closure {labelNumber=closureNumber, bondType=nb}:ml)
+parseClosureAtomMarkers :: String -> [AtomMarker] -> [AtomMarker]
+parseClosureAtomMarkers [] ml = ml
+parseClosureAtomMarkers s ml = parseClosureAtomMarkers s3 (Closure {labelNumber=closureNumber, bondType=nb}:ml)
     where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[/\\]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
           (_, n, _)    = s =~ "([0-9])"::(String, String, String)
           (_, nbs, _)  = s2 =~ "^[-=#\\.]"::(String, String, String)

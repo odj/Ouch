@@ -42,7 +42,7 @@ module Ouch.Structure.Atom (
     , connectAtomsWithBond
     , atomicSymbolForAtom
     , getMatchingClosureNumber
-    , removeClosureMarker
+    , removeClosureAtomMarker
     , getMatchingClosureBondType
     ) where
 
@@ -56,14 +56,14 @@ import qualified Data.List as List
 
 -- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
 -- Bond list is all bond FROM atom.  
--- Marker list is used to aid in graph traversing and other functions.
+-- AtomMarker list is used to aid in graph traversing and other functions.
 {------------------------------------------------------------------------------}
-data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set Marker)}
-            | LonePair {bondList::[Bond], markerSet::(Set Marker)}
-            | Electron {bondList::[Bond], markerSet::(Set Marker)}
-            | Unfilled {bondList::[Bond], markerSet::(Set Marker)}
-            | Unspecified {bondList::[Bond], markerSet::(Set Marker)}   --Wildcard atom for smiles symbol *
-            | Open {bondList::[Bond], markerSet::(Set Marker)}
+data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set AtomMarker)}
+            | LonePair {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Electron {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Unfilled {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Unspecified {bondList::[Bond], markerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Open {bondList::[Bond], markerSet::(Set AtomMarker)}
 
 
 -- connectAtomsWithBond
@@ -527,20 +527,20 @@ isSigmaBondToAtom b = case b of
 
 
 {------------------------------------------------------------------------------}
-removeClosureMarker :: Atom -> Integer -> Atom
-removeClosureMarker a i = a{markerSet = (Set.delete deleteMarker $ markerSet a)} 
-    where deleteMarker = Closure i Single
+removeClosureAtomMarker :: Atom -> Integer -> Atom
+removeClosureAtomMarker a i = a{markerSet = (Set.delete deleteAtomMarker $ markerSet a)} 
+    where deleteAtomMarker = Closure i Single
 
 
 
 {------------------------------------------------------------------------------}
 getMatchingClosureNumber :: Atom -> Atom -> Maybe Integer
-getMatchingClosureNumber a1 a2 = firstCommonMarker
+getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
     where markers1 = fst $ Set.partition isClosure (markerSet a1)
           markers2 = fst $ Set.partition isClosure (markerSet a2)
           intersectionSet = Set.intersection markers1 markers2
           isClosure mk  = case mk of Closure {} -> True ; _ -> False
-          firstCommonMarker = if (Set.null intersectionSet) 
+          firstCommonAtomMarker = if (Set.null intersectionSet) 
                               then Nothing 
                               else Just $ labelNumber (Set.findMin intersectionSet)
 
@@ -567,9 +567,9 @@ getMatchingClosureBondType a1 a2 = newClosureBond
 {------------------------------------------------------------------------------}
 instance Show Atom where
     show a = case a of
-          Element i _ b m ->  name i ++ show b ++ " " ++ show m
-          LonePair b m -> "LP" ++ show b ++ " " ++ show m
-          Electron b m -> "E" ++ show b ++ " " ++ show m
+          Element i _ b m ->  name i ++ "\t" ++ show b ++ "\t" ++ show m ++ "\n"
+          LonePair b m -> "LP" ++ show b ++ " " ++ show m ++ "\n"
+          Electron b m -> "E" ++ show b ++ " " ++ show m ++ "\n"
           Unfilled {} -> ""
           where name b = fromJust $ Map.lookup b atomicSymbols
 

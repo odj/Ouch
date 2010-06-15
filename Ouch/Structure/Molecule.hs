@@ -23,6 +23,9 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
+
+
+
 module Ouch.Structure.Molecule 
     (
        Molecule(..)
@@ -43,6 +46,8 @@ module Ouch.Structure.Molecule
      , moleculeFromPerhapsMolecule
      
      ) where
+         
+
 
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
@@ -56,13 +61,14 @@ import Data.Set as Set
 import Control.Applicative 
 
 
+
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
-data Molecule = Small {atomMap::(Map Int Atom)} 
-                | Markush {}
-                | Polymer {}
-                | Biologic {}
+data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarker)} 
+                | Markush {molMarkerSet::(Set MoleculeMarker)}
+                | Polymer {molMarkerSet::(Set MoleculeMarker)}
+                | Biologic {molMarkerSet::(Set MoleculeMarker)}
                 
 
 -- Use this data structure when a molecule is still being constructed and
@@ -85,13 +91,13 @@ addAtom :: PerhapsMolecule -> Atom -> PerhapsMolecule
 addAtom pm a = case pm of
     Left _ -> pm
     Right m ->  case m of 
-                Small {atomMap=atomM} -> Right $ Small newAtomSet
+                Small {atomMap=atomM} -> Right $ Small newAtomMap Set.empty 
                      where (atom, newAtom) = connectAtomsWithBond topAtom a Single
                            (k, topAtom) = Map.findMax atomM
-                           newAtomSet = Map.insert (k+1) newAtom $ Map.insert k atom atomM
-                Markush            -> Left "Cannot add atom to Markush"
-                Polymer            -> Left "Cannot add atom to Markush"
-                Biologic           -> Left "Cannot add atom to Markush"
+                           newAtomMap = Map.insert (k+1) newAtom $ Map.insert k atom atomM
+                Markush  {}            -> Left "Cannot add atom to Markush"
+                Polymer  {}           -> Left "Cannot add atom to Markush"
+                Biologic {}           -> Left "Cannot add atom to Markush"
 
 
 -- findConnectedAtoms
@@ -148,7 +154,7 @@ cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b =
                                                          ++ (show i1) ++ " " ++ (show i2)))
                             Just atom2 -> cyclizeMoleculeAtAtomsWithBond m atom1 atom2 b
                                 where cyclizeMoleculeAtAtomsWithBond m a1 a2 b 
-                                        | errorTest = cyclizePerhapsMolecule (Right $ Small {atomMap=newMap})
+                                        | errorTest = cyclizePerhapsMolecule (Right $ Small {atomMap=newMap, molMarkerSet=Set.empty})
                                         | otherwise = Left "Could not cyclize molecule"
                                         where markerLabel = getMatchingClosureNumber atom1 atom2 
                                               errorTest = case markerLabel of
@@ -156,8 +162,8 @@ cyclizePerhapsMoleculeAtIndexesWithBond pm i1 i2 b =
                                                   Just label -> True
                                                -- This should not evaluate if 'Nothing' because of the guards
                                               label = (\(Just l) -> l) markerLabel  
-                                              (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureMarker atom1 label)
-                                                                     (removeClosureMarker atom2 label) b
+                                              (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureAtomMarker atom1 label)
+                                                                     (removeClosureAtomMarker atom2 label) b
                                               newMap = Map.insert i1 newAtom1 $ Map.insert i2 newAtom2 (atomMap m)
             where a1 = Map.lookup i1 (atomMap m)
                   a2 = Map.lookup i2 (atomMap m)
@@ -188,7 +194,7 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                           isClosure mk  = case mk of Closure {} -> True ; _ -> False
                           hasClosure = List.elem True $ List.map (isClosure) markers
                           connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b 
-                              | errorTest = Right $ Small {atomMap=newMap}
+                              | errorTest = Right $ Small {atomMap=newMap, molMarkerSet=Set.empty}
                               | otherwise = (Left ("Could not connect molecules at index: " ++  (show i1) ++ " " ++ (show i2)))
                               where a1 = Map.lookup i1 (atomMap m1)
                                     a2 = Map.lookup i2 (atomMap m2)
@@ -213,7 +219,7 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
 -- directly.
 {------------------------------------------------------------------------------}
 addMolecule :: Molecule -> Molecule -> PerhapsMolecule
-addMolecule m1 m2 = cyclizePerhapsMolecule (Right $ Small {atomMap=newAtomMap})
+addMolecule m1 m2 = cyclizePerhapsMolecule (Right $ Small {atomMap=newAtomMap, molMarkerSet=Set.empty})
     where newatomMap = Map.union atomMap1 atomMap2
           atomMap1 = atomMap m1
           atomMap2 = Map.mapKeysMonotonic (+startIndex) $ atomMap m2
@@ -224,7 +230,7 @@ addMolecule m1 m2 = cyclizePerhapsMolecule (Right $ Small {atomMap=newAtomMap})
 -- 
 {------------------------------------------------------------------------------}
 makeMoleculeFromAtom:: Atom -> PerhapsMolecule
-makeMoleculeFromAtom a = (Right $ Small {atomMap = Map.singleton 0 a }) -- atomMap can be empty       
+makeMoleculeFromAtom a = (Right $ Small {atomMap = (Map.singleton 0 a), molMarkerSet=Set.empty }) -- atomMap can be empty       
 
 
 -- 
@@ -232,9 +238,9 @@ makeMoleculeFromAtom a = (Right $ Small {atomMap = Map.singleton 0 a }) -- atomM
 numberOfAtoms :: Molecule -> Maybe Integer
 numberOfAtoms m = case m of
     Small {atomMap=atoms}  -> Just $ num atoms
-    Markush                -> Nothing
-    Polymer                -> Nothing
-    Biologic               -> Nothing
+    Markush  {}               -> Nothing
+    Polymer  {}               -> Nothing
+    Biologic {}               -> Nothing
     where num a = fromIntegral $ Map.size $ Map.filter isElement a
 
 
@@ -243,9 +249,9 @@ numberOfAtoms m = case m of
 numberOfHeavyAtoms :: Molecule -> Maybe Integer
 numberOfHeavyAtoms m = case m of
     Small {atomMap=atoms} -> Just $ num atoms
-    Markush     -> Nothing
-    Polymer     -> Nothing
-    Biologic    -> Nothing
+    Markush  {}    -> Nothing
+    Polymer  {}    -> Nothing
+    Biologic {}    -> Nothing
     where heavy a = Map.filter isHeavyAtom a
           num a = fromIntegral $ Map.size $ heavy a
 
@@ -257,7 +263,7 @@ fillMoleculeValence :: PerhapsMolecule -> PerhapsMolecule
 fillMoleculeValence pm = case pm of
     Left {} -> pm
     Right m -> case m of
-        Small {atomMap=atoms} -> Right $ Small newAtomMap
+        Small {atomMap=atoms} -> Right $ Small newAtomMap Set.empty
             where newAtomTuple = Map.fold (\a -> (++) [fillValence a []]) [] atoms
                   addedAtomList =  List.foldr (\a -> (++) (snd a)) [] newAtomTuple
                   numberOriginalAtoms = Map.size atoms
@@ -265,9 +271,9 @@ fillMoleculeValence pm = case pm of
                   newAtomMap1 = Map.fromList $ zip [0..(numberOriginalAtoms-1)] $ List.map fst newAtomTuple
                   newAtomMap2 = Map.fromList $ zip [numberOriginalAtoms..(numberOriginalAtoms+numberAtomsAdded-1)] addedAtomList
                   newAtomMap  = Map.union newAtomMap1 newAtomMap2
-        Markush     -> Left "Can't fill valence on a Markush."
-        Polymer     -> Left "Can't fill valence on a Polymer."
-        Biologic    -> Left "Can't fill valence on a Biologic."
+        Markush  {}   -> Left "Can't fill valence on a Markush."
+        Polymer  {}   -> Left "Can't fill valence on a Polymer."
+        Biologic {}   -> Left "Can't fill valence on a Biologic."
 
  
 {------------------------------------------------------------------------------}
@@ -276,9 +282,9 @@ molecularWeight pm = case pm of
     Left m  -> Left m
     Right m -> case m of
         Small {atomMap=atoms} -> Right $ mw atoms
-        Markush     -> Left "No MW for Markush"
-        Polymer     -> Left "No MW for Polymer"
-        Biologic    -> Left "No MW for Biologic"
+        Markush  {}   -> Left "No MW for Markush"
+        Polymer  {}   -> Left "No MW for Polymer"
+        Biologic {}   -> Left "No MW for Biologic"
         where mw a = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] a
 
 
@@ -316,7 +322,7 @@ molecularFormula :: PerhapsMolecule -> Either String String
 molecularFormula pm = case pm of
     Left s      -> Left s
     Right mol   -> case mol of 
-        Small at    -> Right molFm 
+        Small {atomMap=at}    -> Right molFm 
             where startMap = Map.empty
                   endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList at
                   -- Use foldr to accumulate and count atoms
@@ -331,9 +337,9 @@ molecularFormula pm = case pm of
                       Just val -> Just (k, val)
                       Nothing -> Nothing
                       where v = Map.lookup k m
-        Markush     -> Left "No molecular formula defined for Markush"
-        Polymer     -> Left "No molecular formula defined for Polymer"
-        Biologic    -> Left "No molecular formula defined for Biologic"
+        Markush  {}   -> Left "No molecular formula defined for Markush"
+        Polymer  {}   -> Left "No molecular formula defined for Polymer"
+        Biologic {}   -> Left "No molecular formula defined for Biologic"
 
 
 -- A function to aid in debugging.  Should not normally be used directly
@@ -348,12 +354,25 @@ moleculeFromPerhapsMolecule pm =  case pm of
 {------------------------------------------------------------------------------}
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
+
+{--
+instance Show PerhapsMolecule where
+    show m = case m of
+        Right mol -> "Valid molecule with the folling info:\n" ++ show mol
+        Left mol  -> "Invalid Molecule with error string: " ++ mol
+--}
+
 instance Show Molecule where
     show m = case m of
-       Small {atomMap=atoms} -> "Is a small molecule with atoms: " ++ show atoms
-       Markush     -> "Is a markush"
-       Polymer     -> "Is a polymer"
-       Biologic    -> "Is a Biologic"
+       Small {atomMap=atoms, molMarkerSet=mm} -> "\nIs a small molecule with formula: " 
+                ++ (\(Right a) -> a) (molecularFormula $ Right m) ++ "\n" 
+                ++ (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- " 
+                    ++ (show $ snd b))) "" (Map.toList atoms)) ++ "\n" 
+                ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
+       Markush  {}   -> "Is a markush"
+       Polymer  {}   -> "Is a polymer"
+       Biologic {}   -> "Is a Biologic"
+
 
 {------------------------------------------------------------------------------}
 instance Eq Molecule where
