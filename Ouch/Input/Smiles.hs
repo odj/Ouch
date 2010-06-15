@@ -209,6 +209,7 @@ parseSmiles s = s =~ pat::(String, String, String)
                     , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
                     , "|^[(].*|(^[/][(].*)|(^[\\][(].*)" -- return the whole string for anything that STARTS with open parens
                     , "|(^[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
+                    , "|(^[-=#\\.]{0,1}[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
                     , "|(^[/][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
                     , "|(^[\\][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
                     , ")"
@@ -229,7 +230,9 @@ nextChoppedSmile s
    | head s2 == '('         = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
    | head s2 == '/'         = Smile {smile=a2, smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProCis])}
    | head s2 == '\\'        = Smile {smile=a2, smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProTrans])}
+   | head (take 2 s2) == '['= Smile {smile=(drop 1 s2), smiles=s3, newBond=nb, mark=(Set.singleton $ Comment s2)}
    | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `Set.union` (Set.singleton $ Comment s2)}
+   
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
          (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
          (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
