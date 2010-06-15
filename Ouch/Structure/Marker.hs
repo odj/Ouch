@@ -125,68 +125,288 @@ instance Ord Marker where
    compare a b =  case a of 
           Charge {} -> case b of 
              Charge {} -> EQ
+             Position {}           -> GT
+             Closure {}            -> GT
+             Class {}              -> GT
+             Chiral {}             -> GT
+             GeoIsomer {}          -> GT
+             AromaticAtom          -> GT
+             Traversed {}          -> GT
+             ExplicitHydrogen {}   -> GT
+             Substructure {}       -> GT
+             ValenceError {}       -> GT
+             InRing {}             -> GT
+             Skip   {}             -> GT
+             Comment {}            -> GT
+             Null                  -> GT
              _ -> LT
           Position {} -> case b of 
-             Position {} ->  EQ
-             _ -> LT 
-          Closure {labelNumber=l1, bondType=b1} -> case b of 
-              Closure {labelNumber=l2, bondType=b2} -> a
-                  where a | (l1 == l2) = EQ
-                          | (l1 > l2)  = GT
-                          | (l1 < l2)  = LT
-                          | otherwise  = GT
-              _ -> LT
+             Charge {}             -> LT
+             Position {}           -> EQ
+             Closure {}            -> GT
+             Class {}              -> GT
+             Chiral {}             -> GT
+             GeoIsomer {}          -> GT
+             AromaticAtom          -> GT
+             Traversed {}          -> GT
+             ExplicitHydrogen {}   -> GT
+             Substructure {}       -> GT
+             ValenceError {}       -> GT
+             InRing {}             -> GT
+             Skip   {}             -> GT
+             Comment {}            -> GT
+             Null                  -> GT
+             _                     -> LT 
+             
+          Closure {labelNumber=l1} -> case b of 
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {labelNumber=l2} -> a
+                     where a | (l1 == l2) = EQ
+                             | (l1 > l2)  = GT
+                             | (l1 < l2)  = LT
+                             | otherwise  = GT
+          
+              Class {}              -> GT
+              Chiral {}             -> GT
+              GeoIsomer {}          -> GT
+              AromaticAtom          -> GT
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
           Class {} -> case b of 
-              Class {} -> EQ
-              _ -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> EQ
+              Chiral {}             -> GT
+              GeoIsomer {}          -> GT
+              AromaticAtom          -> GT
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
           Chiral {} -> case b of 
-              Chiral {} ->  EQ
-              _ -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> EQ
+              GeoIsomer {}          -> GT
+              AromaticAtom          -> GT
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
           GeoIsomer {} -> case b of 
-              GeoIsomer {} -> EQ
-              _ -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> EQ
+              AromaticAtom          -> GT
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
           AromaticAtom -> case b of 
-              AromaticAtom -> EQ
-              _ -> GT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> EQ
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
           Traversed {} -> case b of 
-              Traversed {} -> EQ   
-              _ -> LT 
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> EQ
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT 
           ExplicitHydrogen {} -> case b of 
-              ExplicitHydrogen {} -> EQ   
-              _ -> GT  
+                Charge {}             -> LT
+                Position {}           -> LT
+                Closure {}            -> LT
+                Class {}              -> LT
+                Chiral {}             -> LT
+                GeoIsomer {}          -> LT
+                AromaticAtom          -> LT
+                Traversed {}          -> LT
+                ExplicitHydrogen {}   -> EQ
+                Substructure {}       -> GT
+                ValenceError {}       -> GT
+                InRing {}             -> GT
+                Skip   {}             -> GT
+                Comment {}            -> GT
+                Null                  -> GT
+                _                     -> LT 
           Substructure {substructureNumber=l1} -> case b of 
-              Substructure {substructureNumber=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
-              _ -> LT
+                  Charge {}             -> LT
+                  Position {}           -> LT
+                  Closure {}            -> LT
+                  Class {}              -> LT
+                  Chiral {}             -> LT
+                  GeoIsomer {}          -> LT
+                  AromaticAtom          -> LT
+                  Traversed {}          -> LT
+                  ExplicitHydrogen {}   -> LT
+                  Substructure {substructureNumber=l2} -> a
+                          where a | (l1 == l2) = EQ
+                                  | (l1 > l2)  = GT
+                                  | (l1 < l2)  = LT
+                                  | otherwise  = EQ
+                  ValenceError {}       -> GT
+                  InRing {}             -> GT
+                  Skip   {}             -> GT
+                  Comment {}            -> GT
+                  Null                  -> GT
+                  _                     -> LT
+
           ValenceError {valenceError=l1} -> case b of 
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
               ValenceError {valenceError=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
-              _ -> LT
+                      where a | (l1 == l2) = EQ
+                              | (l1 > l2)  = GT
+                              | (l1 < l2)  = LT
+                              | otherwise  = EQ
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
+              
           InRing {ringNumber=l1} -> case b of 
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
+              ValenceError {}       -> LT
               InRing {ringNumber=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ
-              _ -> LT   
+                      where a | (l1 == l2) = EQ
+                              | (l1 > l2)  = GT
+                              | (l1 < l2)  = LT
+                              | otherwise  = EQ
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
+ 
           Skip -> case b of 
-              Skip -> EQ
-              _ -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
+              ValenceError {}       -> LT
+              InRing {}             -> LT
+              Skip   {}             -> EQ
+              Comment {}            -> GT
+              Null                  -> GT
+              _                     -> LT
+
+
           Comment {comment=l1} -> case b of 
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
+              ValenceError {}       -> LT
+              InRing {}             -> LT
+              Skip   {}             -> LT
               Comment {comment=l2} -> a
-                    where a | (l1 == l2) = EQ
-                            | (l1 > l2)  = GT
-                            | (l1 < l2)  = LT
-                            | otherwise  = EQ  
-              _ -> LT
+                      where a | (l1 == l2) = EQ
+                              | (l1 > l2)  = GT
+                              | (l1 < l2)  = LT
+                              | otherwise  = EQ
+              Null                  -> LT
+              _                     -> LT
+              
+
           Null -> case b of 
-              Null -> EQ 
-              _ -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
+              ValenceError {}       -> LT
+              InRing {}             -> LT
+              Skip   {}             -> LT
+              Comment {}            -> LT
+              Null                  -> EQ
+              _                     -> LT
+
           _ -> case b of
               _  -> LT

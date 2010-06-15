@@ -263,8 +263,7 @@ nextChoppedSmile s
                | otherwise             = Single     
          
          -- Get atom closure info and parse it, then merge with above geoMarker
-         markerSet          =  (Set.fromList $ parseClosureMarkers lb2 [])
-         --markerSet          = Set.union markGeo (Set.fromList $ parseClosureMarkers lb2 [])
+         markerSet          = Set.union markGeo (Set.fromList $ parseClosureMarkers lb2 [])
          (tr1, tr2, tr3)    = b =~ "(.*\\])|()"::(String, String, String)
          (lb1, lb2, lb3)    = tr3 =~ "(([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+)"::(String, String, String)
          smi                | tr2 == ""  = lb1
