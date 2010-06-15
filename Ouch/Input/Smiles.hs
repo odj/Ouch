@@ -149,7 +149,8 @@ makeAtomMoleculeFromChop nb = case nb of
 
 makeAtomMoleculeFromBracketChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromBracketChop sb = mol
-    where (s1, s2, s3)    = (smile sb) =~ "(^[\\[].*(\\]))"::(String, String, String)  -- Contents of the brackets
+    where (s1, s2, s3)    = (smile sb) =~ "(^(\\[)([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"::(String, String, String) 
+          --(s1, s2, s3)    = (smile sb) =~ "(^[\\[].*(\\]))"::(String, String, String)  -- Contents of the brackets
           s =  init $ tail s2   -- Drop the brackets
           
           -- Get charge information
@@ -206,66 +207,73 @@ parseSmiles s = s =~ pat::(String, String, String)
     -- Need a more general format to recognize two-letter elements (or maybe just enumerate them?) 
     where pat = List.foldr (++) "" patList 
           patList = [ "("
-                    , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  -- Search for first atom + bond/marker
-                    , "|^[(].*|(^[/][(].*)|(^[\\][(].*)" -- return the whole string for anything that STARTS with open parens
-                    , "|(^[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"  -- return next atom segment within square brackets plus closure ID's afterwards
-                    , "|(^[-=#\\.]{0,1}[\\[]([+-@:a-zA-Z]|[0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
-                    , "|(^[/][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
-                    , "|(^[\\][\\[]([+-@:a-zA-Z]|[0-9]|])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
+                    -- Search for first atom + bond/marker
+                    , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  
+                    -- return the whole string for anything that STARTS with open parens
+                    , "|^[(].*|(^[/][(].*)|(^[\\][(].*)" 
+                    -- return next atom segment within square brackets plus closure ID's afterwards
+                    , "|(^([-=#\\.][\\[]|[/][\\[]|[\\\\[])([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"  
                     , ")"
                     ]
 
-                          
+                      
 -- nextSmilesSubstring
 -- Function strips atom/bond info into a new type.  
 {------------------------------------------------------------------------------}
 nextChoppedSmile :: String -> ChoppedSmile 
 nextChoppedSmile s
-   | s2 == "" || s1 /= ""   = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=Set.singleton $ Comment s2}
-   | (take 2 s2) == "/["    = Smile {smile=(drop 1 s2), smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProCis])}
-   | (take 2 s2) == "\\["   = Smile {smile=(drop 1 s2), smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProTrans])}
-   | (take 2 s2) == "/("    = SubSmile {smile=bb2', smiles=ss3', newBond=nb2', mark=(Set.fromList [Comment s2, GeoIsomer ProCis])}
-   | (take 2 s2) == "\\("   = SubSmile {smile=bb2', smiles=ss3', newBond=nb2', mark=(Set.fromList [Comment s2, GeoIsomer ProTrans])}
-   | head s2 == '['         = Smile {smile=s2, smiles=s3, newBond=nb, mark=(Set.singleton $ Comment s2)}
-   | head s2 == '('         = SubSmile {smile=bb2, smiles=ss3, newBond=nb2, mark=Set.singleton $ Comment ss2}
-   | head s2 == '/'         = Smile {smile=a2, smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProCis])}
-   | head s2 == '\\'        = Smile {smile=a2, smiles=s3, newBond=nb, mark=(Set.fromList [Comment s2, GeoIsomer ProTrans])}
-   | head (take 2 s2) == '['= Smile {smile=(drop 1 s2), smiles=s3, newBond=nb, mark=(Set.singleton $ Comment s2)}
-   | otherwise              = Smile {smile=a2, smiles=s3, newBond=nb, mark=markerSet `Set.union` (Set.singleton $ Comment s2)}
+   | s2 == "" || s1 /= ""   = SmilesError   {smile=s1, smiles=s, newBond=NoBond, mark=(Set.empty)}
+   | isSubSmile             = SubSmile      {smile=b', smiles=ss3, newBond=nb', mark=markerSet}
+   | otherwise              = Smile         {smile=smi, smiles=s3, newBond=nb, mark=markerSet}
    
    where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
-         (b1, b2, b3)       = s2 =~ "(^[-=#\\.])"::(String, String, String) -- Get bond info for single atoms
-         (lb1, lb2, lb3)    = s2 =~ "([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+"::(String, String, String) -- Get atom closure bond substring
-         (a1, a2, a3)       = s2 =~ "([A-Za-z]+)"::(String, String, String) -- Atom only, remove bond comments, etc
-
-         (ss1, ss2, ss3)    = findNextSubSmile s 1
-         (ss1', ss2', ss3') = findNextSubSmile (drop 1 s) 1    
-
-         (bb1, bb2, bb3)    = ss2 =~ "([\\[A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles
-         (bb1', bb2', bb3') = ss2' =~ "([\\[A-Za-z]+.*)"::(String, String, String) -- Get bond info for subsmiles with geometry marker     
          
-         nb  | b2 == "."              = NoBond
-             | b2 `elem` ["", "-"]    = Single
-             | b2 == "="              = Double
-             | b2 == "#"              = Triple
-             | otherwise              = Single
-             
-         -- need to process a different string to determine bond type if parse gives a subsmile
-         nb2 | bb1 == "."             = NoBond
-             | bb1 == "" || bb2 == "-"= Single
-             | bb1 == "="             = Double
-             | bb1 == "#"             = Triple
-             | otherwise              = Single
-             
-         -- need to process a different string to determine bond type if parse gives a subsmile
-         nb2'| bb1' == "."             = NoBond
-             | bb1' == "" || bb2' == "-"= Single
-             | bb1' == "="             = Double
-             | bb1' == "#"             = Triple
-             | otherwise              = Single
-         -- This is a very simple parse of ring closure markers.  
-         -- Does not accomodate "%" notation (yet)
-         markerSet = Set.fromList $ parseClosureMarkers lb2 []
+         -- Strip off double-bond geometry info first!
+         (g1, g2, g3)       = s2 =~ "(^[/\\])"::(String, String, String)
+         markGeo            | g2 == "/"         = Set.singleton (GeoIsomer ProCis)
+                            | g2 == "\\"        = Set.singleton (GeoIsomer ProTrans)
+                            | g2 == ""          = Set.singleton Null
+                            | otherwise         = Set.singleton Null
+        -- Use the remainder that contains information for all operations below
+         g                   | length g1 /= 0 = g1 | length g3 /= 0 = g3
+                                
+        -- What kind of initial parse we get determines how to handle it.
+         isSubSmile | length g /= 0 = head g == '(' | otherwise = False
+         (ss1, ss2, ss3)  | length g /= 0 = findNextSubSmile g 1 
+                          | otherwise = ("", "", "")
+                  
+         -- Get bond info for single atoms (or bracketed atoms)
+         (b1, b2, b3)       = g =~ "(^[-=#\\.])"::(String, String, String)
+         b                   | length b1 /= 0 = b1 
+                             | length b3 /= 0 = b3 
+         nb   | b2 == "."              = NoBond
+              | b2 `elem` ["", "-"]    = Single
+              | b2 == "="              = Double
+              | b2 == "#"              = Triple
+              | otherwise              = Single
+        -- Get bond info for subsmiles
+         (b1', b2', b3')    = ss2 =~ "(^[-=#\\.])"::(String, String, String) 
+         b'                   | length b1' /= 0 = b1' 
+                              | length b3' /= 0 = b3'
+                              -- | otherwise = ""
+         nb'   | b2' == "."            = NoBond
+               | b2' `elem` ["", "-"]  = Single
+               | b2' == "="            = Double
+               | b2' == "#"            = Triple
+               | otherwise             = Single     
+         
+         -- Get atom closure info and parse it, then merge with above geoMarker
+         markerSet          =  (Set.fromList $ parseClosureMarkers lb2 [])
+         --markerSet          = Set.union markGeo (Set.fromList $ parseClosureMarkers lb2 [])
+         (tr1, tr2, tr3)    = b =~ "(.*\\])|()"::(String, String, String)
+         (lb1, lb2, lb3)    = tr3 =~ "(([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+)"::(String, String, String)
+         smi                | tr2 == ""  = lb1
+                            | otherwise  = tr2
+
+
+
+    
+
 
 
 

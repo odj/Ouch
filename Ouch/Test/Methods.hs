@@ -67,8 +67,8 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
 performTests :: [TestData] -> (String, String)
 performTests [] = ("", "")
 performTests td = (summary, errorLog)
-   where summary = "\tPassed: " ++ show ((length $ rights results) - (length $ lines errorLog)) ++ "\n"
-                   ++ "\tFailed: " ++ show ((length $ lefts results) + (length $ lines errorLog)) ++ "\n"
+   where summary = "\tPassed: " ++ show ((length td) - (length $ lines errorLog)) ++ "\n"
+                   ++ "\tFailed: " ++ show ((length $ lines errorLog)) ++ "\n"
                    ++ "\n"  ++ "\n++++++++++++++++++++\nPerformed " ++ show (length td) ++ " tests.\n--------------------\n"
          errorLog = detail td results
          results = List.map (\a -> (function a) (input a)) td

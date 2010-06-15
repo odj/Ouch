@@ -134,7 +134,7 @@ instance Ord Marker where
                   where a | (l1 == l2) = EQ
                           | (l1 > l2)  = GT
                           | (l1 < l2)  = LT
-                          | otherwise  = EQ
+                          | otherwise  = GT
               _ -> LT
           Class {} -> case b of 
               Class {} -> EQ
@@ -147,7 +147,7 @@ instance Ord Marker where
               _ -> LT
           AromaticAtom -> case b of 
               AromaticAtom -> EQ
-              _ -> LT
+              _ -> GT
           Traversed {} -> case b of 
               Traversed {} -> EQ   
               _ -> LT 
