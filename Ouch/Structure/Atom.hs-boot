@@ -26,8 +26,22 @@
 -- This file is needed to terminate recursive import relationships 
 
 module Ouch.Structure.Atom where
+import Data.Maybe
+import {-# SOURCE #-} Ouch.Structure.Bond
+import {-# SOURCE #-} Ouch.Structure.Marker
+import Data.Set as Set
+import qualified Data.Map as Map
+import qualified Data.List as List
 
-data Atom
+data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set AtomMarker)}
+            | LonePair {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Electron {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Unfilled {bondList::[Bond], markerSet::(Set AtomMarker)}
+            | Unspecified {bondList::[Bond], markerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Open {bondList::[Bond], markerSet::(Set AtomMarker)}
+            
+atomicSymbolForAtom :: Atom -> String
+
 instance Eq Atom
 instance Show Atom 
 instance Ord Atom

@@ -32,6 +32,8 @@ import {-# SOURCE #-} Ouch.Structure.Atom
 import Ouch.Structure.Marker
 
 
+
+
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
@@ -52,13 +54,19 @@ data Bond = Sigma {bondsTo::Atom}
 {------------------------------------------------------------------------------}    
 instance Show Bond where
   show b = case b of
-      Sigma atom -> "Sigma"
-      Pi atom -> "Pi"
-      Aromatic atom -> "Aromatic"
-      Delta atom -> "Delta"
-      Hbond atom -> "Hydrogen"
-      Ionic atom -> "Ionic"
-      Antibond atom -> "AntiBond"
+      Sigma atom -> " -" ++ desc
+      Pi atom -> " =" ++ desc
+      Aromatic atom -> " ~" ++ desc
+      Delta atom -> " delta-" ++ desc
+      Hbond atom -> " H." ++ desc
+      Ionic atom -> " +/-" ++ desc
+      Antibond atom -> " !" ++ desc
+      where atom' = bondsTo b
+            desc = case atom' of
+                Element {} -> atomicSymbolForAtom atom'
+                LonePair {} -> "LP"
+                Electron {} -> "EL"
+                Unfilled {} -> "UF"
   
  
 instance Eq Bond where

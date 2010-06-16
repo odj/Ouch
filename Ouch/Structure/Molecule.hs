@@ -377,7 +377,7 @@ moleculeFromPerhapsMolecule pm =  case pm of
 
 instance Show PerhapsMolecule where
     show m = case m of
-        Mol mol -> "\n+++++++++++++++++++++++++++++++++++\nValid molecule with the folling info:" ++ show mol
+        Mol mol -> "\n+++++++++++++++++++++++++++++++++++\nValid molecule with the following info:" ++ show mol
         MolError mol  -> "Invalid Molecule with error string: " ++ mol
 
 instance Show Molecule where

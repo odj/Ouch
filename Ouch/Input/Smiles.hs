@@ -148,8 +148,8 @@ makeAtomMoleculeFromChop nb = case nb of
                                    | a == "*"       =  Mol $ Small  (Map.singleton 0 $ Unspecified [] markSetAll) Set.empty -- Wildcard Atom
                                    | otherwise      =  MolError  $ "ERROR: Atom not recognized for symbol: " ++ a
                                    where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-                                         markSetClass = Set.empty 
-                                         markSetAll = markSetType `Set.union` mark nb
+                                         markSetClass = Set.singleton $ Class 0 
+                                         markSetAll = markSetType `Set.union` (mark nb) `Set.union` markSetClass
                                          a = [toUpper c | c <- smile nb] 
 
 
@@ -203,7 +203,8 @@ makeAtomMoleculeFromBracketChop sb = mol
           -- molH = foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
          
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureAtomMarkers s3 [])) 
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] 
+                                                            ++ (parseClosureAtomMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
