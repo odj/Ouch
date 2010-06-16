@@ -35,6 +35,7 @@ module Ouch.Structure.Molecule
      , numberOfAtoms
      , numberOfHeavyAtoms
      , fillMoleculeValence
+     , hasHangingClosure
      , molecularWeight
      , exactMass
      , numberOfHydrogenBondDonors
@@ -140,6 +141,22 @@ cyclizePerhapsMolecule pm = case pm of
                             splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
 
 
+hasHangingClosure :: PerhapsMolecule -> Bool
+hasHangingClosure pm = case pm of
+    MolError {}  -> False
+    Mol m  -> case m of
+        Small {}       -> output
+        Markush  {}    -> False
+        Polymer  {}    -> False
+        Biologic {}    -> False
+        where markers       = List.map markerSet $ List.map snd $ Map.toList (atomMap m)
+              isClosure mk  = case mk of Closure {} -> True ; _ -> False
+              splitMk = List.map fst $ List.map (Set.partition isClosure) markers         
+              firstClosure = List.findIndex (/=Set.empty) splitMk
+              output = case firstClosure of 
+                  Nothing -> False
+                  Just atom1 -> True
+
 -- cyclizePerhapsMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 
@@ -196,7 +213,8 @@ connectPerhapsMoleculesAtIndicesWithBond pm1 i1 pm2 i2 b =
                           hasClosure = List.elem True $ List.map (isClosure) markers
                           connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b 
                               | errorTest = Mol $ Small {atomMap=newMap, molMarkerSet=Set.empty}
-                              | otherwise = (MolError ("Could not connect molecules at index: " ++  (show i1) ++ " " ++ (show i2)))
+                              | otherwise = (MolError ("Could not connect molecules at index: " 
+                                                ++  (show i1) ++ " " ++ (show i2)))
                               where a1 = Map.lookup i1 (atomMap m1)
                                     a2 = Map.lookup i2 (atomMap m2)
                                     -- An error gives a 'False' value
@@ -231,7 +249,7 @@ addMolecule m1 m2 = cyclizePerhapsMolecule (Mol $ Small {atomMap=newAtomMap, mol
 -- 
 {------------------------------------------------------------------------------}
 makeMoleculeFromAtom:: Atom -> PerhapsMolecule
-makeMoleculeFromAtom a = (Mol $ Small {atomMap = (Map.singleton 0 a), molMarkerSet=Set.empty }) -- atomMap can be empty       
+makeMoleculeFromAtom a = (Mol $ Small {atomMap = (Map.singleton 0 a), molMarkerSet=Set.empty })       
 
 
 -- 

@@ -73,8 +73,11 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 makeMoleculeFromSmiles::String -> PerhapsMolecule
 makeMoleculeFromSmiles smi = mol
     where mol'  = fillMoleculeValence $ makeScaffoldFromSmiles smi
+          info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
+          closureWarning | hasHangingClosure mol' = Set.singleton $ Warning "Molecule has unmatched bond closures."
+                         | otherwise              = Set.empty
           mol   = case mol' of
-                Mol m  -> Mol $ Small (atomMap m) $ (Info smi) `Set.insert` (molMarkerSet m) 
+                Mol m  -> Mol $ Small (atomMap m) $ foldr Set.union Set.empty [(molMarkerSet m), info, closureWarning]  
                 MolError {}  -> mol'
     
 
@@ -187,7 +190,7 @@ makeAtomMoleculeFromBracketChop sb = mol
           markClass = Class classNumber
           
           -- Get Stereochemical Information
-          scCount = List.foldr (\c n -> if (c == '@') then n+1 else n) 0 s
+          scCount = foldr (\c n -> if (c == '@') then n+1 else n) 0 s
           markStereo | scCount == 1 = Null -- (Chiral Levo)
                      | scCount == 2 = Null -- (Chiral Dextro)
                      | otherwise = Null
@@ -197,7 +200,7 @@ makeAtomMoleculeFromBracketChop sb = mol
          -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
           -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           -- Need to fill the rest with radicals to keep the bracket designation explicit.
-          -- molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
+          -- molH = foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
          
           markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureAtomMarkers s3 [])) 
@@ -208,7 +211,7 @@ makeAtomMoleculeFromBracketChop sb = mol
 parseSmiles :: String -> (String, String, String)
 parseSmiles s = s =~ pat::(String, String, String)
     -- Need a more general format to recognize two-letter elements (or maybe just enumerate them?) 
-    where pat = List.foldr (++) "" patList 
+    where pat = foldr (++) "" patList 
           patList = [ "("
                     -- Search for first atom + bond/marker
                     , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  
