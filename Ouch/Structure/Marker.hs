@@ -252,7 +252,7 @@ instance Ord AtomMarker where
               Comment {}            -> GT
               Null                  -> GT
               _                     -> LT
-          Traversed {} -> case b of 
+          Traversed {order=l1} -> case b of 
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -260,7 +260,10 @@ instance Ord AtomMarker where
               Chiral {}             -> LT
               GeoIsomer {}          -> LT
               AromaticAtom          -> LT
-              Traversed {}          -> EQ
+              Traversed {order=l2}  -> a
+                where a | l1 > l2  = GT
+                        | l1 < l2  = LT
+                        | l1 == l2 = EQ
               ExplicitHydrogen {}   -> GT
               Substructure {}       -> GT
               ValenceError {}       -> GT
