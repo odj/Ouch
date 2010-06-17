@@ -72,16 +72,6 @@ data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarke
                 | Biologic {molMarkerSet::(Set MoleculeMarker)}
                 
 
--- Use this data structure when a molecule is still being constructed and
--- might encounter an error later on.  When an error is encountered, stop construction
--- and propogate error message to a function that actually cares.  Used mostly in
--- INPUT module
-{--
-data PerhapsMolecule =       Mol Molecule
-                           | MolError String
-
---}
-
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
@@ -294,9 +284,11 @@ fillMoleculeValence pm = case pm of
         Polymer  {}   -> MolError "Can't fill valence on a Polymer."
         Biologic {}   -> MolError "Can't fill valence on a Biologic."
 
- 
+ -- moleculeHasError
+ -- Yes if markerSet contains any 'MolError' value
 {------------------------------------------------------------------------------}
 moleculeHasError :: PerhapsMolecule -> Bool
+moleculeHasError 
  
 {------------------------------------------------------------------------------}
 addMarkerToAtomAtIndex :: PerhapsMolecule -> PerhapsMolecule 
