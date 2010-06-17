@@ -94,6 +94,9 @@ instance Show MoleculeMarker where
 
 instance Eq AtomMarker where
   a == b = case a of 
+      Label {labelNumber=l1} -> case b of
+        Label {labelNumber=l2} -> if (l1 == l2) then True else False
+        _ -> False
       Position {position=l1} -> case b of 
           Position {position=l2} -> if (l1 == l2) then True else False
           _ -> False
@@ -144,8 +147,27 @@ instance Eq AtomMarker where
 
 instance Ord AtomMarker where
    compare a b =  case a of 
+          Label{}   -> case b of
+              Label {}              -> EQ
+              Charge {}             -> GT
+              Position {}           -> GT
+              Closure {}            -> GT
+              Class {}              -> GT
+              Chiral {}             -> GT
+              GeoIsomer {}          -> GT
+              AromaticAtom          -> GT
+              Traversed {}          -> GT
+              ExplicitHydrogen {}   -> GT
+              Substructure {}       -> GT
+              ValenceError {}       -> GT
+              InRing {}             -> GT
+              Skip   {}             -> GT
+              Comment {}            -> GT
+              Null                  -> GT
+              _ -> LT   
           Charge {} -> case b of 
-             Charge {} -> EQ
+             Label {}              -> LT
+             Charge {}             -> EQ
              Position {}           -> GT
              Closure {}            -> GT
              Class {}              -> GT
@@ -162,6 +184,7 @@ instance Ord AtomMarker where
              Null                  -> GT
              _ -> LT
           Position {} -> case b of 
+             Label {}              -> LT
              Charge {}             -> LT
              Position {}           -> EQ
              Closure {}            -> GT
@@ -180,6 +203,7 @@ instance Ord AtomMarker where
              _                     -> LT 
              
           Closure {labelNumber=l1} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {labelNumber=l2} -> a
@@ -202,6 +226,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT
           Class {} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -219,6 +244,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT
           Chiral {} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -236,6 +262,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT
           GeoIsomer {} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -253,6 +280,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT
           AromaticAtom -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -270,6 +298,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT
           Traversed {order=l1} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -290,6 +319,7 @@ instance Ord AtomMarker where
               Null                  -> GT
               _                     -> LT 
           ExplicitHydrogen {} -> case b of 
+                Label {}              -> LT
                 Charge {}             -> LT
                 Position {}           -> LT
                 Closure {}            -> LT
@@ -307,6 +337,7 @@ instance Ord AtomMarker where
                 Null                  -> GT
                 _                     -> LT 
           Substructure {substructureNumber=l1} -> case b of 
+                  Label {}              -> LT
                   Charge {}             -> LT
                   Position {}           -> LT
                   Closure {}            -> LT
@@ -329,6 +360,7 @@ instance Ord AtomMarker where
                   _                     -> LT
 
           ValenceError {valenceError=l1} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -351,6 +383,7 @@ instance Ord AtomMarker where
               _                     -> LT
               
           InRing {ringNumber=l1} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -373,6 +406,7 @@ instance Ord AtomMarker where
               _                     -> LT
  
           Skip -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -392,6 +426,7 @@ instance Ord AtomMarker where
 
 
           Comment {comment=l1} -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -415,6 +450,7 @@ instance Ord AtomMarker where
               
 
           Null -> case b of 
+              Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT

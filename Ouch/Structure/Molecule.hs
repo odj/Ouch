@@ -81,7 +81,6 @@ data PerhapsMolecule =       Mol Molecule
 
 
 
-
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
@@ -380,6 +379,8 @@ instance Show PerhapsMolecule where
         Mol mol -> "\n+++++++++++++++++++++++++++++++++++\nValid molecule with the following info:" ++ show mol
         MolError mol  -> "Invalid Molecule with error string: " ++ mol
 
+        
+        
 instance Show Molecule where
     show m = case m of
        Small {atomMap=atoms, molMarkerSet=mm} -> "\nIs a small molecule with formula: " 
