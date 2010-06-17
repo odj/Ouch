@@ -79,7 +79,6 @@ type PerhapsMolecule =  (Either String Molecule)
 
 
 
-
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
@@ -362,6 +361,8 @@ instance Show PerhapsMolecule where
         Left mol  -> "Invalid Molecule with error string: " ++ mol
 --}
 
+        
+        
 instance Show Molecule where
     show m = case m of
        Small {atomMap=atoms, molMarkerSet=mm} -> "\nIs a small molecule with formula: " 
