@@ -44,7 +44,7 @@ module Ouch.Structure.Molecule
      , numberOfRings
      , numberOfRotatableBonds
      , molecularFormula
-     , connectPerhapsMoleculesAtIndicesWithBond
+     , connectMoleculesAtIndicesWithBond
 
      
      ) where
@@ -101,11 +101,11 @@ findConnectedAtoms a = [a]
 -- cyclizePerhapsMolecule
 -- Find all matching closure instances and cyclize on matched pairs.
 {------------------------------------------------------------------------------}
-cyclizePerhapsMolecule :: Molecule -> Molecule
-cyclizePerhapsMolecule m = if (moleculeHasError m) then m else case m of
+cyclizeMolecule :: Molecule -> Molecule
+cyclizeMolecule m = if (moleculeHasError m) then m else case m of
         Small {}       -> case tpl of 
                             Nothing       -> m
-                            Just (a1, a2) -> cyclizePerhapsMoleculeAtIndexesWithBond m a1 a2 bond
+                            Just (a1, a2) -> cyclizeMoleculeAtIndexesWithBond m a1 a2 bond
                                 where  bond = getMatchingClosureBondType atom1 atom2
                                        atom1 = (\(Just a) -> a) $ Map.lookup a1 (atomMap m)
                                        atom2 = (\(Just a) -> a) $ Map.lookup a2 (atomMap m)
@@ -145,8 +145,8 @@ hasHangingClosure m = if (moleculeHasError m) then False else case m of
 -- cyclizePerhapsMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 
-cyclizePerhapsMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-cyclizePerhapsMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then m else case a1 of
+cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then m else case a1 of
         Nothing     -> (giveMoleculeError m ("Could not connect molecules at index: " 
                                      ++ (show i1) ++ " " ++ (show i2)))
         Just atom1  -> case a2 of
@@ -154,7 +154,7 @@ cyclizePerhapsMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then
                                          ++ (show i1) ++ " " ++ (show i2)))
             Just atom2 -> cyclizeMoleculeAtAtomsWithBond m atom1 atom2 b
                 where cyclizeMoleculeAtAtomsWithBond m a1 a2 b 
-                        | errorTest = cyclizePerhapsMolecule (m {atomMap=newMap}) -- !!!Check this!!!
+                        | errorTest = cyclizeMolecule (m {atomMap=newMap}) -- !!!Check this!!!
                         | otherwise = giveMoleculeError m "Could not cyclize molecule"
                         where markerLabel = getMatchingClosureNumber atom1 atom2 
                               errorTest = case markerLabel of
@@ -178,18 +178,18 @@ cyclizePerhapsMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then
 -- respective indices.  Return an error if indices or PerhapsMolecules are
 -- invalid.
 {------------------------------------------------------------------------------}
-connectPerhapsMoleculesAtIndicesWithBond::Molecule -> Int -> 
+connectMoleculesAtIndicesWithBond::Molecule -> Int -> 
                                           Molecule -> Int -> 
                                           NewBond -> Molecule
-connectPerhapsMoleculesAtIndicesWithBond m1 i1 m2 i2 b = 
+connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = 
     if (moleculeHasError m1) then m1 else 
-    if (moleculeHasError m1) then m2 else m12
-        where m12 | hasClosure = cyclizePerhapsMolecule $ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
-                  | otherwise  = connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b
+    if (moleculeHasError m2) then m2 else m12
+        where m12 | hasClosure = cyclizeMolecule $ connectMolecules m1 i1 m2 i2 b
+                  | otherwise  = connectMolecules m1 i1 m2 i2 b
               markers       = List.foldr ((++) . Set.toList . markerSet) [] $ List.map snd $ Map.toList (atomMap m2)
               isClosure mk  = case mk of Closure {} -> True ; _ -> False
               hasClosure    = List.elem True $ List.map (isClosure) markers
-              connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b 
+              connectMolecules m1 i1 m2 i2 b 
                   | errorTest = Small {atomMap=newMap, molMarkerSet=(Set.union (molMarkerSet m1) (molMarkerSet m2))}
                   | otherwise = giveMoleculeError m1 ("Could not connect molecules at index: " 
                                     ++  (show i1) ++ " " ++ (show i2))
@@ -218,7 +218,7 @@ connectPerhapsMoleculesAtIndicesWithBond m1 i1 m2 i2 b =
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = if (moleculeHasError m1) then m1 else 
                     if (moleculeHasError m1) then m2 else m12
-    where m12 = cyclizePerhapsMolecule (Small {atomMap=newAtomMap, molMarkerSet=newMarkerSet})
+    where m12 = cyclizeMolecule (Small {atomMap=newAtomMap, molMarkerSet=newMarkerSet})
           newatomMap = Map.union atomMap1 atomMap2
           atomMap1 = atomMap m1
           atomMap2 = Map.mapKeysMonotonic (+startIndex) $ atomMap m2
@@ -368,7 +368,7 @@ molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
 
         
 instance Show Molecule where
-    show m = case m of
+    show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
        Small {atomMap=atoms, molMarkerSet=mm} -> "\nIs a small molecule with formula: " 
                 ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n" 
                 ++ (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- " 
