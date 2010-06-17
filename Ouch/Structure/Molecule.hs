@@ -76,10 +76,11 @@ data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarke
 -- might encounter an error later on.  When an error is encountered, stop construction
 -- and propogate error message to a function that actually cares.  Used mostly in
 -- INPUT module
+{--
 data PerhapsMolecule =       Mol Molecule
                            | MolError String
 
-
+--}
 
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
@@ -295,6 +296,15 @@ fillMoleculeValence pm = case pm of
 
  
 {------------------------------------------------------------------------------}
+moleculeHasError :: PerhapsMolecule -> Bool
+ 
+{------------------------------------------------------------------------------}
+addMarkerToAtomAtIndex :: PerhapsMolecule -> PerhapsMolecule 
+ 
+{------------------------------------------------------------------------------}
+updateAtomMarkerLabels :: PerhapsMolecule -> PerhapsMolecule 
+ 
+{------------------------------------------------------------------------------}
 molecularWeight :: PerhapsMolecule -> Either String Double
 molecularWeight pm = case pm of
     MolError m  -> Left m
@@ -373,12 +383,12 @@ moleculeFromPerhapsMolecule pm =  case pm of
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
 
-
+{--
 instance Show PerhapsMolecule where
     show m = case m of
         Mol mol -> "\n+++++++++++++++++++++++++++++++++++\nValid molecule with the following info:" ++ show mol
         MolError mol  -> "Invalid Molecule with error string: " ++ mol
-
+--}
         
         
 instance Show Molecule where

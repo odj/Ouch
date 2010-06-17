@@ -34,27 +34,28 @@ module Ouch.Structure.Marker (
 import {-# SOURCE #-} Ouch.Structure.Atom
         
 {------------------------------------------------------------------------------}
-data AtomMarker =  Label {labelNumber::Integer}   -- OUCH specific label
-              | Charge {charge::Integer}
-              | Position {position::(Double, Double, Double)}  -- x, y, z vector
-              | Closure {labelNumber::Integer, bondType::NewBond}
-              | Class {classNumber::Integer}
-              | Chiral {chirality::Chirality}
-              | GeoIsomer {geoIsomer::Geometry}
-              | AromaticAtom
-              | Traversed {order::Integer}
-              | ExplicitHydrogen {numberH::Integer}
-              | Substructure {substructureNumber::Integer}
-              | ValenceError {valenceError::String}
-              | InRing {ringNumber::Integer}
-              | Skip
-              | Comment {comment::String}
-              | Null  -- This is a dummy value for functions that append marker list for simplicity.
-              deriving (Show)
+data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label
+                  | Charge {charge::Integer}
+                  | Position {position::(Double, Double, Double)}  -- x, y, z vector
+                  | Closure {labelNumber::Integer, bondType::NewBond}
+                  | Class {classNumber::Integer}
+                  | Chiral {chirality::Chirality}
+                  | GeoIsomer {geoIsomer::Geometry}
+                  | AromaticAtom
+                  | Traversed {order::Integer}
+                  | ExplicitHydrogen {numberH::Integer}
+                  | Substructure {substructureNumber::Integer}
+                  | ValenceError {valenceError::String}
+                  | InRing {ringNumber::Integer}
+                  | Skip
+                  | Comment {comment::String}
+                  | Null  -- This is a dummy value for functions that append marker list for simplicity.
+                  deriving (Show)
 
 data MoleculeMarker =   Info     {molMarker::String}
-                      | Warning  {molMarker::String} 
                       | Name     {molMarker::String}
+                      | Warning  {molMarker::String} 
+                      | MolError {molMarker::String}
                       deriving (Eq, Ord)
                       
 
@@ -93,10 +94,7 @@ instance Show MoleculeMarker where
 
 
 instance Eq AtomMarker where
-  a == b = case a of 
-      Label {labelNumber=l1} -> case b of
-        Label {labelNumber=l2} -> if (l1 == l2) then True else False
-        _ -> False
+   a == b = case a of 
       Position {position=l1} -> case b of 
           Position {position=l2} -> if (l1 == l2) then True else False
           _ -> False
@@ -142,8 +140,10 @@ instance Eq AtomMarker where
       Null -> case b of 
           Null -> True 
           _ -> False
-      _ -> case b of
-          _  -> False      
+      Label {labelNumber=l1} -> case b of
+            Label {labelNumber=l2} -> if (l1 == l2) then True else False
+            _ -> False
+       
 
 instance Ord AtomMarker where
    compare a b =  case a of 
@@ -164,7 +164,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _ -> LT   
+   
           Charge {} -> case b of 
              Label {}              -> LT
              Charge {}             -> EQ
@@ -182,7 +182,7 @@ instance Ord AtomMarker where
              Skip   {}             -> GT
              Comment {}            -> GT
              Null                  -> GT
-             _ -> LT
+
           Position {} -> case b of 
              Label {}              -> LT
              Charge {}             -> LT
@@ -200,7 +200,7 @@ instance Ord AtomMarker where
              Skip   {}             -> GT
              Comment {}            -> GT
              Null                  -> GT
-             _                     -> LT 
+ 
              
           Closure {labelNumber=l1} -> case b of 
               Label {}              -> LT
@@ -224,7 +224,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
           Class {} -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
@@ -242,7 +242,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
           Chiral {} -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
@@ -260,7 +260,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
           GeoIsomer {} -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
@@ -278,7 +278,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
           AromaticAtom -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
@@ -296,7 +296,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
           Traversed {order=l1} -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
@@ -317,7 +317,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT 
+ 
           ExplicitHydrogen {} -> case b of 
                 Label {}              -> LT
                 Charge {}             -> LT
@@ -335,7 +335,7 @@ instance Ord AtomMarker where
                 Skip   {}             -> GT
                 Comment {}            -> GT
                 Null                  -> GT
-                _                     -> LT 
+ 
           Substructure {substructureNumber=l1} -> case b of 
                   Label {}              -> LT
                   Charge {}             -> LT
@@ -357,7 +357,7 @@ instance Ord AtomMarker where
                   Skip   {}             -> GT
                   Comment {}            -> GT
                   Null                  -> GT
-                  _                     -> LT
+
 
           ValenceError {valenceError=l1} -> case b of 
               Label {}              -> LT
@@ -380,7 +380,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
               
           InRing {ringNumber=l1} -> case b of 
               Label {}              -> LT
@@ -403,7 +403,7 @@ instance Ord AtomMarker where
               Skip   {}             -> GT
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
  
           Skip -> case b of 
               Label {}              -> LT
@@ -422,7 +422,7 @@ instance Ord AtomMarker where
               Skip   {}             -> EQ
               Comment {}            -> GT
               Null                  -> GT
-              _                     -> LT
+
 
 
           Comment {comment=l1} -> case b of 
@@ -446,7 +446,7 @@ instance Ord AtomMarker where
                               | (l1 < l2)  = LT
                               | otherwise  = EQ
               Null                  -> LT
-              _                     -> LT
+
               
 
           Null -> case b of 
@@ -466,7 +466,5 @@ instance Ord AtomMarker where
               Skip   {}             -> LT
               Comment {}            -> LT
               Null                  -> EQ
-              _                     -> LT
 
-          _ -> case b of
-              _  -> LT
+
