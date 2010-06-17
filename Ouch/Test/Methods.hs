@@ -69,16 +69,21 @@ performTests [] = ("", "")
 performTests td = (summary, errorLog)
    where summary = "\tPassed: " ++ show ((length td) - (length $ lines errorLog)) ++ "\n"
                    ++ "\tFailed: " ++ show ((length $ lines errorLog)) ++ "\n"
-                   ++ "\n"  ++ "\n++++++++++++++++++++\nPerformed " ++ show (length td) ++ " tests.\n--------------------\n"
+                   ++ "\n"  ++ "\n++++++++++++++++++++\nPerformed " 
+                   ++ show (length td) 
+                   ++ " tests.\n--------------------\n"
          errorLog = detail td results
          results = List.map (\a -> (function a) (input a)) td
          detail [] _ = ""
          detail _ [] = ""
          detail (t:ts) (r:rs) = case r of
-             Left s ->  description t ++ ":\t" ++ "FAILED\t-with error string:\t" ++ s ++ "\n" ++ detail ts rs
+             Left s ->  description t ++ ":\t" ++ "FAILED\t-with error string:\t" 
+                                               ++ s ++ "\n" ++ detail ts rs
              Right s -> if s == (outcome t)
                       then detail ts rs
-                      else description t ++ ":\t" ++ "FAILED\t-with output: " ++ s ++ " || should get: " ++ (outcome t) ++ "\n" ++ detail ts rs
+                      else description t ++ ":\t" ++ "FAILED\t-with output: " 
+                                                  ++ s ++ " || should get: " ++ (outcome t) 
+                                                  ++ "\n" ++ detail ts rs
 
 -- Simple test function
 testTest::String -> Either String String

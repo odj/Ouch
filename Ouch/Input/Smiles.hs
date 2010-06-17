@@ -73,9 +73,12 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 makeMoleculeFromSmiles::String -> PerhapsMolecule
 makeMoleculeFromSmiles smi = mol
     where mol'  = fillMoleculeValence $ makeScaffoldFromSmiles smi
+          info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
+          closureWarning | hasHangingClosure mol' = Set.singleton $ Warning "Molecule has unmatched bond closures."
+                         | otherwise              = Set.empty
           mol   = case mol' of
-                Right m  -> Right $ Small (atomMap m) $ (Info smi) `Set.insert` (molMarkerSet m) 
-                Left {}  -> mol'
+                Mol m  -> Mol $ Small (atomMap m) $ foldr Set.union Set.empty [(molMarkerSet m), info, closureWarning]  
+                MolError {}  -> mol'
     
 
 -- makeScaffoldFromSmiles
@@ -89,7 +92,7 @@ makeScaffoldFromSmiles smi = case chop of
     -- A well-formed smile should never start with a substructure, but if it does, we connect the next 
     -- atom or substructure to it's beginning (which may or may not be permitted chemically)
     SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newSubstructure 0 nextSmile  
-    SmilesError {}  -> (Left $ "Error trying to parse the Smiles string: " ++ smi)
+    SmilesError {}  -> (MolError $ "Error trying to parse the Smiles string: " ++ smi)
     where chop = nextChoppedSmile smi
           thisSmile = smile chop
           nextSmile = smiles chop
@@ -106,10 +109,10 @@ growPerhapsMoleculeAtIndexWithString :: PerhapsMolecule -> Int -> String -> Perh
 growPerhapsMoleculeAtIndexWithString pm i smi 
     | smi == ""  = pm
     | otherwise  = case pm of
-    Right {} -> case chop of
+    Mol {} -> case chop of
             Smile {}        -> growPerhapsMoleculeAtIndexWithString newMolecule1 (newIndex) nextSmile 
             SubSmile {}     -> growPerhapsMoleculeAtIndexWithString newMolecule2 i nextSmile
-            SmilesError {}  -> (Left $ "Error trying to grow from the Smiles string: " ++ smi)
+            SmilesError {}  -> (MolError $ "Error trying to grow from the Smiles string: " ++ smi)
             where chop = nextChoppedSmile smi
                   nextSmile = smiles chop
                   newAtom = makeAtomMoleculeFromChop chop
@@ -117,8 +120,8 @@ growPerhapsMoleculeAtIndexWithString pm i smi
                   newMolecule1 = connectPerhapsMoleculesAtIndicesWithBond pm i newAtom 0 (newBond chop)
                   newMolecule2 = connectPerhapsMoleculesAtIndicesWithBond pm i newSubStructure 0 (newBond chop)
                   -- We just made this thing, so there shouldn't be any errors, right?
-                  newIndex = case newMolecule1 of Right m1 -> Map.size (atomMap m1) - 1          
-    Left {} -> pm
+                  newIndex = case newMolecule1 of Mol m1 -> Map.size (atomMap m1) - 1          
+    MolError {} -> pm
 
 
 -- makeScaffoldFromSmiles
@@ -127,26 +130,26 @@ growPerhapsMoleculeAtIndexWithString pm i smi
 {------------------------------------------------------------------------------}
 makeAtomMoleculeFromChop::ChoppedSmile -> PerhapsMolecule
 makeAtomMoleculeFromChop nb = case nb of 
-    SmilesError {} -> Left $ "Could not make molecule from smile with string: " ++ smile nb
+    SmilesError {} -> MolError $ "Could not make molecule from smile with string: " ++ smile nb
     Smile {smile=s} -> if ((head s) == '[') then makeAtomMoleculeFromBracketChop nb else makeAtomMolecule nb
-        where makeAtomMolecule nb  | a == ""        =  Left "ERROR: Tried to make atom from empty string."
-                                   | a == "C"       =  Right $ Small  (Map.singleton 0 $ Element 6 0 [] markSetAll) Set.empty
-                                   | a == "N"       =  Right $ Small  (Map.singleton 0 $ Element 7 0 [] markSetAll) Set.empty
-                                   | a == "O"       =  Right $ Small  (Map.singleton 0 $ Element 8 0 [] markSetAll) Set.empty
-                                   | a == "H"       =  Right $ Small  (Map.singleton 0 $ Element 1 0 [] markSetAll) Set.empty
+        where makeAtomMolecule nb  | a == ""        =  MolError "ERROR: Tried to make atom from empty string."
+                                   | a == "C"       =  Mol $ Small  (Map.singleton 0 $ Element 6 0 [] markSetAll) Set.empty
+                                   | a == "N"       =  Mol $ Small  (Map.singleton 0 $ Element 7 0 [] markSetAll) Set.empty
+                                   | a == "O"       =  Mol $ Small  (Map.singleton 0 $ Element 8 0 [] markSetAll) Set.empty
+                                   | a == "H"       =  Mol $ Small  (Map.singleton 0 $ Element 1 0 [] markSetAll) Set.empty
 
-                                   | a == "P"       =  Right $ Small  (Map.singleton 0 $ Element 15 0 [] markSetAll) Set.empty
-                                   | a == "S"       =  Right $ Small  (Map.singleton 0 $ Element 16 0 [] markSetAll) Set.empty
-                                   | a == "F"       =  Right $ Small  (Map.singleton 0 $ Element 9 0 [] markSetAll) Set.empty
-                                   | a == "B"       =  Right $ Small  (Map.singleton 0 $ Element 5 0 [] markSetAll) Set.empty
-                                   | a == "BR"      =  Right $ Small  (Map.singleton 0 $ Element 35 0 [] markSetAll) Set.empty
-                                   | a == "CL"      =  Right $ Small  (Map.singleton 0 $ Element 17 0 [] markSetAll) Set.empty
-                                   | a == "I"       =  Right $ Small  (Map.singleton 0 $ Element 53 0 [] markSetAll) Set.empty
-                                   | a == "*"       =  Right $ Small  (Map.singleton 0 $ Unspecified [] markSetAll) Set.empty -- Wildcard Atom
-                                   | otherwise      =  Left  $ "ERROR: Atom not recognized for symbol: " ++ a
+                                   | a == "P"       =  Mol $ Small  (Map.singleton 0 $ Element 15 0 [] markSetAll) Set.empty
+                                   | a == "S"       =  Mol $ Small  (Map.singleton 0 $ Element 16 0 [] markSetAll) Set.empty
+                                   | a == "F"       =  Mol $ Small  (Map.singleton 0 $ Element 9 0 [] markSetAll) Set.empty
+                                   | a == "B"       =  Mol $ Small  (Map.singleton 0 $ Element 5 0 [] markSetAll) Set.empty
+                                   | a == "BR"      =  Mol $ Small  (Map.singleton 0 $ Element 35 0 [] markSetAll) Set.empty
+                                   | a == "CL"      =  Mol $ Small  (Map.singleton 0 $ Element 17 0 [] markSetAll) Set.empty
+                                   | a == "I"       =  Mol $ Small  (Map.singleton 0 $ Element 53 0 [] markSetAll) Set.empty
+                                   | a == "*"       =  Mol $ Small  (Map.singleton 0 $ Unspecified [] markSetAll) Set.empty -- Wildcard Atom
+                                   | otherwise      =  MolError  $ "ERROR: Atom not recognized for symbol: " ++ a
                                    where markSetType = Set.singleton (if isLower $ head (smile nb) then AromaticAtom else Null)
-                                         markSetClass = Set.empty 
-                                         markSetAll = markSetType `Set.union` mark nb
+                                         markSetClass = Set.singleton $ Class 0 
+                                         markSetAll = markSetType `Set.union` (mark nb) `Set.union` markSetClass
                                          a = [toUpper c | c <- smile nb] 
 
 
@@ -187,20 +190,21 @@ makeAtomMoleculeFromBracketChop sb = mol
           markClass = Class classNumber
           
           -- Get Stereochemical Information
-          scCount = List.foldr (\c n -> if (c == '@') then n+1 else n) 0 s
+          scCount = foldr (\c n -> if (c == '@') then n+1 else n) 0 s
           markStereo | scCount == 1 = Null -- (Chiral Levo)
                      | scCount == 2 = Null -- (Chiral Dextro)
                      | otherwise = Null
 
           -- Now make the molecule
-          mol = Right $ Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll) Set.empty
+          mol = Mol $ Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll) Set.empty
          -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
           -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           -- Need to fill the rest with radicals to keep the bracket designation explicit.
-          -- molH = List.foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
+          -- molH = foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
           
          
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] ++ (parseClosureAtomMarkers s3 [])) 
+          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge] 
+                                                            ++ (parseClosureAtomMarkers s3 [])) 
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
@@ -208,7 +212,7 @@ makeAtomMoleculeFromBracketChop sb = mol
 parseSmiles :: String -> (String, String, String)
 parseSmiles s = s =~ pat::(String, String, String)
     -- Need a more general format to recognize two-letter elements (or maybe just enumerate them?) 
-    where pat = List.foldr (++) "" patList 
+    where pat = foldr (++) "" patList 
           patList = [ "("
                     -- Search for first atom + bond/marker
                     , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"  

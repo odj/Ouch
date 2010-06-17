@@ -52,9 +52,12 @@ data AtomMarker =  Label {labelNumber::Integer}   -- OUCH specific label
               | Null  -- This is a dummy value for functions that append marker list for simplicity.
               deriving (Show)
 
-data MoleculeMarker =   Info {info::String}
-                      | Errors  {errors::String}   
-                      deriving (Show, Eq, Ord)
+data MoleculeMarker =   Info     {molMarker::String}
+                      | Warning  {molMarker::String} 
+                      | Name     {molMarker::String}
+                      deriving (Eq, Ord)
+                      
+
 {------------------------------------------------------------------------------}
 data Chirality = Levo | Dextro | UnknownChirality
    deriving (Show, Eq, Ord)
@@ -70,11 +73,25 @@ data Geometry = Cis {geometetryAtom::Atom} | Trans {geometetryAtom::Atom} | ProC
 data NewBond = Single | Double | Triple | NoBond deriving (Show, Eq, Ord)
 
 
+{------------------------------------------------------------------------------}
+{-------------------------------Typeclass Intances-----------------------------}
+{------------------------------------------------------------------------------}
 
--- This is really ugly, but need to equate closure markers easily, disregarding bond info.
+
+instance Show MoleculeMarker where
+  show m = case m of
+      Info s    -> "Info: " ++ s ++ "\n"
+      Name s    -> "Name: " ++ s ++ "\n"
+      Warning s -> "WARNING: " ++ s ++ "\n"
+
+
+
+-- This is REALLY REALLY ugly, but need to equate closure markers easily in sets, disregarding bond info.
 -- This is because closure bond type only needs to be defined on one end of the molecule,
 -- and therefore might not match the other closure atom in a valid smile.
 {------------------------------------------------------------------------------}
+
+
 instance Eq AtomMarker where
   a == b = case a of 
       Position {position=l1} -> case b of 
@@ -252,7 +269,7 @@ instance Ord AtomMarker where
               Comment {}            -> GT
               Null                  -> GT
               _                     -> LT
-          Traversed {} -> case b of 
+          Traversed {order=l1} -> case b of 
               Charge {}             -> LT
               Position {}           -> LT
               Closure {}            -> LT
@@ -260,7 +277,10 @@ instance Ord AtomMarker where
               Chiral {}             -> LT
               GeoIsomer {}          -> LT
               AromaticAtom          -> LT
-              Traversed {}          -> EQ
+              Traversed {order=l2}  -> a
+                where a | l1 > l2  = GT
+                        | l1 < l2  = LT
+                        | l1 == l2 = EQ
               ExplicitHydrogen {}   -> GT
               Substructure {}       -> GT
               ValenceError {}       -> GT
