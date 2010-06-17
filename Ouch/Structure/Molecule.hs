@@ -38,6 +38,8 @@ module Ouch.Structure.Molecule
      , hasHangingClosure
      , molecularWeight
      , exactMass
+     , giveMoleculeError
+     , moleculeHasError
      , numberOfHydrogenBondDonors
      , numberOfHydrogenBondAcceptors
      , numberOfRings
@@ -71,7 +73,8 @@ data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarke
                 | Polymer {molMarkerSet::(Set MoleculeMarker)}
                 | Biologic {molMarkerSet::(Set MoleculeMarker)}
                 
-
+data PerhapsMolecule =       Mol Molecule
+                           | MolError String
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
@@ -287,15 +290,24 @@ fillMoleculeValence pm = case pm of
  -- moleculeHasError
  -- Yes if markerSet contains any 'MolError' value
 {------------------------------------------------------------------------------}
-moleculeHasError :: PerhapsMolecule -> Bool
-moleculeHasError 
+moleculeHasError :: Molecule -> Bool
+moleculeHasError m = Set.member (MError "") (molMarkerSet m)
+
+ -- giveMoleculeError
+ -- Adds an error marker containing a string to the molecule.
+{------------------------------------------------------------------------------}
+giveMoleculeError :: Molecule -> String -> Molecule
+giveMoleculeError m err = newMol
+    where newSet = Set.insert (MError err) (molMarkerSet m)
+          newMol = m {molMarkerSet=newSet}
  
 {------------------------------------------------------------------------------}
 addMarkerToAtomAtIndex :: PerhapsMolecule -> PerhapsMolecule 
- 
+addMarkerToAtomAtIndex = undefined
 {------------------------------------------------------------------------------}
 updateAtomMarkerLabels :: PerhapsMolecule -> PerhapsMolecule 
- 
+updateAtomMarkerLabels = undefined
+
 {------------------------------------------------------------------------------}
 molecularWeight :: PerhapsMolecule -> Either String Double
 molecularWeight pm = case pm of
@@ -375,12 +387,12 @@ moleculeFromPerhapsMolecule pm =  case pm of
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
 
-{--
+
 instance Show PerhapsMolecule where
     show m = case m of
         Mol mol -> "\n+++++++++++++++++++++++++++++++++++\nValid molecule with the following info:" ++ show mol
         MolError mol  -> "Invalid Molecule with error string: " ++ mol
---}
+
         
         
 instance Show Molecule where

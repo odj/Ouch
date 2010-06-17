@@ -55,8 +55,8 @@ data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label
 data MoleculeMarker =   Info     {molMarker::String}
                       | Name     {molMarker::String}
                       | Warning  {molMarker::String} 
-                      | MolError {molMarker::String}
-                      deriving (Eq, Ord)
+                      | MError {molMarker::String}
+                      deriving (Eq)
                       
 
 {------------------------------------------------------------------------------}
@@ -84,6 +84,7 @@ instance Show MoleculeMarker where
       Info s    -> "Info: " ++ s ++ "\n"
       Name s    -> "Name: " ++ s ++ "\n"
       Warning s -> "WARNING: " ++ s ++ "\n"
+      MError s  -> "ERROR: " ++ s ++ "\n"
 
 
 
@@ -143,7 +144,8 @@ instance Eq AtomMarker where
       Label {labelNumber=l1} -> case b of
             Label {labelNumber=l2} -> if (l1 == l2) then True else False
             _ -> False
-       
+
+
 
 instance Ord AtomMarker where
    compare a b =  case a of 
@@ -445,9 +447,7 @@ instance Ord AtomMarker where
                               | (l1 > l2)  = GT
                               | (l1 < l2)  = LT
                               | otherwise  = EQ
-              Null                  -> LT
-
-              
+              Null                  -> LT          
 
           Null -> case b of 
               Label {}              -> LT
@@ -467,4 +467,39 @@ instance Ord AtomMarker where
               Comment {}            -> LT
               Null                  -> EQ
 
+instance Ord MoleculeMarker where
+  compare a b =  case a of 
+      MError {}  -> case b of
+          MError {}            -> EQ
+          Name {}              -> GT
+          Warning {}           -> GT
+          Info {}              -> GT
+      Name {}  -> case b of
+          MError {}          -> LT
+          Name {}              -> EQ
+          Warning {}           -> GT
+          Info {}              -> GT
+      Warning {molMarker=l1}  -> case b of
+          MError {}          -> LT
+          Name {}              -> LT
+          Warning {molMarker=l2} ->  a
+              where a | (l1 == l2) = EQ
+                        | (l1 > l2)  = GT
+                        | (l1 < l2)  = LT
+                        | otherwise  = EQ
+          Info {}              -> GT
 
+      Info {molMarker=l1}  -> case b of
+          MError {}          -> LT
+          Name {}              -> LT
+          Warning {}           -> LT
+          Info {molMarker=l2}   ->  a
+              where a | (l1 == l2) = EQ
+                      | (l1 > l2)  = GT
+                      | (l1 < l2)  = LT
+                      | otherwise  = EQ
+          
+          
+          
+          
+          
