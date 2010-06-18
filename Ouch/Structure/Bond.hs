@@ -30,6 +30,7 @@ module Ouch.Structure.Bond (
 -- This line terminates recursive import sequences        
 import {-# SOURCE #-} Ouch.Structure.Atom
 import Ouch.Structure.Marker
+import Data.Set as Set
 
 
 
@@ -46,6 +47,7 @@ data Bond = Sigma {bondsTo::Atom}
           | Ionic {bondsTo::Atom}
           | Antibond {bondsTo::Atom}
           | Any {bondsTo::Atom}
+          | PMap {bondsTo::Atom, pathList::[Integer]}
 
 
       
@@ -54,16 +56,18 @@ data Bond = Sigma {bondsTo::Atom}
 {------------------------------------------------------------------------------}    
 instance Show Bond where
   show b = case b of
-      Sigma atom -> " -" ++ desc
-      Pi atom -> " =" ++ desc
-      Aromatic atom -> " ~" ++ desc
-      Delta atom -> " delta-" ++ desc
-      Hbond atom -> " H." ++ desc
-      Ionic atom -> " +/-" ++ desc
-      Antibond atom -> " !" ++ desc
-      where atom' = bondsTo b
-            desc = case atom' of
-                Element {} -> atomicSymbolForAtom atom'
+      Sigma {} -> " -" ++ desc
+      Pi {} -> " =" ++ desc
+      Aromatic {} -> " ~" ++ desc
+      Delta {} -> " delta-" ++ desc
+      Hbond {} -> " H." ++ desc
+      Ionic {} -> " +/-" ++ desc
+      Antibond {} -> " !" ++ desc
+      PMap {pathList=list} -> "Path to atom at index " ++ show index  ++ " :"
+      where atom = bondsTo b
+            index = labelNumber $ Set.findMax $ Set.union (Set.singleton $ Label 0) (markerSet atom)
+            desc = case atom of
+                Element {} -> atomicSymbolForAtom atom
                 LonePair {} -> "LP"
                 Electron {} -> "EL"
                 Unfilled {} -> "UF"

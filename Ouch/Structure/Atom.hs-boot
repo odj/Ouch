@@ -25,7 +25,11 @@
 
 -- This file is needed to terminate recursive import relationships 
 
-module Ouch.Structure.Atom where
+module Ouch.Structure.Atom (
+      Atom(..)
+    , atomicSymbolForAtom
+    ) where
+        
 import Data.Maybe
 import {-# SOURCE #-} Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Marker
@@ -41,6 +45,7 @@ data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::
             | Open {bondList::[Bond], markerSet::(Set AtomMarker)}
             
 atomicSymbolForAtom :: Atom -> String
+
 
 instance Eq Atom
 instance Show Atom 

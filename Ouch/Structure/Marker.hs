@@ -149,7 +149,7 @@ instance Eq AtomMarker where
 
 instance Ord AtomMarker where
    compare a b =  case a of 
-          Label{}   -> case b of
+          Label {}   -> case b of
               Label {}              -> EQ
               Charge {}             -> GT
               Position {}           -> GT
