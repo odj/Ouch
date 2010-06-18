@@ -72,7 +72,7 @@ data ChoppedSmile = Smile {smile::String, smiles::String, newBond::NewBond, mark
 {------------------------------------------------------------------------------}
 makeMoleculeFromSmiles::String -> Molecule
 makeMoleculeFromSmiles smi = mol' {molMarkerSet=newMolInfo} 
-    where mol'  = fillMoleculeValence $ makeScaffoldFromSmiles smi
+    where mol'  = updateAtomLabelMarkers $ fillMoleculeValence $ makeScaffoldFromSmiles smi
           info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
           closureWarning | hasHangingClosure mol' = Set.singleton $ Warning "Molecule has unmatched bond closures."
                          | otherwise              = Set.empty

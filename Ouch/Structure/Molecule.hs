@@ -30,6 +30,7 @@ module Ouch.Structure.Molecule
     (
        Molecule(..)
      , addAtom
+     , addMarkerToAtomAtIndex
      , addMolecule
      , numberOfAtoms
      , numberOfHeavyAtoms
@@ -43,6 +44,7 @@ module Ouch.Structure.Molecule
      , numberOfHydrogenBondAcceptors
      , numberOfRings
      , numberOfRotatableBonds
+     , updateAtomLabelMarkers
      , molecularFormula
      , connectMoleculesAtIndicesWithBond
 
@@ -89,6 +91,8 @@ addAtom m a = if (moleculeHasError m) then m else case m of
     Markush  {}           -> giveMoleculeError m "Cannot add atom to Markush"
     Polymer  {}           -> giveMoleculeError m "Cannot add atom to Markush"
     Biologic {}           -> giveMoleculeError m "Cannot add atom to Markush"
+
+
 
 
 -- findConnectedAtoms
@@ -178,9 +182,7 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then m else
 -- respective indices.  Return an error if indices or PerhapsMolecules are
 -- invalid.
 {------------------------------------------------------------------------------}
-connectMoleculesAtIndicesWithBond::Molecule -> Int -> 
-                                          Molecule -> Int -> 
-                                          NewBond -> Molecule
+connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = 
     if (moleculeHasError m1) then m1 else 
     if (moleculeHasError m2) then m2 else m12
@@ -233,7 +235,7 @@ makeMoleculeFromAtom:: Atom -> Molecule
 makeMoleculeFromAtom a = Small {atomMap = (Map.singleton 0 a), molMarkerSet=Set.empty}       
 
 
--- 
+-- numberOfAtoms
 {------------------------------------------------------------------------------}
 numberOfAtoms :: Molecule -> Maybe Integer
 numberOfAtoms m = if (moleculeHasError m) then Nothing else case m of
@@ -244,7 +246,7 @@ numberOfAtoms m = if (moleculeHasError m) then Nothing else case m of
     where num a = fromIntegral $ Map.size $ Map.filter isElement a
 
 
--- 
+-- numberOfHeavyAtoms
 {------------------------------------------------------------------------------}
 numberOfHeavyAtoms :: Molecule -> Maybe Integer
 numberOfHeavyAtoms m = case m of
@@ -254,10 +256,10 @@ numberOfHeavyAtoms m = case m of
     Biologic {}    -> Nothing
     where heavy a = Map.filter isHeavyAtom a
           num a = fromIntegral $ Map.size $ heavy a
-
+-- fillMoleculeValence
 -- Fills valence with hydrogens and lone-pairs to give neutral species
 -- If valence is already complete, returns molecule unchanged 
--- If cannot fill because of an error, returns error string.
+-- If cannot fill because of an error, adds error to molecule and gives it back.
 {------------------------------------------------------------------------------}
 fillMoleculeValence :: Molecule -> Molecule
 fillMoleculeValence m = if (moleculeHasError m) then m else case m of
@@ -277,22 +279,49 @@ fillMoleculeValence m = if (moleculeHasError m) then m else case m of
  -- Yes if markerSet contains any 'MolError' value
 {------------------------------------------------------------------------------}
 moleculeHasError :: Molecule -> Bool
-moleculeHasError m = Set.member (MError "") (molMarkerSet m)
+moleculeHasError = Set.member (MError "") . molMarkerSet 
 
  -- giveMoleculeError
  -- Adds an error marker containing a string to the molecule.
 {------------------------------------------------------------------------------}
 giveMoleculeError :: Molecule -> String -> Molecule
-giveMoleculeError m err = newMol
-    where newSet = Set.insert (MError err) (molMarkerSet m)
+giveMoleculeError m err = markMolecule m $ MError err
+
+{------------------------------------------------------------------------------}
+markMolecule :: Molecule -> MoleculeMarker -> Molecule
+markMolecule m mm = newMol
+    where newSet = Set.insert mm (molMarkerSet m)
           newMol = m {molMarkerSet=newSet}
+
+-- atomAtIndex
+-- Gives you back the atom at index specified.
+{------------------------------------------------------------------------------}
+atomAtIndex :: Molecule -> Int -> Maybe Atom
+atomAtIndex m i = Map.lookup i $ atomMap m
  
+-- addMarkerToAtomAtIndex
+-- Adds marker to the specified atom.  If the atom doesn't exist, original
+-- molecule is returned with a warnng string added that this operation failed
 {------------------------------------------------------------------------------}
-addMarkerToAtomAtIndex :: Molecule -> Molecule 
-addMarkerToAtomAtIndex = undefined
+addMarkerToAtomAtIndex :: Molecule -> Int -> AtomMarker -> Molecule 
+addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
+    Nothing -> markMolecule m warning
+    Just a  -> m {atomMap = Map.insert i (markAtom a am) (atomMap m)}
+    where atom = atomAtIndex m i
+          warning = Warning $ "Unable to add marker to atom at position " ++ show i
+          
+          
+    
+-- updateAtomLabelMarkers
+-- Adds atom label corresponding to the atom map key.  This lets the atom type "know"
+-- where it is in the overall Molecule data structure
 {------------------------------------------------------------------------------}
-updateAtomMarkerLabels :: Molecule ->Molecule 
-updateAtomMarkerLabels = undefined
+updateAtomLabelMarkers :: Molecule -> Molecule 
+updateAtomLabelMarkers m = if (moleculeHasError m) then m 
+    else m {atomMap=newMap}
+        where jst = (\(Just a) -> a)
+              foldFunc = (\k m -> Map.insert k (markAtom (jst $ Map.lookup k m) (Label $ fromIntegral k)) m)
+              newMap = List.foldr foldFunc (atomMap m) [0..(Map.size $ atomMap m)-1]
 
 {------------------------------------------------------------------------------}
 molecularWeight :: Molecule -> Either String Double 

@@ -37,6 +37,7 @@ module Ouch.Structure.Atom (
     , valence
     , isHeavyAtom
     , isElement
+    , markAtom
     , numberOfBonds
     , numberOfBondsToAtoms
     , connectAtomsWithBond
@@ -339,7 +340,14 @@ valence a = case a of
        lp i  = (elecs i) - (sorb i)
 
 
-    
+-- markAtom
+{------------------------------------------------------------------------------}
+markAtom :: Atom -> AtomMarker -> Atom
+markAtom a am = newAtom
+   where newSet = Set.insert am (markerSet a)
+         newAtom = a {markerSet=newSet}
+
+
 -- isHeavyAtom
 -- Returns True for anything that has mass and is not a Hydrogen Atom
 {------------------------------------------------------------------------------}

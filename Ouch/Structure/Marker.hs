@@ -34,7 +34,7 @@ module Ouch.Structure.Marker (
 import {-# SOURCE #-} Ouch.Structure.Atom
         
 {------------------------------------------------------------------------------}
-data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label
+data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label maintained to match atom map held by Molecule
                   | Charge {charge::Integer}
                   | Position {position::(Double, Double, Double)}  -- x, y, z vector
                   | Closure {labelNumber::Integer, bondType::NewBond}
