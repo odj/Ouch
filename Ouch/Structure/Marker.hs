@@ -48,6 +48,7 @@ data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label mainta
                   | ValenceError {valenceError::String}
                   | InRing {ringNumber::Integer}
                   | Skip
+                  | PGraph {reaches::Integer, pathList::[Integer]}
                   | Comment {comment::String}
                   | Null  -- This is a dummy value for functions that append marker list for simplicity.
                   deriving (Show)
@@ -151,57 +152,18 @@ instance Ord AtomMarker where
    compare a b =  case a of 
           Label {}   -> case b of
               Label {}              -> EQ
-              Charge {}             -> GT
-              Position {}           -> GT
-              Closure {}            -> GT
-              Class {}              -> GT
-              Chiral {}             -> GT
-              GeoIsomer {}          -> GT
-              AromaticAtom          -> GT
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
    
           Charge {} -> case b of 
              Label {}              -> LT
              Charge {}             -> EQ
-             Position {}           -> GT
-             Closure {}            -> GT
-             Class {}              -> GT
-             Chiral {}             -> GT
-             GeoIsomer {}          -> GT
-             AromaticAtom          -> GT
-             Traversed {}          -> GT
-             ExplicitHydrogen {}   -> GT
-             Substructure {}       -> GT
-             ValenceError {}       -> GT
-             InRing {}             -> GT
-             Skip   {}             -> GT
-             Comment {}            -> GT
-             Null                  -> GT
+             _                     -> GT
 
           Position {} -> case b of 
              Label {}              -> LT
              Charge {}             -> LT
              Position {}           -> EQ
-             Closure {}            -> GT
-             Class {}              -> GT
-             Chiral {}             -> GT
-             GeoIsomer {}          -> GT
-             AromaticAtom          -> GT
-             Traversed {}          -> GT
-             ExplicitHydrogen {}   -> GT
-             Substructure {}       -> GT
-             ValenceError {}       -> GT
-             InRing {}             -> GT
-             Skip   {}             -> GT
-             Comment {}            -> GT
-             Null                  -> GT
+             _                     -> GT
  
              
           Closure {labelNumber=l1} -> case b of 
@@ -213,19 +175,7 @@ instance Ord AtomMarker where
                              | (l1 > l2)  = GT
                              | (l1 < l2)  = LT
                              | otherwise  = GT
-          
-              Class {}              -> GT
-              Chiral {}             -> GT
-              GeoIsomer {}          -> GT
-              AromaticAtom          -> GT
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
           Class {} -> case b of 
               Label {}              -> LT
@@ -233,17 +183,7 @@ instance Ord AtomMarker where
               Position {}           -> LT
               Closure {}            -> LT
               Class {}              -> EQ
-              Chiral {}             -> GT
-              GeoIsomer {}          -> GT
-              AromaticAtom          -> GT
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
           Chiral {} -> case b of 
               Label {}              -> LT
@@ -252,16 +192,7 @@ instance Ord AtomMarker where
               Closure {}            -> LT
               Class {}              -> LT
               Chiral {}             -> EQ
-              GeoIsomer {}          -> GT
-              AromaticAtom          -> GT
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
           GeoIsomer {} -> case b of 
               Label {}              -> LT
@@ -271,15 +202,7 @@ instance Ord AtomMarker where
               Class {}              -> LT
               Chiral {}             -> LT
               GeoIsomer {}          -> EQ
-              AromaticAtom          -> GT
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
           AromaticAtom -> case b of 
               Label {}              -> LT
@@ -290,14 +213,7 @@ instance Ord AtomMarker where
               Chiral {}             -> LT
               GeoIsomer {}          -> LT
               AromaticAtom          -> EQ
-              Traversed {}          -> GT
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
           Traversed {order=l1} -> case b of 
               Label {}              -> LT
@@ -312,13 +228,7 @@ instance Ord AtomMarker where
                 where a | l1 > l2  = GT
                         | l1 < l2  = LT
                         | l1 == l2 = EQ
-              ExplicitHydrogen {}   -> GT
-              Substructure {}       -> GT
-              ValenceError {}       -> GT
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
  
           ExplicitHydrogen {} -> case b of 
                 Label {}              -> LT
@@ -331,12 +241,7 @@ instance Ord AtomMarker where
                 AromaticAtom          -> LT
                 Traversed {}          -> LT
                 ExplicitHydrogen {}   -> EQ
-                Substructure {}       -> GT
-                ValenceError {}       -> GT
-                InRing {}             -> GT
-                Skip   {}             -> GT
-                Comment {}            -> GT
-                Null                  -> GT
+                _                     -> GT
  
           Substructure {substructureNumber=l1} -> case b of 
                   Label {}              -> LT
@@ -354,11 +259,7 @@ instance Ord AtomMarker where
                                   | (l1 > l2)  = GT
                                   | (l1 < l2)  = LT
                                   | otherwise  = EQ
-                  ValenceError {}       -> GT
-                  InRing {}             -> GT
-                  Skip   {}             -> GT
-                  Comment {}            -> GT
-                  Null                  -> GT
+                  _                     -> GT
 
 
           ValenceError {valenceError=l1} -> case b of 
@@ -378,10 +279,7 @@ instance Ord AtomMarker where
                               | (l1 > l2)  = GT
                               | (l1 < l2)  = LT
                               | otherwise  = EQ
-              InRing {}             -> GT
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
               
           InRing {ringNumber=l1} -> case b of 
@@ -402,9 +300,7 @@ instance Ord AtomMarker where
                               | (l1 > l2)  = GT
                               | (l1 < l2)  = LT
                               | otherwise  = EQ
-              Skip   {}             -> GT
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
  
           Skip -> case b of 
@@ -422,9 +318,29 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> EQ
-              Comment {}            -> GT
-              Null                  -> GT
+              _                     -> GT
 
+          PGraph {reaches=l1} -> case b of 
+              Label {}              -> LT
+              Charge {}             -> LT
+              Position {}           -> LT
+              Closure {}            -> LT
+              Class {}              -> LT
+              Chiral {}             -> LT
+              GeoIsomer {}          -> LT
+              AromaticAtom          -> LT
+              Traversed {}          -> LT
+              ExplicitHydrogen {}   -> LT
+              Substructure {}       -> LT
+              ValenceError {}       -> LT
+              InRing {}             -> LT
+              Skip   {}             -> LT
+              PGraph {reaches=l2}   -> a
+                  where a   | (l1 == l2) = EQ
+                            | (l1 > l2)  = GT
+                            | (l1 < l2)  = LT
+                            | otherwise  = EQ
+              _                     -> GT
 
 
           Comment {comment=l1} -> case b of 
@@ -442,6 +358,7 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> LT
+              PGraph {}             -> LT
               Comment {comment=l2} -> a
                       where a | (l1 == l2) = EQ
                               | (l1 > l2)  = GT
@@ -464,6 +381,7 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> LT
+              PGraph {}             -> LT
               Comment {}            -> LT
               Null                  -> EQ
 

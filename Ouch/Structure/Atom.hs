@@ -45,6 +45,7 @@ module Ouch.Structure.Atom (
     , getMatchingClosureNumber
     , removeClosureAtomMarker
     , getMatchingClosureBondType
+    , getMarkerSet -- This should be depreciated
     ) where
 
 import Data.Maybe
@@ -105,7 +106,8 @@ connectAtomsWithBond a1 a2 b = (aa1, aa2) where
                             NoBond -> []
 
 
-
+getMarkerSet :: Atom -> (Set AtomMarker)
+getMarkerSet a = markerSet a
 
 -- addLonePair
 -- Create a new lone-pair centered on the atom.

@@ -48,7 +48,7 @@ data Bond = Sigma {bondsTo::Atom}
           | Ionic {bondsTo::Atom}
           | Antibond {bondsTo::Atom}
           | Any {bondsTo::Atom}
-          | PMap {bondsTo::Atom, pathList::[Integer]}
+
 
 
       
@@ -64,9 +64,7 @@ instance Show Bond where
       Hbond {} -> " H." ++ desc
       Ionic {} -> " +/-" ++ desc
       Antibond {} -> " !" ++ desc
-      PMap {pathList=list} -> "Path to atom: " ++ desc  ++ " :"
       where atom = bondsTo b
-            --index = labelNumber $ Set.findMax $ Set.union (Set.singleton $ Label 0) (markerSet atom)
             desc = case atom of
                 Element {} -> atomicSymbolForAtom atom
                 LonePair {} -> "LP"
