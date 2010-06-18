@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Bond.hs-boot - a file to define import recursion
+    Bond.hs-boot - a file to define import recursion for the Bond.hs module
     
     Copyright (c) 2010 Orion D. Jankowski
     

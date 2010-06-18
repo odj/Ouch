@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Atom.hs-boot - a file to define import recursion
+    Atom.hs-boot - a file to define import recursion for the Atom module
     
     Copyright (c) 2010 Orion D. Jankowski
     

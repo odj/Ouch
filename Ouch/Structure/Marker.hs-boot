@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Marker.hs-boot - a file to define import recursion
+    Marker.hs-boot - a file to define import recursion for the Marker.hs module
     
     Copyright (c) 2010 Orion D. Jankowski
     
