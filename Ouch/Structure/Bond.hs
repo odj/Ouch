@@ -22,6 +22,7 @@
 
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
+{-# LANGUAGE ForeignFunctionInterface, CPP, Generics #-}
 
 module Ouch.Structure.Bond (
       Bond(..)
@@ -63,9 +64,9 @@ instance Show Bond where
       Hbond {} -> " H." ++ desc
       Ionic {} -> " +/-" ++ desc
       Antibond {} -> " !" ++ desc
-      PMap {pathList=list} -> "Path to atom at index " ++ show index  ++ " :"
+      PMap {pathList=list} -> "Path to atom: " ++ desc  ++ " :"
       where atom = bondsTo b
-            index = labelNumber $ Set.findMax $ Set.union (Set.singleton $ Label 0) (markerSet atom)
+            --index = labelNumber $ Set.findMax $ Set.union (Set.singleton $ Label 0) (markerSet atom)
             desc = case atom of
                 Element {} -> atomicSymbolForAtom atom
                 LonePair {} -> "LP"
