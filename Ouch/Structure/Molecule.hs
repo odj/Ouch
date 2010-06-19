@@ -287,6 +287,16 @@ moleculeHasError = Set.member (MError "") . molMarkerSet
 giveMoleculeError :: Molecule -> String -> Molecule
 giveMoleculeError m err = markMolecule m $ MError err
 
+ -- getMoleculeError
+ -- Adds an error marker containing a string to the molecule.
+{------------------------------------------------------------------------------}
+getMoleculeError :: Molecule -> Maybe String 
+getMoleculeError m  = let err =  Set.filter (==(MError "")) $  molMarkerSet m 
+                      in  if Set.size err == 0 then Nothing
+                          else Just $ molMarker $ Set.findMax err
+     
+          
+
 {------------------------------------------------------------------------------}
 markMolecule :: Molecule -> MoleculeMarker -> Molecule
 markMolecule m mm = newMol
