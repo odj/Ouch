@@ -261,85 +261,63 @@ atomicSymbolForAtom a = case a of
 -- sp3 (i.e. for Boron).
 {------------------------------------------------------------------------------}
 valence :: Atom -> (Integer, Integer)
-valence a = case a of
-   Element  {} -> (bonds (atomicNumber a), lp (atomicNumber a))
-   LonePair {} -> (1, 0)
-   Electron {} -> (1, 0)
-   Unfilled {} -> (1, 0)
-   where 
-       bonds i | elem i grp1 = 1
-               | elem i grp2 = 2
-               | elem i grp13 = 3
-               | elem i grp14 = 4
-               | elem i grp15 = 3
-               | elem i grp16 = 2
-               | elem i grp17 = 1
-               | elem i grp18 = 0
-               | otherwise = 0 
-               where
-                   grp1 = [1,2,11,19,37,55]
+valence a = let    grp1 = [1,2,11,19,37,55]
                    grp2 = [4,12,20,38,56,88]
                    grp13 = [5,13,31,49,81]
                    grp14 = [6,14,32,50,82]
                    grp15 = [7,15,33,51,83]
                    grp16 = [8,16,34,52,84]
                    grp17 = [9,17,35,53,85]
-                   grp18 = [2,10,18,36,54,86]
-       
-       elecs i | elem i grp1 = 1
-               | elem i grp2 = 2
-               | elem i grp13 = 3
-               | elem i grp14 = 4
-               | elem i grp15 = 5
-               | elem i grp16 = 6
-               | elem i grp17 = 7
-               | elem i grp18 = 8
-               | otherwise = 0 
-               where
-                 grp1 = [1,2,11,19,37,55]
-                 grp2 = [4,12,20,38,56,88]
-                 grp13 = [5,13,31,49,81]
-                 grp14 = [6,14,32,50,82]
-                 grp15 = [7,15,33,51,83]
-                 grp16 = [8,16,34,52,84]
-                 grp17 = [9,17,35,53,85]
-                 grp18 = [2,10,18,36,54,86]
-
-       sorb i | elem i grp1 = 1
-              | elem i grp2 = 2
-              | elem i grp13 = 4
-              | elem i grp14 = 4
-              | elem i grp15 = 4
-              | elem i grp16 = 4
-              | elem i grp17 = 4
-              | elem i grp18 = 4
-              | otherwise = 0 
-              where
-                  grp1 = [1,2,11,19,37,55]
-                  grp2 = [4,12,20,38,56,88]
-                  grp13 = [5,13,31,49,81]
-                  grp14 = [6,14,32,50,82]
-                  grp15 = [7,15,33,51,83]
-                  grp16 = [8,16,34,52,84]
-                  grp17 = [9,17,35,53,85]
-                  grp18 = [2,10,18,36,54,86]
-       -- This is not right but works for now => CORRECTION NEEDED
-       dorb i | elem i per1 = 0
-              | elem i per2 = 0
-              | elem i per3 = 2
-              | elem i per4 = 2
-              | elem i per5 = 2
-              | elem i per6 = 2
-              | otherwise = 0
-              where
-                  per1 = [1,2]
-                  per2 = [3..10]
-                  per3 = [11..18]
-                  per4 = [19,20,31,32,33,34,35,36]
-                  per5 = [37,38,49,50,51,52,53,54]
-                  per6 = [55,56,81,82,83,84,85,96]
-    
-       lp i  = (elecs i) - (sorb i)
+                   grp18 = [2,10,18,36,54,86] 
+                   per1 = [1,2]
+                   per2 = [3..10]
+                   per3 = [11..18]
+                   per4 = [19,20,31,32,33,34,35,36]
+                   per5 = [37,38,49,50,51,52,53,54]
+                   per6 = [55,56,81,82,83,84,85,96]
+                   bonds i | elem i grp1 = 1
+                           | elem i grp2 = 2
+                           | elem i grp13 = 3
+                           | elem i grp14 = 4
+                           | elem i grp15 = 3
+                           | elem i grp16 = 2
+                           | elem i grp17 = 1
+                           | elem i grp18 = 0
+                           | otherwise = 0 
+                   elecs i | elem i grp1 = 1
+                           | elem i grp2 = 2
+                           | elem i grp13 = 3
+                           | elem i grp14 = 4
+                           | elem i grp15 = 5
+                           | elem i grp16 = 6
+                           | elem i grp17 = 7
+                           | elem i grp18 = 8
+                           | otherwise = 0 
+                   sorb i | elem i grp1 = 1
+                          | elem i grp2 = 2
+                          | elem i grp13 = 4
+                          | elem i grp14 = 4
+                          | elem i grp15 = 4
+                          | elem i grp16 = 4
+                          | elem i grp17 = 4
+                          | elem i grp18 = 4
+                          | otherwise = 0 
+                   -- This is not right but works for now => CORRECTION NEEDED
+                   dorb i | elem i per1 = 0
+                          | elem i per2 = 0
+                          | elem i per3 = 2
+                          | elem i per4 = 2
+                          | elem i per5 = 2
+                          | elem i per6 = 2
+                          | otherwise = 0
+                   lp i  = (elecs i) - (sorb i)
+            in case a of
+               Element  {} -> (bonds (atomicNumber a), lp (atomicNumber a))
+               LonePair {} -> (1, 0)
+               Electron {} -> (1, 0)
+               Unfilled {} -> (1, 0)
+                    
+                       
 
 
 -- markAtom
