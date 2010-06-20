@@ -44,7 +44,7 @@ import Text.Regex.TDFA ((=~))
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
-import qualified Data.List as List
+import  Data.List as List
 import Data.Map as Map
 import Control.Applicative 
 
@@ -138,19 +138,19 @@ makeAtomMoleculeFromChop nb = case nb of
           a = [toUpper c | c <- smile nb] 
           emptyMol = Small Map.empty Set.empty 
           makeAtomMolecule nb  | a == ""        =  giveMoleculeError emptyMol "ERROR: Tried to make atom from empty string."
-                               | a == "C"       =  Small  (Map.singleton 0 $ Element 6 0 [] markSetAll) Set.empty
-                               | a == "N"       =  Small  (Map.singleton 0 $ Element 7 0 [] markSetAll) Set.empty
-                               | a == "O"       =  Small  (Map.singleton 0 $ Element 8 0 [] markSetAll) Set.empty
-                               | a == "H"       =  Small  (Map.singleton 0 $ Element 1 0 [] markSetAll) Set.empty
+                               | a == "C"       =  Small  (Map.singleton 0 $ Element 6 0 Map.empty markSetAll) Set.empty
+                               | a == "N"       =  Small  (Map.singleton 0 $ Element 7 0 Map.empty markSetAll) Set.empty
+                               | a == "O"       =  Small  (Map.singleton 0 $ Element 8 0 Map.empty markSetAll) Set.empty
+                               | a == "H"       =  Small  (Map.singleton 0 $ Element 1 0 Map.empty markSetAll) Set.empty
 
-                               | a == "P"       =  Small  (Map.singleton 0 $ Element 15 0 [] markSetAll) Set.empty
-                               | a == "S"       =  Small  (Map.singleton 0 $ Element 16 0 [] markSetAll) Set.empty
-                               | a == "F"       =  Small  (Map.singleton 0 $ Element 9 0 [] markSetAll) Set.empty
-                               | a == "B"       =  Small  (Map.singleton 0 $ Element 5 0 [] markSetAll) Set.empty
-                               | a == "BR"      =  Small  (Map.singleton 0 $ Element 35 0 [] markSetAll) Set.empty
-                               | a == "CL"      =  Small  (Map.singleton 0 $ Element 17 0 [] markSetAll) Set.empty
-                               | a == "I"       =  Small  (Map.singleton 0 $ Element 53 0 [] markSetAll) Set.empty
-                               | a == "*"       =  Small  (Map.singleton 0 $ Unspecified [] markSetAll) Set.empty -- Wildcard Atom
+                               | a == "P"       =  Small  (Map.singleton 0 $ Element 15 0 Map.empty markSetAll) Set.empty
+                               | a == "S"       =  Small  (Map.singleton 0 $ Element 16 0 Map.empty markSetAll) Set.empty
+                               | a == "F"       =  Small  (Map.singleton 0 $ Element 9 0 Map.empty markSetAll) Set.empty
+                               | a == "B"       =  Small  (Map.singleton 0 $ Element 5 0 Map.empty markSetAll) Set.empty
+                               | a == "BR"      =  Small  (Map.singleton 0 $ Element 35 0 Map.empty markSetAll) Set.empty
+                               | a == "CL"      =  Small  (Map.singleton 0 $ Element 17 0 Map.empty markSetAll) Set.empty
+                               | a == "I"       =  Small  (Map.singleton 0 $ Element 53 0 Map.empty markSetAll) Set.empty
+                               | a == "*"       =  Small  (Map.singleton 0 $ Unspecified Map.empty markSetAll) Set.empty -- Wildcard Atom
                                | otherwise      =  giveMoleculeError emptyMol ("ERROR: Atom not recognized for symbol: " ++ a)
                                 
 
@@ -198,7 +198,7 @@ makeAtomMoleculeFromBracketChop sb = mol
                      | otherwise = Null
 
           -- Now make the molecule
-          mol = Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) [] markSetAll) Set.empty
+          mol = Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) Map.empty markSetAll) Set.empty
          -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
           -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
           -- Need to fill the rest with radicals to keep the bracket designation explicit.

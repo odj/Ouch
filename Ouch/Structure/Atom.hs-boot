@@ -34,15 +34,15 @@ import Data.Maybe
 import {-# SOURCE #-} Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Marker
 import Data.Set as Set
-import qualified Data.Map as Map
-import qualified Data.List as List
+import Data.Map as Map
+import Data.List as List
 
-data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set AtomMarker)}
-            | LonePair {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Electron {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Unfilled {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Unspecified {bondList::[Bond], markerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
-            | Open {bondList::[Bond], markerSet::(Set AtomMarker)}
+data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             
 atomicSymbolForAtom :: Atom -> String
 

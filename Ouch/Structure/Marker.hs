@@ -48,7 +48,7 @@ data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label mainta
                   | ValenceError {valenceError::String}
                   | InRing {ringNumber::Integer}
                   | Skip
-                  | PGraph {reaches::Integer, pathList::[Integer]}
+                  | PEdge {reaches::Integer, pathList::[Integer]}
                   | Comment {comment::String}
                   | Null  -- This is a dummy value for functions that append marker list for simplicity.
                   deriving (Show)
@@ -320,7 +320,7 @@ instance Ord AtomMarker where
               Skip   {}             -> EQ
               _                     -> GT
 
-          PGraph {reaches=l1} -> case b of 
+          PEdge {reaches=l1} -> case b of 
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -335,7 +335,7 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> LT
-              PGraph {reaches=l2}   -> a
+              PEdge {reaches=l2}   -> a
                   where a   | (l1 == l2) = EQ
                             | (l1 > l2)  = GT
                             | (l1 < l2)  = LT
@@ -358,7 +358,7 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> LT
-              PGraph {}             -> LT
+              PEdge {}             -> LT
               Comment {comment=l2} -> a
                       where a | (l1 == l2) = EQ
                               | (l1 > l2)  = GT
@@ -381,7 +381,7 @@ instance Ord AtomMarker where
               ValenceError {}       -> LT
               InRing {}             -> LT
               Skip   {}             -> LT
-              PGraph {}             -> LT
+              PEdge {}             -> LT
               Comment {}            -> LT
               Null                  -> EQ
 
