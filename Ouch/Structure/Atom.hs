@@ -29,14 +29,17 @@ module Ouch.Structure.Atom (
     , addHydrogen
     , addLonePair
     , addUnfilled
+    , bondsToHeavyAtomsAtIndices
     , checkValence
     , getError
     , fillValence
+    , getIndexForAtom
     , atomExactMass
     , atomMW
     , valence
     , isHeavyAtom
     , isElement
+    , isSigmaBondToHeavyAtom
     , markAtom
     , numberOfBonds
     , numberOfBondsToAtoms
@@ -319,6 +322,16 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                     
                        
 
+-- markAtom
+{------------------------------------------------------------------------------}
+getIndexForAtom :: Atom -> Maybe Int
+getIndexForAtom a = if n == 0 then Nothing else Just $ fromIntegral (labelNumber $ lb!!0)
+  where lb = Set.toList $ Set.filter (==(Label 0)) (markerSet a)
+        n  = length lb
+
+
+
+
 
 -- markAtom
 {------------------------------------------------------------------------------}
@@ -410,7 +423,9 @@ numberOfAromaticBondsToAtoms a = case a of
     Unfilled b m -> nt b
     where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b    
 
-
+{------------------------------------------------------------------------------}
+bondsToHeavyAtomsAtIndices :: Atom -> [Int]
+bondsToHeavyAtomsAtIndices atom = mapMaybe (getIndexForAtom . bondsTo) $ List.filter isSigmaBondToHeavyAtom $ bondList atom
 
 -- currentValence
 -- Aromatic bonds count as ONE bond, no matter how many there are.  Aromatic atoms that are
@@ -446,6 +461,15 @@ isAnyBondToRadical b = case b of
     Ionic _ -> False
     Antibond _ -> False
     Any atom -> isElectron atom
+
+
+{------------------------------------------------------------------------------}
+isSigmaBondToHeavyAtom :: Bond -> Bool
+isSigmaBondToHeavyAtom b =  
+    case b of   Sigma atom -> (isHeavyAtom $ bondsTo b)
+                _          -> False    
+
+
 
 {------------------------------------------------------------------------------}
 isAnyBondToElement :: Bond -> Integer -> Bool
