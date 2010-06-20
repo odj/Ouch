@@ -1,11 +1,9 @@
-<<<<<<< .merge_file_mMM4kE
-=======
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Main - an executable test module
     
     Copyright (c) 2010 Orion D. Jankowski
->>>>>>> .merge_file_mEX2PD
+
     
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
