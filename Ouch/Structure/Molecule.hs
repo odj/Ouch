@@ -69,6 +69,11 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
+-- It is VERY IMPORTANT to note that this graph is only valid one edge away from each node.
+-- To do otherwise would require a very expensive full recursive rebuild of the entire molecule within each
+-- atom (much like Leibniz's monads).  This is neither efficient nor necessary as long
+-- as the graph map is kept up to date.  The intrinsic structure of the graph is used only for 
+-- bootstrapping the molecule together.  After that, the authoritative graph comes from the atomMap.
 data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarker)} 
                 | Markush {molMarkerSet::(Set MoleculeMarker)}
                 | Polymer {molMarkerSet::(Set MoleculeMarker)}
@@ -116,7 +121,7 @@ cyclizeMolecule m = if (moleculeHasError m) then m else case m of
         Markush  {}    -> giveMoleculeError m "Can't cyclize on a Markush."
         Polymer  {}    -> giveMoleculeError m "Can't cyclize on a Polymer."
         Biologic {}    -> giveMoleculeError m "Can't cyclize on a Biologic."
-        where markers       = List.map markerSet $ List.map snd $ Map.toList (atomMap m)
+        where markers       = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
               isClosure mk  = case mk of Closure {} -> True ; _ -> False
               splitMk = List.map fst $ List.map (Set.partition isClosure) markers
               hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
@@ -138,7 +143,7 @@ hasHangingClosure m = if (moleculeHasError m) then False else case m of
         Markush  {}    -> False
         Polymer  {}    -> False
         Biologic {}    -> False
-        where markers       = List.map markerSet $ List.map snd $ Map.toList (atomMap m)
+        where markers       = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
               isClosure mk  = case mk of Closure {} -> True ; _ -> False
               splitMk = List.map fst $ List.map (Set.partition isClosure) markers         
               firstClosure = List.findIndex (/=Set.empty) splitMk
@@ -188,7 +193,7 @@ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b =
     if (moleculeHasError m2) then m2 else m12
         where m12 | hasClosure = cyclizeMolecule $ connectMolecules m1 i1 m2 i2 b
                   | otherwise  = connectMolecules m1 i1 m2 i2 b
-              markers       = List.foldr ((++) . Set.toList . markerSet) [] $ List.map snd $ Map.toList (atomMap m2)
+              markers       = List.foldr ((++) . Set.toList . atomMarkerSet) [] $ List.map snd $ Map.toList (atomMap m2)
               isClosure mk  = case mk of Closure {} -> True ; _ -> False
               hasClosure    = List.elem True $ List.map (isClosure) markers
               connectMolecules m1 i1 m2 i2 b 
@@ -276,7 +281,7 @@ fillMoleculeValence m = if (moleculeHasError m) then m else case m of
         Biologic {}   -> giveMoleculeError m "Can't fill valence on a Biologic."
 
  -- moleculeHasError
- -- Yes if markerSet contains any 'MolError' value
+ -- Yes if atomMarkerSet contains any 'MolError' value
 {------------------------------------------------------------------------------}
 moleculeHasError :: Molecule -> Bool
 moleculeHasError = Set.member (MError "") . molMarkerSet 

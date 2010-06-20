@@ -489,27 +489,15 @@ isAromaticBondToAtom b = case b of
 {------------------------------------------------------------------------------}
 isPiBondToAtom :: Bond -> Bool
 isPiBondToAtom b = case b of
-    Sigma atom -> False
-    Pi atom -> isElement atom
-    Aromatic atom -> False
-    Delta atom -> False
-    Hbond atom -> False
-    Ionic atom -> False
-    Antibond atom -> False
-    Any atom -> True
+    Pi {}   -> isElement (bondsTo b)
+    _       -> False
 
 
 {------------------------------------------------------------------------------}
 isSigmaBondToAtom :: Bond -> Bool
 isSigmaBondToAtom b = case b of
-    Sigma atom -> isElement atom
-    Pi atom -> False
-    Aromatic atom -> False
-    Delta atom -> False
-    Hbond atom -> False
-    Ionic atom -> False
-    Antibond atom -> False
-    Any atom -> True
+    Sigma {}   -> isElement (bondsTo b)
+    _          -> False
 
 
 {------------------------------------------------------------------------------}
