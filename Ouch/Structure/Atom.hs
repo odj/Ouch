@@ -51,66 +51,70 @@ module Ouch.Structure.Atom (
     , getMarkerSet -- This should be depreciated
     ) where
 
-import Data.Maybe
+import Data.Maybe as Maybe
 import Ouch.Data.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Data.Set as Set
-import qualified Data.Map as Map
-import qualified Data.List as List
+import Data.Map as Map
+import Data.List as List
 
 -- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
 -- Bond list is all bond FROM atom.  
 -- AtomMarker list is used to aid in graph traversing and other functions.
 {------------------------------------------------------------------------------}
-data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, bondList::[Bond], markerSet::(Set AtomMarker)}
-            | LonePair {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Electron {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Unfilled {bondList::[Bond], markerSet::(Set AtomMarker)}
-            | Unspecified {bondList::[Bond], markerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
-            | Open {bondList::[Bond], markerSet::(Set AtomMarker)}
+data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
 
 
 -- connectAtomsWithBond
 {------------------------------------------------------------------------------}
 connectAtomsWithBond :: Atom -> Atom -> NewBond -> (Atom, Atom)
-connectAtomsWithBond a1 a2 b = (aa1, aa2) where
+connectAtomsWithBond a1 a2 b = let  
+      n1  = Map.size $ atomBondMap a1
+      n2  = Map.size $ atomBondMap a2
+      nb1 = case b of
+                    Single -> Map.fromList $ (n1, Sigma aa2 n2):[]
+                    Double -> Map.fromList $ (n1, Sigma aa2 n2):(n1+1, Pi aa2 $ n2+1):[]
+                    Triple -> Map.fromList $ (n1, Sigma aa2 n2):(n1+1, Pi aa2 $ n2+1):(n1+2, Pi aa2 $ n2+2):[]
+                    NoBond -> Map.empty
+      nb2 = case b of
+                    Single -> Map.fromList $ (n2, Sigma aa1 n1):[]
+                    Double -> Map.fromList $ (n2, Sigma aa1 n1):(n2+1, Pi aa1 $ n1+1):[]
+                    Triple -> Map.fromList $ (n2, Sigma aa1 n1):(n2+1, Pi aa1 $ n1+1):(n2+2, Pi aa1 $ n1+2):[]
+                    NoBond -> Map.empty
       aa1 = case a1 of
           Element  {} ->  Element     { atomicNumber=(atomicNumber a1)
                                       , neutronNumber=(neutronNumber a1)
-                                      , bondList=((bondList a1) ++ newBond)
-                                      , markerSet=(markerSet a1)}
-          LonePair {} -> LonePair     { bondList=((bondList a1) ++ newBond)
-                                      , markerSet=(markerSet a1)}
-          Electron {} -> Electron     { bondList=((bondList a1) ++ newBond)
-                                      , markerSet=(markerSet a1)}
-          Unfilled {} -> Unfilled     { bondList=((bondList a1) ++ newBond)
-                                      , markerSet=(markerSet a1)}
-          where newBond = case b of
-                              Single -> [Sigma aa2]
-                              Double -> [Sigma aa2] ++ [Pi aa2]
-                              Triple -> [Sigma aa2] ++ [Pi aa2] ++ [Pi aa2]
-                              NoBond -> []
+                                      , atomBondMap=(Map.union (atomBondMap a1) nb1)
+                                      , atomMarkerSet=(atomMarkerSet a1)}
+          LonePair {} -> LonePair     { atomBondMap=(Map.union (atomBondMap a1) nb1)
+                                      , atomMarkerSet=(atomMarkerSet a1)}
+          Electron {} -> Electron     { atomBondMap=(Map.union (atomBondMap a1) nb1)
+                                      , atomMarkerSet=(atomMarkerSet a1)}
+          Unfilled {} -> Unfilled     { atomBondMap=(Map.union (atomBondMap a1) nb1)
+                                      , atomMarkerSet=(atomMarkerSet a1)}
       aa2 = case a2 of
           Element  {} -> Element      { atomicNumber=(atomicNumber a2)
                                       , neutronNumber=(neutronNumber a2)
-                                      , bondList=((bondList a2) ++ newBond)
-                                      , markerSet=(markerSet a2)}
-          LonePair {} -> LonePair     { bondList=((bondList a2) ++ newBond)
-                                      , markerSet=(markerSet a2)}
-          Electron {} -> Electron     { bondList=((bondList a2) ++ newBond)
-                                      , markerSet=(markerSet a2)}
-          Unfilled {} -> Unfilled     { bondList=((bondList a2) ++ newBond)
-                                      , markerSet=(markerSet a2)}
-          where newBond = case b of
-                            Single -> [Sigma aa1]
-                            Double -> [Sigma aa1] ++ [Pi aa1]
-                            Triple -> [Sigma aa1] ++ [Pi aa1] ++ [Pi aa1]
-                            NoBond -> []
+                                      , atomBondMap=(Map.union (atomBondMap a2) nb2)
+                                      , atomMarkerSet=(atomMarkerSet a2)}
+          LonePair {} -> LonePair     { atomBondMap=(Map.union (atomBondMap a2) nb2)
+                                      , atomMarkerSet=(atomMarkerSet a2)}
+          Electron {} -> Electron     { atomBondMap=(Map.union (atomBondMap a2) nb2)
+                                      , atomMarkerSet=(atomMarkerSet a2)}
+          Unfilled {} -> Unfilled     { atomBondMap=(Map.union (atomBondMap a2) nb2)
+                                      , atomMarkerSet=(atomMarkerSet a2)}
+
+      in (aa1, aa2)                     
 
 
 getMarkerSet :: Atom -> (Set AtomMarker)
-getMarkerSet a = markerSet a
+getMarkerSet a = atomMarkerSet a
 
 -- addLonePair
 -- Create a new lone-pair centered on the atom.
@@ -118,7 +122,7 @@ getMarkerSet a = markerSet a
 {------------------------------------------------------------------------------}
 addLonePair :: Atom -> [Atom] -> (Atom, [Atom])
 addLonePair a as  = (a', ([as'] ++ as))
-   where (a', as') = connectAtomsWithBond a (LonePair [] Set.empty) Single
+   where (a', as') = connectAtomsWithBond a (LonePair Map.empty Set.empty) Single
          val  = (fst $ valence a) + (abs(snd $ valence a))
          nb   = numberOfBonds a
          
@@ -129,14 +133,14 @@ addLonePair a as  = (a', ([as'] ++ as))
 {------------------------------------------------------------------------------}
 addHydrogen :: Atom -> [Atom] -> (Atom, [Atom]) 
 addHydrogen a as = (a', ([as'] ++ as))
-    where (a', as') = connectAtomsWithBond a (Element 1 1 [] Set.empty) Single
+    where (a', as') = connectAtomsWithBond a (Element 1 1 Map.empty Set.empty) Single
           val  = fst $ valence a
           nb   = numberOfBondsToAtoms a
     
 
 addElectron :: Atom -> [Atom] -> (Atom, [Atom]) 
 addElectron a as  = (a', ([as'] ++ as))
-  where (a', as') = connectAtomsWithBond a (Electron [] Set.empty) Single
+  where (a', as') = connectAtomsWithBond a (Electron Map.empty Set.empty) Single
         val  = fst $ valence a
         nb   = numberOfBondsToAtoms a
 
@@ -176,8 +180,8 @@ getError a = Nothing
 fillValence :: Atom -> [Atom] -> (Atom, [Atom])
 fillValence a as =  
     let val          = valence a
-        hBool        = Set.member (ExplicitHydrogen 0) (markerSet a)
-        h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (markerSet a)
+        hBool        = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
+        h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
                      | otherwise = 0
         nba          = (numberOfBondsToAtoms a) + (numberOfBondsToRadicals a)
         nb           = numberOfBonds a
@@ -189,7 +193,7 @@ fillValence a as =
         outputXH   | nbh < h                                       = fillValence aH asH
                    | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
                      -- Fill marked aromatics with a radical
-                   | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aEL asEL
+                   | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
 
                      -- Fill empty valences with radical
                    | nba < fst val                                 = fillValence aEL asEL
@@ -201,7 +205,7 @@ fillValence a as =
                    | otherwise = (a, as)
         output     | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
                      -- Fill marked aromatics with a radical
-                   | nbrB && Set.member AromaticAtom (markerSet a) = fillValence aEL asEL
+                   | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
 
                      -- Fill empty valences with hydrogen
                    | nba < fst val                                 = fillValence aH asH
@@ -326,7 +330,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
 {------------------------------------------------------------------------------}
 getIndexForAtom :: Atom -> Maybe Int
 getIndexForAtom a = if n == 0 then Nothing else Just $ fromIntegral (labelNumber $ lb!!0)
-  where lb = Set.toList $ Set.filter (==(Label 0)) (markerSet a)
+  where lb = Set.toList $ Set.filter (==(Label 0)) (atomMarkerSet a)
         n  = length lb
 
 
@@ -337,8 +341,8 @@ getIndexForAtom a = if n == 0 then Nothing else Just $ fromIntegral (labelNumber
 {------------------------------------------------------------------------------}
 markAtom :: Atom -> AtomMarker -> Atom
 markAtom a am = newAtom
-   where newSet = Set.insert am (markerSet a)
-         newAtom = a {markerSet=newSet}
+   where newSet = Set.insert am (atomMarkerSet a)
+         newAtom = a {atomMarkerSet=newSet}
 
 
 -- isHeavyAtom
@@ -379,7 +383,7 @@ isElectron a = case a of
 -- graph (i.e. one sigma and two pi bonds count as a 'one' bond)
 {------------------------------------------------------------------------------}
 numberOfBonds :: Atom -> Integer
-numberOfBonds a = fromIntegral $ length $ bondList a
+numberOfBonds a = fromIntegral $ Map.size $ atomBondMap a
 
 
 
@@ -391,7 +395,7 @@ numberOfBondsToAtoms a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToAtom b 
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b 
 
 {------------------------------------------------------------------------------}
 numberOfBondsToRadicals :: Atom -> Integer
@@ -400,7 +404,7 @@ numberOfBondsToRadicals a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
 
 
 {------------------------------------------------------------------------------}
@@ -410,10 +414,10 @@ numberOfBondsToHydrogens a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map (\a -> isAnyBondToElement a 1) b 
+    where nt b = fromIntegral $ Map.size $ Map.filter (\a -> isAnyBondToElement a 1) b 
 
 
-
+-- !!! Check this - not right !!!!
 {------------------------------------------------------------------------------}
 numberOfAromaticBondsToAtoms :: Atom -> Integer
 numberOfAromaticBondsToAtoms a = case a of
@@ -421,11 +425,12 @@ numberOfAromaticBondsToAtoms a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ length $ List.filter (==True) $ List.map isAnyBondToRadical b    
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b    
 
 {------------------------------------------------------------------------------}
 bondsToHeavyAtomsAtIndices :: Atom -> [Int]
-bondsToHeavyAtomsAtIndices atom = mapMaybe (getIndexForAtom . bondsTo) $ List.filter isSigmaBondToHeavyAtom $ bondList atom
+bondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList 
+                                  $ Map.filter isSigmaBondToHeavyAtom $ atomBondMap atom
 
 -- currentValence
 -- Aromatic bonds count as ONE bond, no matter how many there are.  Aromatic atoms that are
@@ -440,75 +445,44 @@ currentValence a = undefined
 
 {------------------------------------------------------------------------------}
 isAnyBondToAtom :: Bond -> Bool
-isAnyBondToAtom b = case b of
-    Sigma atom -> isElement atom
-    Pi atom -> isElement atom
-    Aromatic atom -> isElement atom
-    Delta atom -> isElement atom
-    Hbond atom -> False
-    Ionic atom -> False
-    Antibond atom -> False
-    Any atom -> True
+isAnyBondToAtom b =  isElement $ bondsTo b
+
+
     
 {------------------------------------------------------------------------------}
 isAnyBondToRadical :: Bond -> Bool
-isAnyBondToRadical b = case b of
-    Sigma atom -> isElectron atom
-    Pi _ -> False
-    Aromatic _ -> False
-    Delta _ -> False
-    Hbond _ -> False
-    Ionic _ -> False
-    Antibond _ -> False
-    Any atom -> isElectron atom
+isAnyBondToRadical b = isElectron $ bondsTo b
+
 
 
 {------------------------------------------------------------------------------}
 isSigmaBondToHeavyAtom :: Bond -> Bool
 isSigmaBondToHeavyAtom b =  
-    case b of   Sigma atom -> (isHeavyAtom $ bondsTo b)
+    case b of   Sigma {} -> isHeavyAtom $ bondsTo b
                 _          -> False    
 
 
 
 {------------------------------------------------------------------------------}
 isAnyBondToElement :: Bond -> Integer -> Bool
-isAnyBondToElement b i = let an | isElement (bondsTo b) = atomicNumber (bondsTo b) | otherwise = 0 in 
-    case b of   Sigma atom -> an == i
-                Pi atom -> an == i
-                Aromatic atom -> an == i
-                Delta atom -> an == i
-                Hbond atom -> an == i
-                Ionic atom -> an == i
-                Antibond atom -> an == i
-                Any atom -> an == i
+isAnyBondToElement b i =  i == (if isElement (bondsTo b) then atomicNumber (bondsTo b) else 0) 
+
+               
 
 
 {------------------------------------------------------------------------------}
 isDeltaBondToAtom :: Bond -> Bool
 isDeltaBondToAtom b = case b of
-    Sigma atom -> False
-    Pi atom -> False
-    Aromatic atom -> False
-    Delta atom -> isElement atom
-    Hbond atom -> False
-    Ionic atom -> False
-    Antibond atom -> False
-    Any atom -> True
+    Delta {} -> isElement (bondsTo b)
+    _          -> False
 
 
 
 {------------------------------------------------------------------------------}
 isAromaticBondToAtom :: Bond -> Bool
 isAromaticBondToAtom b = case b of
-    Sigma atom -> False
-    Pi atom -> False
-    Aromatic atom -> isElement atom
-    Delta atom -> False
-    Hbond atom -> False
-    Ionic atom -> False
-    Antibond atom -> False
-    Any atom -> True
+    Aromatic {}   -> isElement (bondsTo b)
+    _             -> False
 
 
 
@@ -540,7 +514,7 @@ isSigmaBondToAtom b = case b of
 
 {------------------------------------------------------------------------------}
 removeClosureAtomMarker :: Atom -> Integer -> Atom
-removeClosureAtomMarker a i = a{markerSet = (Set.delete deleteAtomMarker $ markerSet a)} 
+removeClosureAtomMarker a i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)} 
     where deleteAtomMarker = Closure i Single
 
 
@@ -548,8 +522,8 @@ removeClosureAtomMarker a i = a{markerSet = (Set.delete deleteAtomMarker $ marke
 {------------------------------------------------------------------------------}
 getMatchingClosureNumber :: Atom -> Atom -> Maybe Integer
 getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
-    where markers1 = fst $ Set.partition isClosure (markerSet a1)
-          markers2 = fst $ Set.partition isClosure (markerSet a2)
+    where markers1 = fst $ Set.partition isClosure (atomMarkerSet a1)
+          markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
           intersectionSet = Set.intersection markers1 markers2
           isClosure mk  = case mk of Closure {} -> True ; _ -> False
           firstCommonAtomMarker = if (Set.null intersectionSet) 
@@ -559,8 +533,8 @@ getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
 {------------------------------------------------------------------------------}
 getMatchingClosureBondType :: Atom -> Atom -> NewBond
 getMatchingClosureBondType a1 a2 = newClosureBond
-  where markers1 = fst $ Set.partition isClosure (markerSet a1)
-        markers2 = fst $ Set.partition isClosure (markerSet a2)
+  where markers1 = fst $ Set.partition isClosure (atomMarkerSet a1)
+        markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
         intersectionSet = Set.intersection markers1 markers2
         isClosure mk  = case mk of Closure {} -> True ; _ -> False
         newClosureBond    = if (Set.null intersectionSet) 

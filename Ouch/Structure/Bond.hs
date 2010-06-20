@@ -40,14 +40,14 @@ import Data.Set as Set
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Bond = Sigma {bondsTo::Atom}
-          | Pi {bondsTo::Atom} 
-          | Aromatic {bondsTo::Atom}
-          | Delta {bondsTo::Atom}
-          | Hbond {bondsTo::Atom}
-          | Ionic {bondsTo::Atom}
-          | Antibond {bondsTo::Atom}
-          | Any {bondsTo::Atom}
+data Bond = Sigma {bondsTo::Atom, revKey::Int}
+          | Pi {bondsTo::Atom, revKey::Int} 
+          | Aromatic {bondsTo::Atom, revKey::Int}
+          | Delta {bondsTo::Atom, revKey::Int}
+          | Hbond {bondsTo::Atom, revKey::Int}
+          | Ionic {bondsTo::Atom, revKey::Int}
+          | Antibond {bondsTo::Atom, revKey::Int}
+          | Any {bondsTo::Atom, revKey::Int}
 
 
 
