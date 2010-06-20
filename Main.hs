@@ -1,12 +1,3 @@
-<<<<<<< HEAD
---------------------------------------------------------------------------
-=======
-
->>>>>>> 1859b2d8bbcd7244f3740fdd47d62ba5d5f3f925
--------------------------------------------------------------------------------
-    Main - an executable test module
-    
-    Copyright (c) 2010 Orion D. Jankowski
     
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
