@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Main - an executable test module
+    Main - an executable test module AAAAAA
     
     Copyright (c) 2010 Orion D. Jankowski
 
