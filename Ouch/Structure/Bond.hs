@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Bond - a module to define bond data type
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -28,8 +28,8 @@
 module Ouch.Structure.Bond (
       Bond(..)
     ) where
-    
--- This line terminates recursive import sequences        
+
+-- This line terminates recursive import sequences
 import {-# SOURCE #-} Ouch.Structure.Atom
 import Ouch.Structure.Marker
 import Data.Set as Set
@@ -42,7 +42,7 @@ import Data.Set as Set
 {------------------------------------------------------------------------------}
 
 data Bond = Sigma {bondsTo::Atom, revKey::Int}
-          | Pi {bondsTo::Atom, revKey::Int} 
+          | Pi {bondsTo::Atom, revKey::Int}
           | Aromatic {bondsTo::Atom, revKey::Int}
           | Delta {bondsTo::Atom, revKey::Int}
           | Hbond {bondsTo::Atom, revKey::Int}
@@ -52,10 +52,10 @@ data Bond = Sigma {bondsTo::Atom, revKey::Int}
 
 
 
-      
+
 {------------------------------------------------------------------------------}
 {-------------------------------Typeclass Intances-----------------------------}
-{------------------------------------------------------------------------------}    
+{------------------------------------------------------------------------------}
 instance Show Bond where
   show b = case b of
       Sigma {} -> " -" ++ desc
@@ -71,8 +71,8 @@ instance Show Bond where
                 LonePair {} -> "LP"
                 Electron {} -> "EL"
                 Unfilled {} -> "UF"
-  
- 
+
+
 instance Eq Bond where
   a == b = True
-          
+

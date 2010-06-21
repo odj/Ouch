@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Atoms - a module to manage atom data
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -61,7 +61,7 @@ import Data.Map as Map
 import Data.List as List
 
 -- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
--- Bond list is all bond FROM atom.  
+-- Bond list is all bond FROM atom.
 -- AtomMarker list is used to aid in graph traversing and other functions.
 {------------------------------------------------------------------------------}
 data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
@@ -75,7 +75,7 @@ data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMa
 -- connectAtomsWithBond
 {------------------------------------------------------------------------------}
 connectAtomsWithBond :: Atom -> Atom -> NewBond -> (Atom, Atom)
-connectAtomsWithBond a1 a2 b = let  
+connectAtomsWithBond a1 a2 b = let
       n1  = Map.size $ atomBondMap a1
       n2  = Map.size $ atomBondMap a2
       nb1 = case b of
@@ -111,7 +111,7 @@ connectAtomsWithBond a1 a2 b = let
           Unfilled {} -> Unfilled     { atomBondMap=(Map.union (atomBondMap a2) nb2)
                                       , atomMarkerSet=(atomMarkerSet a2)}
 
-      in (aa1, aa2)                     
+      in (aa1, aa2)
 
 
 getMarkerSet :: Atom -> (Set AtomMarker)
@@ -126,20 +126,20 @@ addLonePair a as  = (a', ([as'] ++ as))
    where (a', as') = connectAtomsWithBond a (LonePair Map.empty Set.empty) Single
          val  = (fst $ valence a) + (abs(snd $ valence a))
          nb   = numberOfBonds a
-         
+
 
 
 
 
 {------------------------------------------------------------------------------}
-addHydrogen :: Atom -> [Atom] -> (Atom, [Atom]) 
+addHydrogen :: Atom -> [Atom] -> (Atom, [Atom])
 addHydrogen a as = (a', ([as'] ++ as))
     where (a', as') = connectAtomsWithBond a (Element 1 1 Map.empty Set.empty) Single
           val  = fst $ valence a
           nb   = numberOfBondsToAtoms a
-    
 
-addElectron :: Atom -> [Atom] -> (Atom, [Atom]) 
+
+addElectron :: Atom -> [Atom] -> (Atom, [Atom])
 addElectron a as  = (a', ([as'] ++ as))
   where (a', as') = connectAtomsWithBond a (Electron Map.empty Set.empty) Single
         val  = fst $ valence a
@@ -153,9 +153,9 @@ addElectron a as  = (a', ([as'] ++ as))
 {------------------------------------------------------------------------------}
 addUnfilled :: Atom -> [Atom] -> (Atom, [Atom])
 addUnfilled a = undefined
-  
-  
-   
+
+
+
 -- checkValence
 -- Verify valence rules are met.  True is what you want.
 {------------------------------------------------------------------------------}
@@ -174,12 +174,12 @@ getError a = Nothing
 
 -- fillValence
 -- Populate free valences with hydrogens/lone-pairs.  Return new atom plus an
--- atom list containing all the hydrogens added (adding to second arg).  
+-- atom list containing all the hydrogens added (adding to second arg).
 -- Lone pairs (i.e. for Nitrgen atoms) and empty orbitals (i.e. on Boron)
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
 fillValence :: Atom -> [Atom] -> (Atom, [Atom])
-fillValence a as =  
+fillValence a as =
     let val          = valence a
         hBool        = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
         h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
@@ -192,7 +192,7 @@ fillValence a as =
         (aEL, asEL)  = addElectron a as
         nbrB         = (numberOfBondsToRadicals a) == 0
         outputXH   | nbh < h                                       = fillValence aH asH
-                   | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
+                   | nb >= ((fst val) + (abs(snd val)))            = (a, as)
                      -- Fill marked aromatics with a radical
                    | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
 
@@ -204,7 +204,7 @@ fillValence a as =
 
                      -- Pattern completion
                    | otherwise = (a, as)
-        output     | nb >= ((fst val) + (abs(snd val)))            = (a, as) 
+        output     | nb >= ((fst val) + (abs(snd val)))            = (a, as)
                      -- Fill marked aromatics with a radical
                    | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
 
@@ -217,10 +217,10 @@ fillValence a as =
                      -- Pattern completion
                    | otherwise = (a, as)
     in if hBool then outputXH else output
-  
-   
-       
-       
+
+
+
+
 
 
 
@@ -255,16 +255,16 @@ atomicSymbolForAtom a = case a of
     Electron {} -> ""
     Unfilled {} -> ""
     Unspecified {} -> ""
-    Open {} -> ""     
+    Open {} -> ""
     where lookupValue n = (Map.lookup n atomicSymbols)
           symbol d = case d of
                  Just d -> d
                  Nothing -> ""
-   
-   
+
+
 -- valence
 -- Returns the normal valence for the element in question as a tuple.
--- First value is the number of normal bonds.  Second value is the number 
+-- First value is the number of normal bonds.  Second value is the number
 -- of lone-pairs.  A negative value for the second number indicates unfilled
 -- sp3 (i.e. for Boron).
 {------------------------------------------------------------------------------}
@@ -276,7 +276,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                    grp15 = [7,15,33,51,83]
                    grp16 = [8,16,34,52,84]
                    grp17 = [9,17,35,53,85]
-                   grp18 = [2,10,18,36,54,86] 
+                   grp18 = [2,10,18,36,54,86]
                    per1 = [1,2]
                    per2 = [3..10]
                    per3 = [11..18]
@@ -291,7 +291,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                            | elem i grp16 = 2
                            | elem i grp17 = 1
                            | elem i grp18 = 0
-                           | otherwise = 0 
+                           | otherwise = 0
                    elecs i | elem i grp1 = 1
                            | elem i grp2 = 2
                            | elem i grp13 = 3
@@ -300,7 +300,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                            | elem i grp16 = 6
                            | elem i grp17 = 7
                            | elem i grp18 = 8
-                           | otherwise = 0 
+                           | otherwise = 0
                    sorb i | elem i grp1 = 1
                           | elem i grp2 = 2
                           | elem i grp13 = 4
@@ -309,7 +309,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                           | elem i grp16 = 4
                           | elem i grp17 = 4
                           | elem i grp18 = 4
-                          | otherwise = 0 
+                          | otherwise = 0
                    -- This is not right but works for now => CORRECTION NEEDED
                    dorb i | elem i per1 = 0
                           | elem i per2 = 0
@@ -324,8 +324,8 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                LonePair {} -> (1, 0)
                Electron {} -> (1, 0)
                Unfilled {} -> (1, 0)
-                    
-                       
+
+
 
 -- markAtom
 {------------------------------------------------------------------------------}
@@ -355,9 +355,9 @@ isHeavyAtom a = case a of
    LonePair {} -> False
    Electron {} -> False
    Unfilled {} -> False
-  
-  
-   
+
+
+
 -- isElement
 -- Returns TRUE if atom is a "real" element
 {------------------------------------------------------------------------------}
@@ -380,7 +380,7 @@ isElectron a = case a of
 
 
 -- numberOfBonds
--- Returns number of covalent connections to other atoms in the molecule 
+-- Returns number of covalent connections to other atoms in the molecule
 -- graph (i.e. one sigma and two pi bonds count as a 'one' bond)
 {------------------------------------------------------------------------------}
 numberOfBonds :: Atom -> Integer
@@ -396,7 +396,7 @@ numberOfBondsToAtoms a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b 
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b
 
 {------------------------------------------------------------------------------}
 numberOfBondsToRadicals :: Atom -> Integer
@@ -415,7 +415,7 @@ numberOfBondsToHydrogens a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter (\a -> isAnyBondToElement a 1) b 
+    where nt b = fromIntegral $ Map.size $ Map.filter (\a -> isAnyBondToElement a 1) b
 
 
 -- !!! Check this - not right !!!!
@@ -426,11 +426,11 @@ numberOfAromaticBondsToAtoms a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b    
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
 
 {------------------------------------------------------------------------------}
 bondsToHeavyAtomsAtIndices :: Atom -> [Int]
-bondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList 
+bondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList
                                   $ Map.filter isSigmaBondToHeavyAtom $ atomBondMap atom
 
 -- currentValence
@@ -449,7 +449,7 @@ isAnyBondToAtom :: Bond -> Bool
 isAnyBondToAtom b =  isElement $ bondsTo b
 
 
-    
+
 {------------------------------------------------------------------------------}
 isAnyBondToRadical :: Bond -> Bool
 isAnyBondToRadical b = isElectron $ bondsTo b
@@ -458,17 +458,17 @@ isAnyBondToRadical b = isElectron $ bondsTo b
 
 {------------------------------------------------------------------------------}
 isSigmaBondToHeavyAtom :: Bond -> Bool
-isSigmaBondToHeavyAtom b =  
+isSigmaBondToHeavyAtom b =
     case b of   Sigma {} -> isHeavyAtom $ bondsTo b
-                _          -> False    
+                _          -> False
 
 
 
 {------------------------------------------------------------------------------}
 isAnyBondToElement :: Bond -> Integer -> Bool
-isAnyBondToElement b i =  i == (if isElement (bondsTo b) then atomicNumber (bondsTo b) else 0) 
+isAnyBondToElement b i =  i == (if isElement (bondsTo b) then atomicNumber (bondsTo b) else 0)
 
-               
+
 
 
 {------------------------------------------------------------------------------}
@@ -503,7 +503,7 @@ isSigmaBondToAtom b = case b of
 
 {------------------------------------------------------------------------------}
 removeClosureAtomMarker :: Atom -> Integer -> Atom
-removeClosureAtomMarker a i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)} 
+removeClosureAtomMarker a i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)}
     where deleteAtomMarker = Closure i Single
 
 
@@ -515,8 +515,8 @@ getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
           markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
           intersectionSet = Set.intersection markers1 markers2
           isClosure mk  = case mk of Closure {} -> True ; _ -> False
-          firstCommonAtomMarker = if (Set.null intersectionSet) 
-                              then Nothing 
+          firstCommonAtomMarker = if (Set.null intersectionSet)
+                              then Nothing
                               else Just $ labelNumber (Set.findMin intersectionSet)
 
 {------------------------------------------------------------------------------}
@@ -526,8 +526,8 @@ getMatchingClosureBondType a1 a2 = newClosureBond
         markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
         intersectionSet = Set.intersection markers1 markers2
         isClosure mk  = case mk of Closure {} -> True ; _ -> False
-        newClosureBond    = if (Set.null intersectionSet) 
-                            then NoBond 
+        newClosureBond    = if (Set.null intersectionSet)
+                            then NoBond
                             else bondType (Set.findMax intersectionSet)
 
 
@@ -538,7 +538,7 @@ getMatchingClosureBondType a1 a2 = newClosureBond
 
 
 
-         
+
 {------------------------------------------------------------------------------}
 instance Show Atom where
     show a = case a of
@@ -554,7 +554,7 @@ instance Show Atom where
 instance Eq Atom where
     a == b = True
 
-    
+
 {------------------------------------------------------------------------------}
 instance Ord Atom where
     a > b = True

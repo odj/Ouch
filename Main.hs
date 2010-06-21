@@ -1,10 +1,10 @@
 {------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Main - an executable test module
-    
+
     Copyright (c) 2010 Orion D. Jankowski
 
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -26,7 +26,7 @@
 -- ghc --make -O2 -fforce-recomp -prof -auto-all -caf-all Main.hs -o a.out
 -- ghc --make -O2 -fforce-recomp Main.hs -o a.out
 -- time ./a.out tests.txt +RTS -sstderr -p -K100M
--- 
+--
 {-# LANGUAGE ForeignFunctionInterface, CPP, Generics #-}
 
 
@@ -34,11 +34,11 @@ import Ouch.Test.Methods
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
-import Ouch.Structure.Marker 
+import Ouch.Structure.Marker
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
 import Ouch.Property.Ring
-import System.IO 
+import System.IO
 import System.Environment
 import Data.Either
 import Data.Maybe

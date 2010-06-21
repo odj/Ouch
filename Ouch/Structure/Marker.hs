@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     AtomMarker - a module to manage atom markers
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -29,10 +29,10 @@ module Ouch.Structure.Marker (
     , MoleculeMarker(..)
     , NewBond(..)
     , Geometry(..)
-    ) where 
+    ) where
 
 import {-# SOURCE #-} Ouch.Structure.Atom
-        
+
 {------------------------------------------------------------------------------}
 data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label maintained to match atom map held by Molecule
                   | Charge {charge::Integer}
@@ -55,10 +55,10 @@ data AtomMarker =   Label {labelNumber::Integer}   -- OUCH specific label mainta
 
 data MoleculeMarker =   Info     {molMarker::String}
                       | Name     {molMarker::String}
-                      | Warning  {molMarker::String} 
+                      | Warning  {molMarker::String}
                       | MError {molMarker::String}
                       deriving (Eq)
-                      
+
 
 {------------------------------------------------------------------------------}
 data Chirality = Levo | Dextro | UnknownChirality
@@ -96,51 +96,51 @@ instance Show MoleculeMarker where
 
 
 instance Eq AtomMarker where
-   a == b = case a of 
-      Position {position=l1} -> case b of 
+   a == b = case a of
+      Position {position=l1} -> case b of
           Position {position=l2} -> if (l1 == l2) then True else False
           _ -> False
-      Charge {charge=l1} -> case b of 
+      Charge {charge=l1} -> case b of
           Charge {charge=l2} -> if (l1 == l2) then True else False
           _ -> False
-      Closure {labelNumber=l1, bondType=b1} -> case b of 
+      Closure {labelNumber=l1, bondType=b1} -> case b of
           Closure {labelNumber=l2, bondType=b2} -> if (l1 == l2) then True else False
           _ -> False
-      Class {classNumber=l1} -> case b of 
-          Class {classNumber=l2} -> if (l1 == l2) then True else False    
-          _ -> False 
-      Chiral {} -> case b of 
+      Class {classNumber=l1} -> case b of
+          Class {classNumber=l2} -> if (l1 == l2) then True else False
+          _ -> False
+      Chiral {} -> case b of
           Chiral {} -> True
           _ -> False
-      GeoIsomer {} -> case b of 
+      GeoIsomer {} -> case b of
           GeoIsomer {} -> True
           _ -> False
-      AromaticAtom -> case b of 
+      AromaticAtom -> case b of
           AromaticAtom -> True
           _ -> False
-      Traversed {} -> case b of 
-          Traversed { }-> True   
-          _ -> False 
-      ExplicitHydrogen {} -> case b of 
-          ExplicitHydrogen {}-> True   
+      Traversed {} -> case b of
+          Traversed { }-> True
           _ -> False
-      Substructure {substructureNumber=l1} -> case b of 
+      ExplicitHydrogen {} -> case b of
+          ExplicitHydrogen {}-> True
+          _ -> False
+      Substructure {substructureNumber=l1} -> case b of
           Substructure {substructureNumber=l2} -> if (l1 == l2) then True else False
           _ -> False
-      ValenceError {valenceError=l1} -> case b of 
+      ValenceError {valenceError=l1} -> case b of
           ValenceError {valenceError=l2} -> if (l1 == l2) then True else False
           _ -> False
-      InRing {ringNumber=l1} -> case b of 
-          InRing {ringNumber=l2} -> if (l1 == l2) then True else False  
-          _ -> False   
-      Skip -> case b of 
+      InRing {ringNumber=l1} -> case b of
+          InRing {ringNumber=l2} -> if (l1 == l2) then True else False
+          _ -> False
+      Skip -> case b of
           Skip -> True
           _ -> False
-      Comment {comment=l1} -> case b of 
-          Comment {comment=l2} -> if (l1 == l2) then True else False    
+      Comment {comment=l1} -> case b of
+          Comment {comment=l2} -> if (l1 == l2) then True else False
           _ -> False
-      Null -> case b of 
-          Null -> True 
+      Null -> case b of
+          Null -> True
           _ -> False
       Label {labelNumber=l1} -> case b of
             Label {labelNumber=l2} -> if (l1 == l2) then True else False
@@ -149,24 +149,24 @@ instance Eq AtomMarker where
 
 
 instance Ord AtomMarker where
-   compare a b =  case a of 
+   compare a b =  case a of
           Label {}   -> case b of
               Label {}              -> EQ
               _                     -> GT
-   
-          Charge {} -> case b of 
+
+          Charge {} -> case b of
              Label {}              -> LT
              Charge {}             -> EQ
              _                     -> GT
 
-          Position {} -> case b of 
+          Position {} -> case b of
              Label {}              -> LT
              Charge {}             -> LT
              Position {}           -> EQ
              _                     -> GT
- 
-             
-          Closure {labelNumber=l1} -> case b of 
+
+
+          Closure {labelNumber=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -177,7 +177,7 @@ instance Ord AtomMarker where
                              | otherwise  = GT
               _                     -> GT
 
-          Class {} -> case b of 
+          Class {} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -185,7 +185,7 @@ instance Ord AtomMarker where
               Class {}              -> EQ
               _                     -> GT
 
-          Chiral {} -> case b of 
+          Chiral {} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -194,7 +194,7 @@ instance Ord AtomMarker where
               Chiral {}             -> EQ
               _                     -> GT
 
-          GeoIsomer {} -> case b of 
+          GeoIsomer {} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -204,7 +204,7 @@ instance Ord AtomMarker where
               GeoIsomer {}          -> EQ
               _                     -> GT
 
-          AromaticAtom -> case b of 
+          AromaticAtom -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -215,7 +215,7 @@ instance Ord AtomMarker where
               AromaticAtom          -> EQ
               _                     -> GT
 
-          Traversed {order=l1} -> case b of 
+          Traversed {order=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -229,8 +229,8 @@ instance Ord AtomMarker where
                         | l1 < l2  = LT
                         | l1 == l2 = EQ
               _                     -> GT
- 
-          ExplicitHydrogen {} -> case b of 
+
+          ExplicitHydrogen {} -> case b of
                 Label {}              -> LT
                 Charge {}             -> LT
                 Position {}           -> LT
@@ -242,8 +242,8 @@ instance Ord AtomMarker where
                 Traversed {}          -> LT
                 ExplicitHydrogen {}   -> EQ
                 _                     -> GT
- 
-          Substructure {substructureNumber=l1} -> case b of 
+
+          Substructure {substructureNumber=l1} -> case b of
                   Label {}              -> LT
                   Charge {}             -> LT
                   Position {}           -> LT
@@ -262,7 +262,7 @@ instance Ord AtomMarker where
                   _                     -> GT
 
 
-          ValenceError {valenceError=l1} -> case b of 
+          ValenceError {valenceError=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -281,8 +281,8 @@ instance Ord AtomMarker where
                               | otherwise  = EQ
               _                     -> GT
 
-              
-          InRing {ringNumber=l1} -> case b of 
+
+          InRing {ringNumber=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -302,8 +302,8 @@ instance Ord AtomMarker where
                               | otherwise  = EQ
               _                     -> GT
 
- 
-          Skip -> case b of 
+
+          Skip -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -320,7 +320,7 @@ instance Ord AtomMarker where
               Skip   {}             -> EQ
               _                     -> GT
 
-          PEdge {reaches=l1} -> case b of 
+          PEdge {reaches=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -343,7 +343,7 @@ instance Ord AtomMarker where
               _                     -> GT
 
 
-          Comment {comment=l1} -> case b of 
+          Comment {comment=l1} -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -364,9 +364,9 @@ instance Ord AtomMarker where
                               | (l1 > l2)  = GT
                               | (l1 < l2)  = LT
                               | otherwise  = EQ
-              Null                  -> LT          
+              Null                  -> LT
 
-          Null -> case b of 
+          Null -> case b of
               Label {}              -> LT
               Charge {}             -> LT
               Position {}           -> LT
@@ -386,7 +386,7 @@ instance Ord AtomMarker where
               Null                  -> EQ
 
 instance Ord MoleculeMarker where
-  compare a b =  case a of 
+  compare a b =  case a of
       MError {}  -> case b of
           MError {}            -> EQ
           Name {}              -> GT
@@ -416,8 +416,8 @@ instance Ord MoleculeMarker where
                       | (l1 > l2)  = GT
                       | (l1 < l2)  = LT
                       | otherwise  = EQ
-          
-          
-          
-          
-          
+
+
+
+
+
