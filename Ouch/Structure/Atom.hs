@@ -24,6 +24,7 @@
 ------------------------------------------------------------------------------}
 
 {-# LANGUAGE CPP #-}
+
 module Ouch.Structure.Atom (
       Atom(..)
     , addHydrogen
