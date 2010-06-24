@@ -69,11 +69,13 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
--- It is VERY IMPORTANT to note that this graph is only valid one edge away from each node.
--- To do otherwise would require a very expensive full recursive rebuild of the entire molecule within each
--- atom (much like Leibniz's monads).  This is neither efficient nor necessary as long
--- as the graph map is kept up to date.  The intrinsic structure of the graph is used only for
--- bootstrapping the molecule together.  After that, the authoritative graph comes from the atomMap.
+-- It is VERY IMPORTANT to note that this graph is only valid one edge away from
+-- each node.  To do otherwise would require a very expensive full recursive
+-- rebuild of the entire molecule within each atom (much like Leibniz's monads).
+-- This is neither efficient nor necessary as long as the graph map is kept up to
+-- date.  The intrinsic structure of the graph is used only for bootstrapping the
+-- molecule together.  After that, the authoritative graph comes from the
+-- atomMap.
 data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarker)}
                 | Markush {molMarkerSet::(Set MoleculeMarker)}
                 | Polymer {molMarkerSet::(Set MoleculeMarker)}
@@ -135,8 +137,8 @@ cyclizeMolecule m = if (moleculeHasError m) then m else case m of
                       Just atom2 -> Just (atom1, atom2)
                       where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
                             splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
-
-
+--hasHangingClosure
+{------------------------------------------------------------------------------}
 hasHangingClosure :: Molecule -> Bool
 hasHangingClosure m = if (moleculeHasError m) then False else case m of
         Small {}       -> output
@@ -261,6 +263,8 @@ numberOfHeavyAtoms m = case m of
     Biologic {}    -> Nothing
     where heavy a = Map.filter isHeavyAtom a
           num a = fromIntegral $ Map.size $ heavy a
+
+
 -- fillMoleculeValence
 -- Fills valence with hydrogens and lone-pairs to give neutral species
 -- If valence is already complete, returns molecule unchanged
@@ -380,24 +384,24 @@ numberOfRotatableBonds m = Just (0::Integer)
 {------------------------------------------------------------------------------}
 molecularFormula :: Molecule -> Either String String
 molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
-        Small {atomMap=at}    -> Right molFm
-            where startMap = Map.empty
-                  endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList at
-                  -- Use foldr to accumulate and count atoms
-                  updateMap a m | Map.notMember (atomicSymbolForAtom a) m   = Map.insert (atomicSymbolForAtom a)  1 m
-                             | otherwise                                    = Map.adjust (+ 1) (atomicSymbolForAtom a) m
-                  -- Convert the map to a list of just the elements present, and in IUPAC order
-                  finalList = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
-                  --  Build the final output string from the map
-                  molFm = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList
-                  -- simple little utility function which, strangely, is not already defined in Data.Map
-                  lookupPair k m = case v of
-                      Just val -> Just (k, val)
-                      Nothing -> Nothing
-                      where v = Map.lookup k m
-        Markush  {}   -> Left "No molecular formula defined for Markush"
-        Polymer  {}   -> Left "No molecular formula defined for Polymer"
-        Biologic {}   -> Left "No molecular formula defined for Biologic"
+    Small {atomMap=at}    -> Right molFm
+        where startMap = Map.empty
+              endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList at
+              -- Use foldr to accumulate and count atoms
+              updateMap a m | Map.notMember (atomicSymbolForAtom a) m = Map.insert (atomicSymbolForAtom a)  1 m
+                            | otherwise                               = Map.adjust (+ 1) (atomicSymbolForAtom a) m
+              -- Convert the map to a list of just the elements present, and in IUPAC order
+              finalList = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
+              --  Build the final output string from the map
+              molFm = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList
+              -- simple little utility function which, strangely, is not already defined in Data.Map
+              lookupPair k m = case v of
+                  Just val -> Just (k, val)
+                  Nothing -> Nothing
+                  where v = Map.lookup k m
+    Markush  {}   -> Left "No molecular formula defined for Markush"
+    Polymer  {}   -> Left "No molecular formula defined for Polymer"
+    Biologic {}   -> Left "No molecular formula defined for Biologic"
 
 
 
