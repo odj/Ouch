@@ -1,4 +1,3 @@
-rm -r *.hi
-rm -r *.o
-rm errorLog.txt
+find . -regextype posix-extended -regex '.*\.(hi|o)' | xargs rm 
+rm  errorLog.txt
 
