@@ -170,7 +170,8 @@ makeAtomMoleculeFromChop nb = case nb of
           a = [toUpper c | c <- smile nb]
           emptyMol = Small Map.empty Set.empty
           makeAtomMolecule nb
-           | a == ""    =  giveMoleculeError emptyMol "ERROR: Tried to make atom from empty string."
+           | a == ""    =  giveMoleculeError emptyMol
+                           "ERROR: Tried to make atom from empty string."
            | a == "C"   =  Small  (Map.singleton 0
                            $ Element 6 0 Map.empty markSetAll) Set.empty
            | a == "N"   =  Small  (Map.singleton 0
@@ -181,51 +182,77 @@ makeAtomMoleculeFromChop nb = case nb of
                            $ Element 1 0 Map.empty markSetAll) Set.empty
            | a == "P"   =  Small  (Map.singleton 0
                            $ Element 15 0 Map.empty markSetAll) Set.empty
-           | a == "S"   =  Small  (Map.singleton 0 $ Element 16 0 Map.empty markSetAll) Set.empty
-           | a == "F"   =  Small  (Map.singleton 0 $ Element 9  0 Map.empty markSetAll) Set.empty
-           | a == "B"   =  Small  (Map.singleton 0 $ Element 5  0 Map.empty markSetAll) Set.empty
-           | a == "BR"  =  Small  (Map.singleton 0 $ Element 35 0 Map.empty markSetAll) Set.empty
-           | a == "CL"  =  Small  (Map.singleton 0 $ Element 17 0 Map.empty markSetAll) Set.empty
-           | a == "I"   =  Small  (Map.singleton 0 $ Element 53 0 Map.empty markSetAll) Set.empty
-           | a == "*"   =  Small  (Map.singleton 0 $ Unspecified Map.empty markSetAll) Set.empty -- Wildcard Atom
-           | otherwise  =  giveMoleculeError emptyMol ("ERROR: Atom not recognized for symbol: " ++ a)
+           | a == "S"   =  Small  (Map.singleton 0
+                           $ Element 16 0 Map.empty markSetAll) Set.empty
+           | a == "F"   =  Small  (Map.singleton 0
+                           $ Element 9  0 Map.empty markSetAll) Set.empty
+           | a == "B"   =  Small  (Map.singleton 0
+                           $ Element 5  0 Map.empty markSetAll) Set.empty
+           | a == "BR"  =  Small  (Map.singleton 0
+                           $ Element 35 0 Map.empty markSetAll) Set.empty
+           | a == "CL"  =  Small  (Map.singleton 0
+                           $ Element 17 0 Map.empty markSetAll) Set.empty
+           | a == "I"   =  Small  (Map.singleton 0
+                           $ Element 53 0 Map.empty markSetAll) Set.empty
+           | a == "*"   =  Small  (Map.singleton 0
+                           $ Unspecified Map.empty markSetAll) Set.empty
+           | otherwise  =  giveMoleculeError emptyMol
+                           ("ERROR: Atom not recognized for symbol: " ++ a)
 
 
 
 makeAtomMoleculeFromBracketChop::ChoppedSmile -> Molecule
 makeAtomMoleculeFromBracketChop sb = mol
-    where (s1, s2, s3)    = (smile sb) =~ "(^(\\[)([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"::(String, String, String)
-          --(s1, s2, s3)    = (smile sb) =~ "(^[\\[].*(\\]))"::(String, String, String)  -- Contents of the brackets
+    where (s1, s2, s3)    = (smile sb)
+                          =~ "(^(\\[)([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
+                          ::(String, String, String)
           s =  init $ tail s2   -- Drop the brackets
 
           -- Get charge information
-          (ch1, ch2, ch3)   = s     =~ "([+-][0-9]*)"::(String, String, String)
-          (sign, int, _)    = ch2   =~ "([^+-][0-9]*)"::(String, String, String)
+          (ch1, ch2, ch3)   = s
+                            =~ "([+-][0-9]*)"
+                            ::(String, String, String)
+          (sign, int, _)    = ch2
+                            =~ "([^+-][0-9]*)"
+                            ::(String, String, String)
           charge | int == "" = 1 | otherwise = read int::Integer
-          markCharge | ch2 == "" = Null | sign == "-" = Charge (0 - charge) | otherwise = Charge charge
+          markCharge | ch2 == "" = Null
+                     | sign == "-" = Charge (0 - charge)
+                     | otherwise = Charge charge
 
           -- Get isotopic number
-          (n1, n2, n3)   = s     =~ "(^[0-9]*)"::(String, String, String)
+          (n1, n2, n3)   = s =~ "(^[0-9]*)"
+                             ::(String, String, String)
           isotope | n2 == "" = 0 | otherwise = read n2::Integer
 
           -- Get element symbol
-          (a1, a2, a3)   = s     =~ "([A-Za-z]{1}[a-z]{0,1})"::(String, String, String)
-          lookupString | isLower (head a2) && (length a2) == 1 = [toUpper $ a2!!0] | otherwise = a2
-          markAromatic | isLower (head a2) && (length a2) == 1 = AromaticAtom | otherwise = Null
-          atomicNumber = case Map.lookup lookupString atomicNumberFromSymbol of  -- Need to error check here!
+          (a1, a2, a3)   = s =~ "([A-Za-z]{1}[a-z]{0,1})"
+                             ::(String, String, String)
+          lookupString | isLower (head a2) && (length a2) == 1
+                       = [toUpper $ a2!!0] | otherwise = a2
+          markAromatic | isLower (head a2) && (length a2) == 1
+                       = AromaticAtom | otherwise = Null
+         -- Need to error check here!
+          atomicNumber = case Map.lookup lookupString atomicNumberFromSymbol of
               Just n -> n
               Nothing -> 0  -- This needs to generate an error
 
           -- Get number of extra internal hydrogens (I think this notation is stupid)
-          (h1, h2, h3)    = a3     =~ "([H]{1}[0-9]*)"::(String, String, String)
-          (nh1, nh2, nh3) = h2     =~ "([0-9]+)"::(String, String, String)
+          (h1, h2, h3)    = a3 =~ "([H]{1}[0-9]*)"
+                               ::(String, String, String)
+          (nh1, nh2, nh3) = h2 =~ "([0-9]+)"
+                               ::(String, String, String)
           numberH | h2 == "" = 0 | nh2 == "" = 1 | otherwise = read nh2::Integer
           markH = ExplicitHydrogen numberH
 
           -- Get class information
-          (c1, c2, c3)       = s     =~ "([:][0-9]+)"::(String, String, String)
-          (cn1, cn2, cn3)    = c2    =~ "([0-9]+)"::(String, String, String)
-          classNumber | c2 == "" = 0 | cn2 == "" =0 | otherwise = read cn2::Integer
+          (c1, c2, c3)       = s  =~ "([:][0-9]+)"
+                                  ::(String, String, String)
+          (cn1, cn2, cn3)    = c2 =~ "([0-9]+)"
+                                  ::(String, String, String)
+          classNumber | c2 == "" = 0
+                      | cn2 == "" =0
+                      | otherwise = read cn2::Integer
           markClass = Class classNumber
 
           -- Get Stereochemical Information
@@ -235,15 +262,13 @@ makeAtomMoleculeFromBracketChop sb = mol
                      | otherwise = Null
 
           -- Now make the molecule
-          mol = Small (Map.singleton 0 $ Element atomicNumber (isotope-atomicNumber) Map.empty markSetAll) Set.empty
-         -- hydrogen = Right $ Small $ Map.singleton 0 $ Element 1 0 [] Set.empty
-          -- hydrogens = take (fromIntegral numberH) $ repeat hydrogen
-          -- Need to fill the rest with radicals to keep the bracket designation explicit.
-          -- molH = foldr (\a mol -> connectPerhapsMoleculesAtIndicesWithBond mol 0 a 0 Single) mol hydrogens
+          mol = Small (Map.singleton 0
+              $ Element atomicNumber (isotope-atomicNumber)
+                Map.empty markSetAll) Set.empty
 
-
-          markSetAll = Set.union (mark sb) $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge]
-                                                            ++ (parseClosureAtomMarkers s3 []))
+          markSetAll = Set.union (mark sb)
+                     $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge]
+                     ++ (parseClosureAtomMarkers s3 []))
 
 -- nextSmilesSubstring
 -- Lots, lots, lots!!!!! more to fill in here
@@ -254,11 +279,17 @@ parseSmiles s = s =~ pat::(String, String, String)
     where pat = foldr (++) "" patList
           patList = [ "("
                     -- Search for first atom + bond/marker
-                    , "^[-=#\\./]{0,1}[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"
-                    -- return the whole string for anything that STARTS with open parens
+                    , "^[-=#\\./]{0,1}"
+                   ++ "[\\]{0,1}([A-Za-z]|Br|Cl|Si|Sn|Li|Na|Cs){1}"
+                   ++ "([-=#\\.]{0,1}[/\\]{0,1}[0-9])*[@]*"
+                    -- return the whole string for anything
+                    -- that STARTS with open parens
                     , "|^[(].*|(^[/][(].*)|(^[\\][(].*)"
-                    -- return next atom segment within square brackets plus closure ID's afterwards
-                    , "|(^([-=#\\.][\\[]|[/][\\[]|[\\\\[])([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}[/\\]{0,1}[0-9])*)"
+                    -- return next atom segment within square
+                    -- brackets plus closure ID's afterwards
+                    , "|(^([-=#\\.][\\[]|[/][\\[]|[\\\\[])"
+                   ++ "([+-@:a-zA-Z0-9])*(\\])([-=#\\.]{0,1}"
+                   ++ "[/\\]{0,1}[0-9])*)"
                     , ")"
                     ]
 
@@ -268,18 +299,18 @@ parseSmiles s = s =~ pat::(String, String, String)
 {------------------------------------------------------------------------------}
 nextChoppedSmile :: String -> ChoppedSmile
 nextChoppedSmile s
-   | s2 == "" || s1 /= ""   = SmilesError   {smile=s1, smiles=s, newBond=NoBond, mark=(Set.empty)}
-   | isSubSmile             = SubSmile      {smile=b', smiles=ss3, newBond=nb', mark=markerSet}
-   | otherwise              = Smile         {smile=smi, smiles=s3, newBond=nb, mark=markerSet}
+   | s2 == "" || s1 /= "" = SmilesError {smile=s1, smiles=s, newBond=NoBond, mark=(Set.empty)}
+   | isSubSmile           = SubSmile    {smile=b', smiles=ss3, newBond=nb', mark=markerSet}
+   | otherwise            = Smile       {smile=smi, smiles=s3, newBond=nb, mark=markerSet}
 
-   where (s1, s2, s3)       = parseSmiles s                                 -- Get initial parse
+   where (s1, s2, s3)       = parseSmiles s   -- Get initial parse
 
          -- Strip off double-bond geometry info first!
          (g1, g2, g3)       = s2 =~ "(^[/\\])"::(String, String, String)
-         markGeo            | g2 == "/"         = Set.singleton (GeoIsomer ProCis)
-                            | g2 == "\\"        = Set.singleton (GeoIsomer ProTrans)
-                            | g2 == ""          = Set.singleton Null
-                            | otherwise         = Set.singleton Null
+         markGeo            | g2 == "/"   = Set.singleton (GeoIsomer ProCis)
+                            | g2 == "\\"  = Set.singleton (GeoIsomer ProTrans)
+                            | g2 == ""    = Set.singleton Null
+                            | otherwise   = Set.singleton Null
         -- Use the remainder that contains information for all operations below
          g                   | length g1 /= 0 = g1 | length g3 /= 0 = g3
 
@@ -308,41 +339,42 @@ nextChoppedSmile s
                | b2' == "#"            = Triple
                | otherwise             = Single
 
-         -- Get atom closure info and parse it, then merge with above geoAtomMarker
-         markerSet          = Set.union markGeo (Set.fromList $ parseClosureAtomMarkers lb2 [])
-         (tr1, tr2, tr3)    = b =~ "(.*\\])|()"::(String, String, String)
-         (lb1, lb2, lb3)    = tr3 =~ "(([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+)"::(String, String, String)
-         smi                | tr2 == ""  = lb1
-                            | otherwise  = tr2
+         -- Get atom closure info and parse it,
+         -- then merge with above geoAtomMarker
+         markerSet       = Set.union markGeo (Set.fromList
+                         $ parseClosureAtomMarkers lb2 [])
+         (tr1, tr2, tr3) = b   =~ "(.*\\])|()"
+                               ::(String, String, String)
+         (lb1, lb2, lb3) = tr3 =~ "(([-=#\\.]{0,1}[%]{0,1}[/\\]{0,1}[0-9])+)"
+                               ::(String, String, String)
+         smi | tr2 == ""  = lb1
+             | otherwise  = tr2
 
-
-
-
-
-
-
-
-
-
+--parseClosureAtomMarkers
 parseClosureAtomMarkers :: String -> [AtomMarker] -> [AtomMarker]
 parseClosureAtomMarkers [] ml = ml
-parseClosureAtomMarkers s ml = parseClosureAtomMarkers s3 (Closure {labelNumber=closureNumber, bondType=nb}:ml)
-    where (_, s2, s3) = s =~ "([-=#\\.]{0,1}[/\\]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"::(String, String, String)
-          (_, n, _)    = s =~ "([0-9])"::(String, String, String)
-          (_, nbs, _)  = s2 =~ "^[-=#\\.]"::(String, String, String)
+parseClosureAtomMarkers s ml = parseClosureAtomMarkers s3
+                               (Closure {labelNumber=closureNumber, bondType=nb}:ml)
+    where (_, s2, s3) = s  =~ "([-=#\\.]{0,1}[/\\]{0,1}[%]{0,1}[0-9]{0,1}){0,1}"
+                           ::(String, String, String)
+          (_, n, _)   = s  =~ "([0-9])"
+                           ::(String, String, String)
+          (_, nbs, _) = s2 =~ "^[-=#\\.]"
+                           ::(String, String, String)
           nb | nbs == "-" = Single
              | nbs == "=" = Double
              | nbs == "#" = Triple
              | otherwise = Single
           closureNumber = read n::Integer
 
+
 -- findNextSubSmile
 {------------------------------------------------------------------------------}
 findNextSubSmile::String -> Int -> (String, String, String)
 findNextSubSmile s i | length s >= i && (open == closed)  = ("", s2', s3)
                      | length s > i                       = findNextSubSmile s (i + 1)
-                     | length s <= i                      = ("", "", s)  -- Will trigger smiles error message
-                     | otherwise                          = ("", "", s)  -- Will trigger smiles error message
+                     | length s <= i                      = ("", "", s)
+                     | otherwise                          = ("", "", s)
                      where s2 = take i s
                            s3 = drop i s
                            s2' | i > 2 = tail $ init s2 | otherwise = ""
