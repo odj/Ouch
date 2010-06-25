@@ -1,0 +1,4 @@
+rm -r *.hi
+rm -r *.o
+rm errorLog.txt
+
