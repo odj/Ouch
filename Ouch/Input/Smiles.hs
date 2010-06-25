@@ -44,7 +44,7 @@ import Text.Regex.TDFA ((=~))
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
-import  Data.List as List
+import Data.List as List
 import Data.Map as Map
 import Control.Applicative
 
@@ -129,8 +129,10 @@ growMoleculeAtIndexWithString :: Molecule -> Int -> String -> Molecule
 growMoleculeAtIndexWithString m i smi
     | smi == ""  = m
     | otherwise  = if (moleculeHasError m) then m else case chop of
-            Smile {}        -> growMoleculeAtIndexWithString newMolecule1 (newIndex) nextSmile
-            SubSmile {}     -> growMoleculeAtIndexWithString newMolecule2 i nextSmile
+            Smile {}        -> growMoleculeAtIndexWithString newMolecule1
+                               (newIndex) nextSmile
+            SubSmile {}     -> growMoleculeAtIndexWithString newMolecule2
+                               i nextSmile
             SmilesError {}  -> giveMoleculeError m
                                ("Error trying to grow from the Smiles string: " ++ smi)
             where chop = nextChoppedSmile smi
@@ -169,15 +171,19 @@ makeAtomMoleculeFromChop nb = case nb of
           emptyMol = Small Map.empty Set.empty
           makeAtomMolecule nb
            | a == ""    =  giveMoleculeError emptyMol "ERROR: Tried to make atom from empty string."
-           | a == "C"   =  Small  (Map.singleton 0 $ Element 6 0 Map.empty markSetAll) Set.empty
-           | a == "N"   =  Small  (Map.singleton 0 $ Element 7 0 Map.empty markSetAll) Set.empty
-           | a == "O"   =  Small  (Map.singleton 0 $ Element 8 0 Map.empty markSetAll) Set.empty
-           | a == "H"   =  Small  (Map.singleton 0 $ Element 1 0 Map.empty markSetAll) Set.empty
-
-           | a == "P"   =  Small  (Map.singleton 0 $ Element 15 0 Map.empty markSetAll) Set.empty
+           | a == "C"   =  Small  (Map.singleton 0
+                           $ Element 6 0 Map.empty markSetAll) Set.empty
+           | a == "N"   =  Small  (Map.singleton 0
+                           $ Element 7 0 Map.empty markSetAll) Set.empty
+           | a == "O"   =  Small  (Map.singleton 0
+                           $ Element 8 0 Map.empty markSetAll) Set.empty
+           | a == "H"   =  Small  (Map.singleton 0
+                           $ Element 1 0 Map.empty markSetAll) Set.empty
+           | a == "P"   =  Small  (Map.singleton 0
+                           $ Element 15 0 Map.empty markSetAll) Set.empty
            | a == "S"   =  Small  (Map.singleton 0 $ Element 16 0 Map.empty markSetAll) Set.empty
-           | a == "F"   =  Small  (Map.singleton 0 $ Element 9 0 Map.empty markSetAll) Set.empty
-           | a == "B"   =  Small  (Map.singleton 0 $ Element 5 0 Map.empty markSetAll) Set.empty
+           | a == "F"   =  Small  (Map.singleton 0 $ Element 9  0 Map.empty markSetAll) Set.empty
+           | a == "B"   =  Small  (Map.singleton 0 $ Element 5  0 Map.empty markSetAll) Set.empty
            | a == "BR"  =  Small  (Map.singleton 0 $ Element 35 0 Map.empty markSetAll) Set.empty
            | a == "CL"  =  Small  (Map.singleton 0 $ Element 17 0 Map.empty markSetAll) Set.empty
            | a == "I"   =  Small  (Map.singleton 0 $ Element 53 0 Map.empty markSetAll) Set.empty
