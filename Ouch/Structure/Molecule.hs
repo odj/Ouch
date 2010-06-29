@@ -116,58 +116,65 @@ cyclizeMolecule m = if (moleculeHasError m) then m else case m of
     where markers = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
           isClosure mk  = case mk of Closure {} -> True ; _ -> False
           splitMk = List.map fst $ List.map (Set.partition isClosure) markers
-          hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
-          where labelSet1 = List.map labelNumber (Set.toList ms1)
-                labelSet2 = List.map labelNumber (Set.toList ms2)
+          hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet ms1 <*> labelSet ms2
+          labelSet ms = List.map labelNumber (Set.toList ms)
           firstClosure = List.findIndex (/=Set.empty) splitMk
           tpl = case firstClosure of
               Nothing -> Nothing
               Just atom1 -> case secondClosure of
                   Nothing -> Nothing
                   Just atom2 -> Just (atom1, atom2)
-                  where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
-                        splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
+                  where secondClosure = List.findIndex
+                                       (hasPair (splitMk !! atom1)) splitMk2
+                        splitMk2 = (take atom1 splitMk)
+                                 ++ [Set.empty]
+                                 ++ (drop (atom1+1) splitMk)
+
+
 --hasHangingClosure
 {------------------------------------------------------------------------------}
 hasHangingClosure :: Molecule -> Bool
 hasHangingClosure m = if (moleculeHasError m) then False else case m of
-        Small {}       -> output
-        Markush  {}    -> False
-        Polymer  {}    -> False
-        Biologic {}    -> False
-        where markers       = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
-              isClosure mk  = case mk of Closure {} -> True ; _ -> False
-              splitMk = List.map fst $ List.map (Set.partition isClosure) markers
-              firstClosure = List.findIndex (/=Set.empty) splitMk
-              output = case firstClosure of
-                  Nothing -> False
-                  Just atom1 -> True
+    Small {}  -> output
+    _         -> False
+    where markers = List.map atomMarkerSet
+                  $ List.map snd
+                  $ Map.toList (atomMap m)
+          isClosure mk  = case mk of Closure {} -> True ; _ -> False
+          splitMk = List.map fst $ List.map (Set.partition isClosure) markers
+          firstClosure = List.findIndex (/=Set.empty) splitMk
+          output = case firstClosure of
+              Nothing    -> False
+              Just atom1 -> True
 
 -- cyclizePerhapsMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-cyclizeMoleculeAtIndexesWithBond m i1 i2 b = if (moleculeHasError m) then m else case a1 of
-        Nothing     -> (giveMoleculeError m ("Could not connect molecules at index: "
-                                     ++ (show i1) ++ " " ++ (show i2)))
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
+    let a1 = Map.lookup i1 (atomMap m)
+        a2 = Map.lookup i2 (atomMap m) in
+    if (moleculeHasError m) then m else case a1 of
+        Nothing     -> (giveMoleculeError m
+                       ("Could not connect molecules at index: "
+                    ++ (show i1) ++ " " ++ (show i2)))
         Just atom1  -> case a2 of
-            Nothing     -> (giveMoleculeError m ("Could not connect molecules at index: "
-                                         ++ (show i1) ++ " " ++ (show i2)))
+            Nothing -> (giveMoleculeError m
+                       ("Could not connect molecules at index: "
+                    ++ (show i1) ++ " " ++ (show i2)))
             Just atom2 -> cyclizeMoleculeAtAtomsWithBond m atom1 atom2 b
                 where cyclizeMoleculeAtAtomsWithBond m a1 a2 b
-                        | errorTest = cyclizeMolecule (m {atomMap=newMap}) -- !!!Check this!!!
-                        | otherwise = giveMoleculeError m "Could not cyclize molecule"
+                        | errorTest = cyclizeMolecule (m {atomMap=newMap})
+                        | otherwise = giveMoleculeError m
+                          "Could not cyclize molecule"
                         where markerLabel = getMatchingClosureNumber atom1 atom2
                               errorTest = case markerLabel of
                                   Nothing -> False
                                   Just label -> True
-                               -- This should not evaluate if 'Nothing' because of the guards
                               label = (\(Just l) -> l) markerLabel
                               (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureAtomMarker atom1 label)
                                                      (removeClosureAtomMarker atom2 label) b
                               newMap = Map.insert i1 newAtom1 $ Map.insert i2 newAtom2 (atomMap m)
-    where a1 = Map.lookup i1 (atomMap m)
-          a2 = Map.lookup i2 (atomMap m)
 
 
 
@@ -209,6 +216,8 @@ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b =
                         newMap = Map.union newMap1 newMap2
 
 
+
+
 -- addMolecule
 -- Combines two molecules and connects bond-markers if required
 -- Otherwise, adds as disconnected structure.  This is not really meant to be accessed
@@ -226,7 +235,9 @@ addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
 
 
---
+
+
+--makeMoleculeFromAtom
 {------------------------------------------------------------------------------}
 makeMoleculeFromAtom:: Atom -> Molecule
 makeMoleculeFromAtom a = Small {atomMap = (Map.singleton 0 a), molMarkerSet=Set.empty}
@@ -274,7 +285,8 @@ fillMoleculeValence m = if (moleculeHasError m) then m else case m of
         Polymer  {}   -> giveMoleculeError m "Can't fill valence on a Polymer."
         Biologic {}   -> giveMoleculeError m "Can't fill valence on a Biologic."
 
- -- moleculeHasError
+
+-- moleculeHasError
  -- Yes if atomMarkerSet contains any 'MolError' value
 {------------------------------------------------------------------------------}
 moleculeHasError :: Molecule -> Bool
@@ -295,7 +307,7 @@ getMoleculeError m  = let err =  Set.filter (==(MError "")) $  molMarkerSet m
                           else Just $ molMarker $ Set.findMax err
 
 
-
+--markMolecule
 {------------------------------------------------------------------------------}
 markMolecule :: Molecule -> MoleculeMarker -> Molecule
 markMolecule m mm = newMol
@@ -329,9 +341,12 @@ updateAtomLabelMarkers :: Molecule -> Molecule
 updateAtomLabelMarkers m = if (moleculeHasError m) then m
     else m {atomMap=newMap}
         where jst = (\(Just a) -> a)
-              foldFunc = (\k m -> Map.insert k (markAtom (jst $ Map.lookup k m) (Label $ fromIntegral k)) m)
-              newMap = List.foldr foldFunc (atomMap m) [0..(Map.size $ atomMap m)-1]
+              foldFunc = (\k m -> Map.insert k (markAtom (jst $ Map.lookup k m)
+                         (Label $ fromIntegral k)) m)
+              newMap = List.foldr foldFunc (atomMap m)
+                       [0..(Map.size $ atomMap m)-1]
 
+--molecularWeight
 {------------------------------------------------------------------------------}
 molecularWeight :: Molecule -> Either String Double
 molecularWeight m = if (moleculeHasError m) then (Left "") else case m of
@@ -370,7 +385,7 @@ numberOfRings m = Just (0::Integer)
 numberOfRotatableBonds :: Molecule -> Maybe Integer
 numberOfRotatableBonds m = Just (0::Integer)
 
---
+--molecularFormula
 {------------------------------------------------------------------------------}
 molecularFormula :: Molecule -> Either String String
 molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
@@ -401,9 +416,6 @@ molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
 {------------------------------------------------------------------------------}
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
-
-
-
 
 instance Show Molecule where
     show m = if (moleculeHasError m) then ("Molecule has error.") else case m of

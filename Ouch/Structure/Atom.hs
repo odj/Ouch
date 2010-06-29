@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Atoms - a module to manage atom data
+    Atom - a module to manage atom data
 
     Copyright (c) 2010 Orion D. Jankowski
 
@@ -60,15 +60,19 @@ import Data.Set as Set
 import Data.Map as Map
 import Data.List as List
 
--- First Int is atomic number, second Int is number of neutrons (if n=0, then assume natural abundance ratio)
--- Bond list is all bond FROM atom.
--- AtomMarker list is used to aid in graph traversing and other functions.
+--First Int is atomic number, second Int is number of neutrons (if n=0, then
+--assume natural abundance ratio) Bond list is all bond FROM atom.  AtomMarker
+--list is used to aid in graph traversing and other functions.
 {------------------------------------------------------------------------------}
-data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+
+data Atom   = Element {atomicNumber::Integer
+            , neutronNumber::Integer
+            , atomBondMap::(Map Int Bond)
+            , atomMarkerSet::(Set AtomMarker)}
             | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
 
 

@@ -41,14 +41,14 @@ import Data.Set as Set
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Bond = Sigma {bondsTo::Atom, revKey::Int}
-          | Pi {bondsTo::Atom, revKey::Int}
-          | Aromatic {bondsTo::Atom, revKey::Int}
-          | Delta {bondsTo::Atom, revKey::Int}
-          | Hbond {bondsTo::Atom, revKey::Int}
-          | Ionic {bondsTo::Atom, revKey::Int}
-          | Antibond {bondsTo::Atom, revKey::Int}
-          | Any {bondsTo::Atom, revKey::Int}
+data Bond = Sigma {bondsTo::Int}
+          | Pi {bondsTo::Int}
+          | Aromatic {bondsTo::Int}
+          | Delta {bondsTo::Int}
+          | Hbond {bondsTo::Int}
+          | Ionic {bondsTo::Int}
+          | Antibond {bondsTo::Int}
+          | Any {bondsTo::Int}
 
 
 
@@ -57,7 +57,8 @@ data Bond = Sigma {bondsTo::Atom, revKey::Int}
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
 instance Show Bond where
-  show b = case b of
+  show b = let desc = "Element at position: " ++  show (bondsTo b) in
+   case b of
       Sigma {} -> " -" ++ desc
       Pi {} -> " =" ++ desc
       Aromatic {} -> " ~" ++ desc
@@ -65,12 +66,6 @@ instance Show Bond where
       Hbond {} -> " H." ++ desc
       Ionic {} -> " +/-" ++ desc
       Antibond {} -> " !" ++ desc
-      where atom = bondsTo b
-            desc = case atom of
-                Element {} -> atomicSymbolForAtom atom
-                LonePair {} -> "LP"
-                Electron {} -> "EL"
-                Unfilled {} -> "UF"
 
 
 instance Eq Bond where
