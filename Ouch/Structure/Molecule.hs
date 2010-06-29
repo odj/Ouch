@@ -24,8 +24,6 @@
 ------------------------------------------------------------------------------}
 
 
-
-
 module Ouch.Structure.Molecule
     (
        Molecule(..)
@@ -47,10 +45,7 @@ module Ouch.Structure.Molecule
      , updateAtomLabelMarkers
      , molecularFormula
      , connectMoleculesAtIndicesWithBond
-
-
      ) where
-
 
 
 import Ouch.Structure.Atom
@@ -69,14 +64,9 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
--- It is VERY IMPORTANT to note that this graph is only valid one edge away from
--- each node.  To do otherwise would require a very expensive full recursive
--- rebuild of the entire molecule within each atom (much like Leibniz's monads).
--- This is neither efficient nor necessary as long as the graph map is kept up to
--- date.  The intrinsic structure of the graph is used only for bootstrapping the
--- molecule together.  After that, the authoritative graph comes from the
--- atomMap.
-data Molecule = Small {atomMap::(Map Int Atom), molMarkerSet::(Set MoleculeMarker)}
+
+data Molecule = Small {atomMap::(Map Int Atom)
+                     , molMarkerSet::(Set MoleculeMarker)}
                 | Markush {molMarkerSet::(Set MoleculeMarker)}
                 | Polymer {molMarkerSet::(Set MoleculeMarker)}
                 | Biologic {molMarkerSet::(Set MoleculeMarker)}
@@ -114,29 +104,29 @@ findConnectedAtoms a = [a]
 {------------------------------------------------------------------------------}
 cyclizeMolecule :: Molecule -> Molecule
 cyclizeMolecule m = if (moleculeHasError m) then m else case m of
-        Small {}       -> case tpl of
-                            Nothing       -> m
-                            Just (a1, a2) -> cyclizeMoleculeAtIndexesWithBond m a1 a2 bond
-                                where  bond = getMatchingClosureBondType atom1 atom2
-                                       atom1 = (\(Just a) -> a) $ Map.lookup a1 (atomMap m)
-                                       atom2 = (\(Just a) -> a) $ Map.lookup a2 (atomMap m)
-        Markush  {}    -> giveMoleculeError m "Can't cyclize on a Markush."
-        Polymer  {}    -> giveMoleculeError m "Can't cyclize on a Polymer."
-        Biologic {}    -> giveMoleculeError m "Can't cyclize on a Biologic."
-        where markers       = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
-              isClosure mk  = case mk of Closure {} -> True ; _ -> False
-              splitMk = List.map fst $ List.map (Set.partition isClosure) markers
-              hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
-                  where labelSet1 = List.map labelNumber (Set.toList ms1)
-                        labelSet2 = List.map labelNumber (Set.toList ms2)
-              firstClosure = List.findIndex (/=Set.empty) splitMk
-              tpl = case firstClosure of
+    Small {} -> case tpl of
+                Nothing       -> m
+                Just (a1, a2) -> cyclizeMoleculeAtIndexesWithBond m a1 a2 bond
+                    where  bond = getMatchingClosureBondType atom1 atom2
+                           atom1 = (\(Just a) -> a) $ Map.lookup a1 (atomMap m)
+                           atom2 = (\(Just a) -> a) $ Map.lookup a2 (atomMap m)
+    Markush  {}    -> giveMoleculeError m "Can't cyclize on a Markush."
+    Polymer  {}    -> giveMoleculeError m "Can't cyclize on a Polymer."
+    Biologic {}    -> giveMoleculeError m "Can't cyclize on a Biologic."
+    where markers = List.map atomMarkerSet $ List.map snd $ Map.toList (atomMap m)
+          isClosure mk  = case mk of Closure {} -> True ; _ -> False
+          splitMk = List.map fst $ List.map (Set.partition isClosure) markers
+          hasPair ms1 ms2 = List.elem True $ (==) <$> labelSet1 <*> labelSet2
+          where labelSet1 = List.map labelNumber (Set.toList ms1)
+                labelSet2 = List.map labelNumber (Set.toList ms2)
+          firstClosure = List.findIndex (/=Set.empty) splitMk
+          tpl = case firstClosure of
+              Nothing -> Nothing
+              Just atom1 -> case secondClosure of
                   Nothing -> Nothing
-                  Just atom1 -> case secondClosure of
-                      Nothing -> Nothing
-                      Just atom2 -> Just (atom1, atom2)
-                      where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
-                            splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
+                  Just atom2 -> Just (atom1, atom2)
+                  where secondClosure = List.findIndex (hasPair (splitMk !! atom1)) splitMk2
+                        splitMk2 = (take atom1 splitMk) ++ [Set.empty] ++ (drop (atom1+1) splitMk)
 --hasHangingClosure
 {------------------------------------------------------------------------------}
 hasHangingClosure :: Molecule -> Bool
