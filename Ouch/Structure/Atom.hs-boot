@@ -37,13 +37,17 @@ import Data.Set as Set
 import Data.Map as Map
 import Data.List as List
 
-data Atom   = Element {atomicNumber::Integer, neutronNumber::Integer, atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+data Atom   = Element {atomicNumber::Integer
+            , neutronNumber::Integer
+            , atomBondSet::(Set Bond)
+            , atomMarkerSet::(Set AtomMarker)}
             | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}   --Wildcard atom for smiles symbol *
+            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
             | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            
+ 
+           
 atomicSymbolForAtom :: Atom -> String
 
 

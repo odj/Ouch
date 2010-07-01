@@ -43,13 +43,14 @@ import Data.Set as Set
 
 data Bond = Sigma {bondsTo::Int}
           | Pi {bondsTo::Int}
+          | PiPi {bondsTo::Int} --This is a triple bond
           | Aromatic {bondsTo::Int}
           | Delta {bondsTo::Int}
           | Hbond {bondsTo::Int}
           | Ionic {bondsTo::Int}
           | Antibond {bondsTo::Int}
           | Any {bondsTo::Int}
-
+          deriving (Eq, Ord)
 
 
 
@@ -66,8 +67,4 @@ instance Show Bond where
       Hbond {} -> " H." ++ desc
       Ionic {} -> " +/-" ++ desc
       Antibond {} -> " !" ++ desc
-
-
-instance Eq Bond where
-  a == b = True
 

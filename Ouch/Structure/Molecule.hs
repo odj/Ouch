@@ -28,6 +28,7 @@ module Ouch.Structure.Molecule
     (
        Molecule(..)
      , addAtom
+     , addBond
      , addMarkerToAtomAtIndex
      , addMolecule
      , numberOfAtoms
@@ -42,7 +43,6 @@ module Ouch.Structure.Molecule
      , numberOfHydrogenBondAcceptors
      , numberOfRings
      , numberOfRotatableBonds
-     , updateAtomLabelMarkers
      , molecularFormula
      , connectMoleculesAtIndicesWithBond
      ) where
@@ -76,27 +76,190 @@ data Molecule = Small {atomMap::(Map Int Atom)
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
--- addAtom
--- Default sigma-bonds to top atom on the list
+-- checkMolFunSmall
+-- Performs check to make sure molecule is valid, otherwise performs the function
+-- specified. If check fails, because of type, adds specified string.
+{------------------------------------------------------------------------------}
+checkMolFunSmall :: Molecule -> Molecule -> String -> Molecule
+checkMolFunSmall mIn mOut s = if (moleculeHasError mIn) then mIn else case mIn of
+    Small {} -> mOut
+    Markush  {}    -> giveMoleculeError m "Can't perform on Markush: " ++ s
+    Polymer  {}    -> giveMoleculeError m "Can't perform on Polymer: " ++ s
+    Biologic {}    -> giveMoleculeError m "Can't perform on Biologic: " ++ s
+
+
+--addAtom
+-- Adds atom to top of the atom list with no bonds to the molecule.
 {------------------------------------------------------------------------------}
 addAtom :: Molecule -> Atom -> Molecule
-addAtom m a = if (moleculeHasError m) then m else case m of
-    Small {atomMap=atomM} -> m {atomMap=newAtomMap}
-         where (atom, newAtom) = connectAtomsWithBond topAtom a Single
-               (k, topAtom) = Map.findMax atomM
-               newAtomMap = Map.insert (k+1) newAtom $ Map.insert k atom atomM
-    Markush  {}           -> giveMoleculeError m "Cannot add atom to Markush"
-    Polymer  {}           -> giveMoleculeError m "Cannot add atom to Markush"
-    Biologic {}           -> giveMoleculeError m "Cannot add atom to Markush"
+addAtom m a = checkMolFunSmall m mOut "addAtom"
+    where mOut =  m {atomMap = Map.insert (1 + Map.size $ atomMap m) a}
 
-
-
-
--- findConnectedAtoms
+-- numberBondsAtIndex
+-- Returns number of covalent connections to other atoms in the molecule
+-- graph (i.e. one sigma and two pi bonds count as a 'one' bond)
 {------------------------------------------------------------------------------}
-findConnectedAtoms :: Atom -> [Atom]
-findConnectedAtoms a = [a]
+numberBondsAtIndex :: Molecule -> Int -> Integer
+numberBondsAtIndex a = fromIntegral $ Map.size $ atomBondSet a
 
+
+
+-- numberBondsToAtomsAtIndex
+{------------------------------------------------------------------------------}
+numberBondsToAtomsAtIndex :: Molecule -> Int -> Integer
+numberBondsToAtomsAtIndex a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b
+
+-- numberBondsToRadicalsAtIndex
+{------------------------------------------------------------------------------}
+numberBondsToRadicalsAtndex :: Molecule -> Int -> Integer
+numberBondsToRadicalsAtIndex a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
+
+-- numberBondsToHydrogensAtIndex
+{------------------------------------------------------------------------------}
+numberBondsToHydrogensAtIndex ::  Molecule -> Int -> Integer
+numberBondsToHydrogensAtIndex a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ Map.size $ Map.filter (\a -> isAnyBondToElement a 1) b
+
+
+-- numberAromaticBondsToAtomsAtIndex !!! Check this - not right !!!!
+{------------------------------------------------------------------------------}
+numberAromaticBondsToAtomsAtIndex ::  Molecule -> Int -> Integer
+numberAromaticBondsToAtomsAtIndex a = case a of
+    Element z n b _ -> nt b
+    LonePair b m -> nt b
+    Electron b m -> nt b
+    Unfilled b m -> nt b
+    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
+
+-- numberBondsToHeavyAtomsAtIndices
+{------------------------------------------------------------------------------}
+numberBondsToHeavyAtomsAtIndices :: Atom -> [Int]
+numberBondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList
+                                  $ Map.filter isSigmaBondToHeavyAtom $ atomBondMap atom
+ 
+-- addNewBond
+-- Connects two atom positions with a new bond
+{------------------------------------------------------------------------------}
+addBond :: Molecule -> Int -> Int -> NewBond -> Molecule
+addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
+    where mOut = if (isNothing ma1 || isNothing ma2)
+                 then giveMoleculeError m "Cannot connect atoms."
+                 else m {atomMap=newAtomMap}
+          a1 = (\(Maybe a) -> a) $ Map.lookup i1 atomM
+          a2 = (\(Maybe a) -> a) $ Map.lookup i2 atomM
+          (s1, s2)  = (atomBondSet a1, atomBondSet a2)
+          (ns1, ns2) = case b of
+            Single -> (Set.insert (Sigma i2) s1, Set.insert (Sigma i1) s2)
+            Double -> (Set.insert (Pi i2) s1, Set.insert (Pi i1) s2)
+            Triple -> (Set.insert (PiPi i2) s1, Set.insert (PiPi i1) s2)
+            NoBond -> (s1, s2)
+          (na1, na2) = (a1 {atomBondSet = ns1}, a2 {atomBondSet = ns2})
+          newAtomMap = Map.insert i1 na1 $ Map.insert i2 na2
+
+-- addLonePairAtIndex
+-- Create a new lone-pair centered on the atom.
+-- Return atom and list containing new lone-pair.
+{------------------------------------------------------------------------------}
+addLonePairAtIndex :: Molecule -> Int -> Molecule
+addLonePairAtIndex m i  = (a', ([as'] ++ as))
+   where (a', as') = connectAtomsWithBond a (LonePair Map.empty Set.empty) Single
+         val  = (fst $ valence a) + (abs(snd $ valence a))
+         nb   = numberOfBonds a
+
+
+--addHydrogen
+{------------------------------------------------------------------------------}
+addHydrogen :: Atom -> [Atom] -> (Atom, [Atom])
+addHydrogen a as = (a', ([as'] ++ as))
+    where (a', as') = connectAtomsWithBond a (Element 1 1 Map.empty Set.empty) Single
+          val  = fst $ valence a
+          nb   = numberOfBondsToAtoms a
+
+--addElectron
+{------------------------------------------------------------------------------}
+addElectron :: Atom -> [Atom] -> (Atom, [Atom])
+addElectron a as  = (a', ([as'] ++ as))
+  where (a', as') = connectAtomsWithBond a (Electron Map.empty Set.empty) Single
+        val  = fst $ valence a
+        nb   = numberOfBondsToAtoms a
+
+
+-- addUnfilled
+-- Create a new unfilled orbital centered on the atom.
+-- Return atom and list containing new unfilled orbital.
+{------------------------------------------------------------------------------}
+addUnfilled :: Atom -> [Atom] -> (Atom, [Atom])
+addUnfilled a = undefined
+
+
+-- checkValence
+-- Verify valence rules are met.  True is what you want.
+{------------------------------------------------------------------------------}
+checkValence :: Atom -> Bool
+checkValence a = True
+
+
+
+
+-- fillValence
+-- Populate free valences with hydrogens/lone-pairs.  Return new atom plus an
+-- atom list containing all the hydrogens added (adding to second arg).
+-- Lone pairs (i.e. for Nitrgen atoms) and empty orbitals (i.e. on Boron)
+-- are also added and incuded in the list.
+{------------------------------------------------------------------------------}
+fillValence :: Atom -> [Atom] -> (Atom, [Atom])
+fillValence a as =
+    let val          = valence a
+        hBool        = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
+        h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
+                     | otherwise = 0
+        nba          = (numberOfBondsToAtoms a) + (numberOfBondsToRadicals a)
+        nb           = numberOfBonds a
+        nbh          = numberOfBondsToHydrogens a
+        (aH, asH)    = addHydrogen a as
+        (aLP, asLP)  = addLonePair a as
+        (aEL, asEL)  = addElectron a as
+        nbrB         = (numberOfBondsToRadicals a) == 0
+        outputXH   | nbh < h                                       = fillValence aH asH
+                   | nb >= ((fst val) + (abs(snd val)))            = (a, as)
+                     -- Fill marked aromatics with a radical
+                   | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
+
+                     -- Fill empty valences with radical
+                   | nba < fst val                                 = fillValence aEL asEL
+
+                     -- Then, fill lone-pairs if needed
+                   | nb < ((fst val) + (abs(snd val)))             = fillValence aLP asLP
+
+                     -- Pattern completion
+                   | otherwise = (a, as)
+        output     | nb >= ((fst val) + (abs(snd val)))            = (a, as)
+                     -- Fill marked aromatics with a radical
+                   | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
+
+                     -- Fill empty valences with hydrogen
+                   | nba < fst val                                 = fillValence aH asH
+
+                     -- Then, fill lone-pairs if needed
+                   | nb < ((fst val) + (abs(snd val)))             = fillValence aLP asLP
+
+                     -- Pattern completion
+                   | otherwise = (a, as)
+    in if hBool then outputXH else output
 
 
 -- cyclizePerhapsMolecule
@@ -147,9 +310,9 @@ hasHangingClosure m = if (moleculeHasError m) then False else case m of
               Nothing    -> False
               Just atom1 -> True
 
--- cyclizePerhapsMoleculeAtIndexesWithBond
-{------------------------------------------------------------------------------}
 
+--cyclizeMoleculeAtIndexesWithBond
+{------------------------------------------------------------------------------}
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
 cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
     let a1 = Map.lookup i1 (atomMap m)
@@ -175,10 +338,6 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
                               (newAtom1, newAtom2) = connectAtomsWithBond (removeClosureAtomMarker atom1 label)
                                                      (removeClosureAtomMarker atom2 label) b
                               newMap = Map.insert i1 newAtom1 $ Map.insert i2 newAtom2 (atomMap m)
-
-
-
-
 
 
 -- connectPerhapsMoleculesAtIndicesWithBond
@@ -217,7 +376,6 @@ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b =
 
 
 
-
 -- addMolecule
 -- Combines two molecules and connects bond-markers if required
 -- Otherwise, adds as disconnected structure.  This is not really meant to be accessed
@@ -233,7 +391,6 @@ addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
           startIndex = Map.size atomMap1
           newAtomMap = Map.union atomMap1 atomMap2
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
-
 
 
 
@@ -306,7 +463,6 @@ getMoleculeError m  = let err =  Set.filter (==(MError "")) $  molMarkerSet m
                       in  if Set.size err == 0 then Nothing
                           else Just $ molMarker $ Set.findMax err
 
-
 --markMolecule
 {------------------------------------------------------------------------------}
 markMolecule :: Molecule -> MoleculeMarker -> Molecule
@@ -332,20 +488,6 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
           warning = Warning $ "Unable to add marker to atom at position " ++ show i
 
 
-
--- updateAtomLabelMarkers
--- Adds atom label corresponding to the atom map key.  This lets the atom type "know"
--- where it is in the overall Molecule data structure
-{------------------------------------------------------------------------------}
-updateAtomLabelMarkers :: Molecule -> Molecule
-updateAtomLabelMarkers m = if (moleculeHasError m) then m
-    else m {atomMap=newMap}
-        where jst = (\(Just a) -> a)
-              foldFunc = (\k m -> Map.insert k (markAtom (jst $ Map.lookup k m)
-                         (Label $ fromIntegral k)) m)
-              newMap = List.foldr foldFunc (atomMap m)
-                       [0..(Map.size $ atomMap m)-1]
-
 --molecularWeight
 {------------------------------------------------------------------------------}
 molecularWeight :: Molecule -> Either String Double
@@ -365,22 +507,25 @@ molecularWeight m = if (moleculeHasError m) then (Left "") else case m of
 exactMass :: Molecule -> Maybe [(Integer, Double)]
 exactMass m = undefined
 
---
+
+--Function Stubs
+
+--numberOfHydrogenBondDonors
 {------------------------------------------------------------------------------}
 numberOfHydrogenBondDonors :: Molecule -> Maybe Integer
 numberOfHydrogenBondDonors m = undefined
 
---
+--numberOfHydrogenBondAcceptors
 {------------------------------------------------------------------------------}
 numberOfHydrogenBondAcceptors :: Molecule -> Maybe Integer
 numberOfHydrogenBondAcceptors m = undefined
 
---
+--numberOfRings
 {------------------------------------------------------------------------------}
 numberOfRings :: Molecule -> Maybe Integer
 numberOfRings m = Just (0::Integer)
 
---
+--numberOfRotatableBonds
 {------------------------------------------------------------------------------}
 numberOfRotatableBonds :: Molecule -> Maybe Integer
 numberOfRotatableBonds m = Just (0::Integer)
