@@ -83,9 +83,9 @@ data Molecule = Small {atomMap::(Map Int Atom)
 checkMolFunSmall :: Molecule -> Molecule -> String -> Molecule
 checkMolFunSmall mIn mOut s = if (moleculeHasError mIn) then mIn else case mIn of
     Small {} -> mOut
-    Markush  {}    -> giveMoleculeError m "Can't perform on Markush: " ++ s
-    Polymer  {}    -> giveMoleculeError m "Can't perform on Polymer: " ++ s
-    Biologic {}    -> giveMoleculeError m "Can't perform on Biologic: " ++ s
+    Markush  {}    -> giveMoleculeError mIn "Can't perform on Markush: " ++ s
+    Polymer  {}    -> giveMoleculeError mIn "Can't perform on Polymer: " ++ s
+    Biologic {}    -> giveMoleculeError mIn "Can't perform on Biologic: " ++ s
 
 
 --addAtom
@@ -113,6 +113,7 @@ numberBondsToAtomsAtIndex a = case a of
     Electron b m -> nt b
     Unfilled b m -> nt b
     where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b
+
 
 -- numberBondsToRadicalsAtIndex
 {------------------------------------------------------------------------------}
@@ -150,17 +151,17 @@ numberAromaticBondsToAtomsAtIndex a = case a of
 numberBondsToHeavyAtomsAtIndices :: Atom -> [Int]
 numberBondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList
                                   $ Map.filter isSigmaBondToHeavyAtom $ atomBondMap atom
- 
+
 -- addNewBond
 -- Connects two atom positions with a new bond
 {------------------------------------------------------------------------------}
 addBond :: Molecule -> Int -> Int -> NewBond -> Molecule
 addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
-    where mOut = if (isNothing ma1 || isNothing ma2)
+    where mOut = if (isNothing a1 || isNothing a2)
                  then giveMoleculeError m "Cannot connect atoms."
                  else m {atomMap=newAtomMap}
-          a1 = (\(Maybe a) -> a) $ Map.lookup i1 atomM
-          a2 = (\(Maybe a) -> a) $ Map.lookup i2 atomM
+          a1 = (\(Just a) -> a) $ Map.lookup i1 $ atomMap m
+          a2 = (\(Just a) -> a) $ Map.lookup i2 $ atomMap m
           (s1, s2)  = (atomBondSet a1, atomBondSet a2)
           (ns1, ns2) = case b of
             Single -> (Set.insert (Sigma i2) s1, Set.insert (Sigma i1) s2)
