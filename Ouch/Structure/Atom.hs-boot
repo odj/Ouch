@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Atom.hs-boot - a file to define import recursion for the Atom module
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -23,13 +23,13 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
--- This file is needed to terminate recursive import relationships 
+-- This file is needed to terminate recursive import relationships
 
 module Ouch.Structure.Atom (
       Atom(..)
     , atomicSymbolForAtom
     ) where
-        
+
 import Data.Maybe
 import {-# SOURCE #-} Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Marker
@@ -41,16 +41,16 @@ data Atom   = Element {atomicNumber::Integer
             , neutronNumber::Integer
             , atomBondSet::(Set Bond)
             , atomMarkerSet::(Set AtomMarker)}
-            | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
- 
-           
+            | LonePair {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Open {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+
+
 atomicSymbolForAtom :: Atom -> String
 
 
 instance Eq Atom
-instance Show Atom 
+instance Show Atom
 instance Ord Atom

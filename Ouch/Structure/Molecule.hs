@@ -55,8 +55,9 @@ import Ouch.Data.Atom
 import Data.Either
 import Data.Maybe
 import Data.Map as Map
-import qualified Data.List as List
+import Data.List as List
 import Data.Set as Set
+import Data.Maybe as Maybe
 import Control.Applicative
 
 
@@ -87,6 +88,10 @@ checkMolFunSmall mIn mOut s = if (moleculeHasError mIn) then mIn else case mIn o
     Polymer  {}    -> giveMoleculeError mIn "Can't perform on Polymer: " ++ s
     Biologic {}    -> giveMoleculeError mIn "Can't perform on Biologic: " ++ s
 
+checkMolFun :: Molecule -> Molecule -> Molecule
+checkMolFun mIn mOut s = if (moleculeHasError mIn) then mIn else mOut
+
+
 
 --addAtom
 -- Adds atom to top of the atom list with no bonds to the molecule.
@@ -112,18 +117,18 @@ numberBondsToAtomsAtIndex a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToAtom b
+    where nt b = Set.size b
 
 
 -- numberBondsToRadicalsAtIndex
 {------------------------------------------------------------------------------}
-numberBondsToRadicalsAtndex :: Molecule -> Int -> Integer
+numberBondsToRadicalsAtIndex :: Molecule -> Int -> Integer
 numberBondsToRadicalsAtIndex a = case a of
     Element z n b _ -> nt b
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
+    where nt b = Set.size b
 
 -- numberBondsToHydrogensAtIndex
 {------------------------------------------------------------------------------}
@@ -133,7 +138,7 @@ numberBondsToHydrogensAtIndex a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter (\a -> isAnyBondToElement a 1) b
+    where nt b = Set.size b
 
 
 -- numberAromaticBondsToAtomsAtIndex !!! Check this - not right !!!!
@@ -144,13 +149,12 @@ numberAromaticBondsToAtomsAtIndex a = case a of
     LonePair b m -> nt b
     Electron b m -> nt b
     Unfilled b m -> nt b
-    where nt b = fromIntegral $ Map.size $ Map.filter isAnyBondToRadical b
+    where nt b = Set.size b
 
 -- numberBondsToHeavyAtomsAtIndices
 {------------------------------------------------------------------------------}
 numberBondsToHeavyAtomsAtIndices :: Atom -> [Int]
-numberBondsToHeavyAtomsAtIndices atom = Maybe.mapMaybe (getIndexForAtom . bondsTo) $ List.map snd $ Map.toList
-                                  $ Map.filter isSigmaBondToHeavyAtom $ atomBondMap atom
+numberBondsToHeavyAtomsAtIndices atom = undefined
 
 -- addNewBond
 -- Connects two atom positions with a new bond
@@ -176,42 +180,38 @@ addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
 -- Return atom and list containing new lone-pair.
 {------------------------------------------------------------------------------}
 addLonePairAtIndex :: Molecule -> Int -> Molecule
-addLonePairAtIndex m i  = (a', ([as'] ++ as))
-   where (a', as') = connectAtomsWithBond a (LonePair Map.empty Set.empty) Single
-         val  = (fst $ valence a) + (abs(snd $ valence a))
-         nb   = numberOfBonds a
+addLonePairAtIndex m i  = checkMolFunSmall m mOut "addLonePairAtIndex"
+    where mOut = addAtom m newAtom
+          newAtom = LonePair (Set.singleton $ Single i) Set.empty
 
-
---addHydrogen
+--addHydrogenAtIndex
 {------------------------------------------------------------------------------}
-addHydrogen :: Atom -> [Atom] -> (Atom, [Atom])
-addHydrogen a as = (a', ([as'] ++ as))
-    where (a', as') = connectAtomsWithBond a (Element 1 1 Map.empty Set.empty) Single
-          val  = fst $ valence a
-          nb   = numberOfBondsToAtoms a
+addHydrogenAtIndex :: Molecule -> Int -> Molecule
+addHydrogenAtIndex m i  = checkMolFunSmall m mOut "addHydrogenAtIndex"
+    where mOut = addAtom m newAtom
+          newAtom = Element 1 0 (Set.singleton $ Single i) Set.empty
 
---addElectron
+--addElectronAtIndex
 {------------------------------------------------------------------------------}
-addElectron :: Atom -> [Atom] -> (Atom, [Atom])
-addElectron a as  = (a', ([as'] ++ as))
-  where (a', as') = connectAtomsWithBond a (Electron Map.empty Set.empty) Single
-        val  = fst $ valence a
-        nb   = numberOfBondsToAtoms a
+addElectronAtIndex :: Molecule -> Int -> Molecule
+addElectronAtIndex m i  = checkMolFunSmall m mOut "addElectronAtIndex"
+    where mOut = addAtom m newAtom
+          newAtom = Electron (Set.singleton $ Single i) Set.empty
 
 
 -- addUnfilled
 -- Create a new unfilled orbital centered on the atom.
 -- Return atom and list containing new unfilled orbital.
 {------------------------------------------------------------------------------}
-addUnfilled :: Atom -> [Atom] -> (Atom, [Atom])
+addUnfilled :: Molecule -> Int -> Molecule
 addUnfilled a = undefined
 
 
 -- checkValence
 -- Verify valence rules are met.  True is what you want.
 {------------------------------------------------------------------------------}
-checkValence :: Atom -> Bool
-checkValence a = True
+checkValenceAtIndex :: Molecule -> Int -> Bool
+checkValenceAtIndex m i = True
 
 
 
@@ -222,8 +222,8 @@ checkValence a = True
 -- Lone pairs (i.e. for Nitrgen atoms) and empty orbitals (i.e. on Boron)
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
-fillValence :: Atom -> [Atom] -> (Atom, [Atom])
-fillValence a as =
+fillValenceAtIndex :: Molecule -> Int -> Molecule
+fillValence m i =
     let val          = valence a
         hBool        = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
         h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
@@ -236,7 +236,7 @@ fillValence a as =
         (aEL, asEL)  = addElectron a as
         nbrB         = (numberOfBondsToRadicals a) == 0
         outputXH   | nbh < h                                       = fillValence aH asH
-                   | nb >= ((fst val) + (abs(snd val)))            = (a, as)
+                   | nb >= ((fst val) + (abs(snd val)))             = (a, as)
                      -- Fill marked aromatics with a radical
                    | nbrB && Set.member AromaticAtom (atomMarkerSet a) = fillValence aEL asEL
 

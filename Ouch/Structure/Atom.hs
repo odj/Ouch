@@ -59,11 +59,11 @@ data Atom   = Element {atomicNumber::Integer
             , neutronNumber::Integer
             , atomBondSet::(Set Bond)
             , atomMarkerSet::(Set AtomMarker)}
-            | LonePair {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Electron {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unfilled {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
-            | Open {atomBondMap::(Map Int Bond), atomMarkerSet::(Set AtomMarker)}
+            | LonePair {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Open {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
 
 
 
