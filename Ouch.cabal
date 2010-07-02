@@ -14,6 +14,7 @@ Tested-With:         GHC==6.10.4
 Build-Type:          Simple
 Build-Depends:       base >= 3 && < 5, containers, regex-tdfa
 Data-Files:          README
-Exposed-modules:     Ouch.Test.Methods
+Exposed-modules:     Ouch.Test.Methods, Ouch.Structure.Molecule,
+                     Ouch.Structure.Atom, Ouch.Structure.Marker, Ouch.Structure.Bond, Ouch.Input.Smiles
 extensions:          CPP
 ghc-options:         
