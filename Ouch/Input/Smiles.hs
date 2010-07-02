@@ -332,7 +332,7 @@ nextChoppedSmile s
          (b1', b2', b3')    = ss2 =~ "(^[-=#\\.])"::(String, String, String)
          b'                   | length b1' /= 0 = b1'
                               | length b3' /= 0 = b3'
-                              -- | otherwise = ""
+                              | otherwise = ""
          nb'   | b2' == "."            = NoBond
                | b2' `elem` ["", "-"]  = Single
                | b2' == "="            = Double
