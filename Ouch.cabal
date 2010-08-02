@@ -1,20 +1,48 @@
-Name:                Ouch
-Version:             0.0.1
-License:             GPL
-License-file:        COPYING
-Author:              Orion Jankowski
-Maintainer:          Orion Jankowski odj@me.com
-Copyright:           Orion Jankowski 2010
-Category:            Cheminformatics
-Synopsis:            A cheminformatics library
-Description:         A work in progress...
-Homepage:            We don't have one
-Stability:           Unstable
-Tested-With:         GHC==6.10.4
-Build-Type:          Simple
-Build-Depends:       base >= 3 && < 5, containers, regex-tdfa
-Data-Files:          README
-Exposed-modules:     Ouch.Test.Methods, Ouch.Structure.Molecule,
-                     Ouch.Structure.Atom, Ouch.Structure.Marker, Ouch.Structure.Bond, Ouch.Input.Smiles
-extensions:          CPP
-ghc-options:         
+name: Ouch
+version: 0.0.1
+cabal-version: -any
+build-type: Simple
+license: GPL
+license-file: COPYING
+copyright: Orion Jankowski 2010
+maintainer: Orion Jankowski odj@me.com
+build-depends: base >=3 && <5, containers -any, regex-tdfa -any
+stability: Unstable
+homepage: We don't have one
+package-url:
+bug-reports:
+synopsis: A cheminformatics library
+description: A work in progress...
+category: Cheminformatics
+author: Orion Jankowski
+tested-with: GHC ==6.10.4
+data-files: README
+data-dir: ""
+extra-source-files:
+extra-tmp-files:
+exposed-modules: Ouch.Input.Smiles Ouch.Structure.Atom
+                 Ouch.Structure.Bond Ouch.Structure.Marker Ouch.Structure.Molecule
+                 Ouch.Test.Methods
+exposed: True
+buildable: True
+build-tools:
+cpp-options:
+cc-options:
+ld-options:
+pkgconfig-depends:
+frameworks:
+c-sources:
+extensions: CPP
+extra-libraries:
+extra-lib-dirs:
+includes:
+install-includes:
+include-dirs:
+hs-source-dirs: .
+other-modules:
+ghc-prof-options:
+ghc-shared-options:
+ghc-options:
+hugs-options:
+nhc98-options:
+jhc-options:
