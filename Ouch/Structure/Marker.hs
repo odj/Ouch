@@ -35,10 +35,10 @@ import {-# SOURCE #-} Ouch.Structure.Atom
 
 {------------------------------------------------------------------------------}
 data AtomMarker =
-    Label            {labelNumber::Integer}   -- Same as atomMap number
+    Label            {labelNumber::Int}   -- Same as atomMap number
   | Charge           {charge::Integer}
   | Position         {position::(Double, Double, Double)}  -- x, y, z vector
-  | Closure          {labelNumber::Integer, bondType::NewBond}
+  | Closure          {labelNumber::Int, bondType::NewBond}
   | Class            {classNumber::Integer}
   | Chiral           {chirality::Chirality}
   | GeoIsomer        {geoIsomer::Geometry}
@@ -49,7 +49,7 @@ data AtomMarker =
   | ValenceError     {valenceError::String}
   | InRing           {ringNumber::Integer}
   | Skip
-  | PEdge            {reaches::Integer, pathList::[Integer]}
+  | PEdge            {reaches::Int, pathList::[Int]}
   | Comment          {comment::String}
   | Null  -- This is a dummy value for functions that append marker list for simplicity.
   deriving (Show)

@@ -83,8 +83,7 @@ data ChoppedSmile = Smile        {smile::String
 {------------------------------------------------------------------------------}
 makeMoleculeFromSmiles::String -> Molecule
 makeMoleculeFromSmiles smi = mol' {molMarkerSet=newMolInfo}
-    where mol'  =   updateAtomLabelMarkers
-                  $ fillMoleculeValence
+    where mol'  =   fillMoleculeValence
                   $ makeScaffoldFromSmiles smi
           info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
           closureWarning | hasHangingClosure mol'
@@ -173,29 +172,29 @@ makeAtomMoleculeFromChop nb = case nb of
            | a == ""    =  giveMoleculeError emptyMol
                            "ERROR: Tried to make atom from empty string."
            | a == "C"   =  Small  (Map.singleton 0
-                           $ Element 6 0 Map.empty markSetAll) Set.empty
+                           $ Element 6 0 Set.empty markSetAll) Set.empty
            | a == "N"   =  Small  (Map.singleton 0
-                           $ Element 7 0 Map.empty markSetAll) Set.empty
+                           $ Element 7 0 Set.empty markSetAll) Set.empty
            | a == "O"   =  Small  (Map.singleton 0
-                           $ Element 8 0 Map.empty markSetAll) Set.empty
+                           $ Element 8 0 Set.empty markSetAll) Set.empty
            | a == "H"   =  Small  (Map.singleton 0
-                           $ Element 1 0 Map.empty markSetAll) Set.empty
+                           $ Element 1 0 Set.empty markSetAll) Set.empty
            | a == "P"   =  Small  (Map.singleton 0
-                           $ Element 15 0 Map.empty markSetAll) Set.empty
+                           $ Element 15 0 Set.empty markSetAll) Set.empty
            | a == "S"   =  Small  (Map.singleton 0
-                           $ Element 16 0 Map.empty markSetAll) Set.empty
+                           $ Element 16 0 Set.empty markSetAll) Set.empty
            | a == "F"   =  Small  (Map.singleton 0
-                           $ Element 9  0 Map.empty markSetAll) Set.empty
+                           $ Element 9  0 Set.empty markSetAll) Set.empty
            | a == "B"   =  Small  (Map.singleton 0
-                           $ Element 5  0 Map.empty markSetAll) Set.empty
+                           $ Element 5  0 Set.empty markSetAll) Set.empty
            | a == "BR"  =  Small  (Map.singleton 0
-                           $ Element 35 0 Map.empty markSetAll) Set.empty
+                           $ Element 35 0 Set.empty markSetAll) Set.empty
            | a == "CL"  =  Small  (Map.singleton 0
-                           $ Element 17 0 Map.empty markSetAll) Set.empty
+                           $ Element 17 0 Set.empty markSetAll) Set.empty
            | a == "I"   =  Small  (Map.singleton 0
-                           $ Element 53 0 Map.empty markSetAll) Set.empty
+                           $ Element 53 0 Set.empty markSetAll) Set.empty
            | a == "*"   =  Small  (Map.singleton 0
-                           $ Unspecified Map.empty markSetAll) Set.empty
+                           $ Unspecified Set.empty markSetAll) Set.empty
            | otherwise  =  giveMoleculeError emptyMol
                            ("ERROR: Atom not recognized for symbol: " ++ a)
 
@@ -264,7 +263,7 @@ makeAtomMoleculeFromBracketChop sb = mol
           -- Now make the molecule
           mol = Small (Map.singleton 0
               $ Element atomicNumber (isotope-atomicNumber)
-                Map.empty markSetAll) Set.empty
+                Set.empty markSetAll) Set.empty
 
           markSetAll = Set.union (mark sb)
                      $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge]
@@ -365,7 +364,7 @@ parseClosureAtomMarkers s ml = parseClosureAtomMarkers s3
              | nbs == "=" = Double
              | nbs == "#" = Triple
              | otherwise = Single
-          closureNumber = read n::Integer
+          closureNumber = read n::Int
 
 
 -- findNextSubSmile

@@ -239,14 +239,14 @@ isElectron a = case a of
 
 
 {------------------------------------------------------------------------------}
-removeClosureAtomMarker :: Atom -> Integer -> Atom
+removeClosureAtomMarker :: Atom -> Int -> Atom
 removeClosureAtomMarker a i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)}
     where deleteAtomMarker = Closure i Single
 
 
 
 {------------------------------------------------------------------------------}
-getMatchingClosureNumber :: Atom -> Atom -> Maybe Integer
+getMatchingClosureNumber :: Atom -> Atom -> Maybe Int
 getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
     where markers1 = fst $ Set.partition isClosure (atomMarkerSet a1)
           markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
