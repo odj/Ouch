@@ -142,7 +142,6 @@ growMoleculeAtIndexWithString m i smi
                                  m i newAtom 0 (newBond chop)
                   newMolecule2 = connectMoleculesAtIndicesWithBond
                                  m i newSubStructure 0 (newBond chop)
---                We just made this thing, so there shouldn't be any errors, right?
                   newIndex = Map.size (atomMap newMolecule1) - 1
 
 

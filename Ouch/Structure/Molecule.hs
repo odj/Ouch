@@ -381,7 +381,7 @@ connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = checkMolFunSmall m1 mOut "conn
 
 
 incrementAtomMap :: (Map Int Atom) -> Int -> (Map Int Atom)
-incrementAtomMap set i = undefined
+incrementAtomMap map i = Map.empty
 
 
 
