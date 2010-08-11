@@ -34,6 +34,10 @@ module Ouch.Structure.Atom (
     , valence
     , isHeavyAtom
     , isElement
+    , isHydrogen
+    , isElectron
+    , hasMarker
+    , incrementAtom
     , markAtom
     , atomicSymbolForAtom
     , getMatchingClosureNumber
@@ -54,16 +58,15 @@ import Data.List as List
 --assume natural abundance ratio) Bond list is all bond FROM atom.  AtomMarker
 --list is used to aid in graph traversing and other functions.
 {------------------------------------------------------------------------------}
-
 data Atom   = Element {atomicNumber::Integer
             , neutronNumber::Integer
             , atomBondSet::(Set Bond)
             , atomMarkerSet::(Set AtomMarker)}
-            | LonePair {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Electron {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unfilled {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Open {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | LonePair {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Open {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
 
 
 
@@ -185,13 +188,21 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                Unfilled {} -> (1, 0)
 
 
+{------------------------------------------------------------------------------}
+incrementAtom :: Atom -> Int -> Atom
+incrementAtom a i = a {atomBondSet=newBondSet, atomMarkerSet=newMarkerSet}
+  where newBondSet = Set.mapMonotonic incrementBond $ atomBondSet a
+        newMarkerSet = Set.insert (Label $ (+i) $ fromJust $ getIndexForAtom a ) $
+                                  atomMarkerSet a
+        incrementBond b = b {bondsTo=(i + bondsTo b)}
 
 -- markAtom
 {------------------------------------------------------------------------------}
 getIndexForAtom :: Atom -> Maybe Int
 getIndexForAtom a = if n == 0 then Nothing else Just $ fromIntegral (labelNumber $ lb!!0)
-  where lb = Set.toList $ Set.filter (==(Label 0)) (atomMarkerSet a)
+  where lb = Set.toList $ Set.filter isLabel (atomMarkerSet a)
         n  = length lb
+        isLabel l = case l of Label _ -> True; _ -> False
 
 
 
@@ -236,6 +247,20 @@ isElectron a = case a of
     LonePair {} -> False
     Electron {} -> True
     Unfilled {} -> False
+
+-- isElementOrRadical
+-- Returns TRUE if atom is a "real" element
+{------------------------------------------------------------------------------}
+isHydrogen :: Atom -> Bool
+isHydrogen a = case a of
+    Element 1 _ _ _ -> True
+    LonePair {} -> False
+    Electron {} -> False
+    Unfilled {} -> False
+
+
+hasMarker :: Atom -> AtomMarker -> Bool
+hasMarker a mk = Set.member mk $ atomMarkerSet a
 
 
 {------------------------------------------------------------------------------}

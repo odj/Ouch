@@ -170,30 +170,18 @@ makeAtomMoleculeFromChop nb = case nb of
           makeAtomMolecule nb
            | a == ""    =  giveMoleculeError emptyMol
                            "ERROR: Tried to make atom from empty string."
-           | a == "C"   =  Small  (Map.singleton 0
-                           $ Element 6 0 Set.empty markSetAll) Set.empty
-           | a == "N"   =  Small  (Map.singleton 0
-                           $ Element 7 0 Set.empty markSetAll) Set.empty
-           | a == "O"   =  Small  (Map.singleton 0
-                           $ Element 8 0 Set.empty markSetAll) Set.empty
-           | a == "H"   =  Small  (Map.singleton 0
-                           $ Element 1 0 Set.empty markSetAll) Set.empty
-           | a == "P"   =  Small  (Map.singleton 0
-                           $ Element 15 0 Set.empty markSetAll) Set.empty
-           | a == "S"   =  Small  (Map.singleton 0
-                           $ Element 16 0 Set.empty markSetAll) Set.empty
-           | a == "F"   =  Small  (Map.singleton 0
-                           $ Element 9  0 Set.empty markSetAll) Set.empty
-           | a == "B"   =  Small  (Map.singleton 0
-                           $ Element 5  0 Set.empty markSetAll) Set.empty
-           | a == "BR"  =  Small  (Map.singleton 0
-                           $ Element 35 0 Set.empty markSetAll) Set.empty
-           | a == "CL"  =  Small  (Map.singleton 0
-                           $ Element 17 0 Set.empty markSetAll) Set.empty
-           | a == "I"   =  Small  (Map.singleton 0
-                           $ Element 53 0 Set.empty markSetAll) Set.empty
-           | a == "*"   =  Small  (Map.singleton 0
-                           $ Unspecified Set.empty markSetAll) Set.empty
+           | a == "C"   =  makeMoleculeFromAtom $ Element 6 0  Set.empty markSetAll
+           | a == "N"   =  makeMoleculeFromAtom $ Element 7 0  Set.empty markSetAll
+           | a == "O"   =  makeMoleculeFromAtom $ Element 8 0  Set.empty markSetAll
+           | a == "H"   =  makeMoleculeFromAtom $ Element 1 0  Set.empty markSetAll
+           | a == "P"   =  makeMoleculeFromAtom $ Element 15 0 Set.empty markSetAll
+           | a == "S"   =  makeMoleculeFromAtom $ Element 16 0 Set.empty markSetAll
+           | a == "F"   =  makeMoleculeFromAtom $ Element 9  0 Set.empty markSetAll
+           | a == "B"   =  makeMoleculeFromAtom $ Element 5  0 Set.empty markSetAll
+           | a == "BR"  =  makeMoleculeFromAtom $ Element 35 0 Set.empty markSetAll
+           | a == "CL"  =  makeMoleculeFromAtom $ Element 17 0 Set.empty markSetAll
+           | a == "I"   =  makeMoleculeFromAtom $ Element 53 0 Set.empty markSetAll
+           | a == "*"   =  makeMoleculeFromAtom $ Unspecified  Set.empty markSetAll
            | otherwise  =  giveMoleculeError emptyMol
                            ("ERROR: Atom not recognized for symbol: " ++ a)
 

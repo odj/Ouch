@@ -41,11 +41,11 @@ data Atom   = Element {atomicNumber::Integer
             , neutronNumber::Integer
             , atomBondSet::(Set Bond)
             , atomMarkerSet::(Set AtomMarker)}
-            | LonePair {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Electron {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unfilled {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Open {atomBondMap::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | LonePair {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Electron {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unfilled {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Unspecified {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+            | Open {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
 
 
 atomicSymbolForAtom :: Atom -> String
