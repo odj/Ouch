@@ -100,7 +100,7 @@ instance Show MoleculeMarker where
       Info s    -> "Info: "     ++ s ++ "\n"
       Name s    -> "Name: "     ++ s ++ "\n"
       Warning s -> "WARNING: "  ++ s ++ "\n"
-      MError s  -> "ERROR: "  ++ s ++ "\n"
+      MError s  -> "ERROR: "    ++ s ++ "\n"
 
 
 

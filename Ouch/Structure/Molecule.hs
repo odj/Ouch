@@ -408,7 +408,8 @@ incrementAtomMap map i = Map.mapKeys (+i) $ Map.map (\a -> incrementAtom a i) ma
 {------------------------------------------------------------------------------}
 hasClosure :: Molecule -> Bool
 hasClosure m = List.elem True $ List.map (isClosure) markers
-    where markers = List.foldr ((++) . Set.toList . atomMarkerSet) [] $ List.map snd $ Map.toList (atomMap m)
+    where markers = List.foldr ((++) . Set.toList . atomMarkerSet) [] $
+                    List.map snd $ Map.toList (atomMap m)
           isClosure mk  = case mk of Closure {} -> True ; _ -> False
 
 

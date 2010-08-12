@@ -41,15 +41,15 @@ import Data.Set as Set
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Bond = Sigma {bondsTo::Int}
-          | Pi {bondsTo::Int}
-          | PiPi {bondsTo::Int} --This is a triple bond
+data Bond = Sigma    {bondsTo::Int}
+          | Pi       {bondsTo::Int}
+          | PiPi     {bondsTo::Int} --This is a triple bond
           | Aromatic {bondsTo::Int}
-          | Delta {bondsTo::Int}
-          | Hbond {bondsTo::Int}
-          | Ionic {bondsTo::Int}
+          | Delta    {bondsTo::Int}
+          | Hbond    {bondsTo::Int}
+          | Ionic    {bondsTo::Int}
           | Antibond {bondsTo::Int}
-          | Any {bondsTo::Int}
+          | Any      {bondsTo::Int}
           deriving (Eq, Ord)
 
 
@@ -60,11 +60,11 @@ data Bond = Sigma {bondsTo::Int}
 instance Show Bond where
   show b = let desc = "Element at position: " ++  show (bondsTo b) in
    case b of
-      Sigma {} -> " -" ++ desc
-      Pi {} -> " =" ++ desc
+      Sigma    {} -> " -" ++ desc
+      Pi       {} -> " =" ++ desc
       Aromatic {} -> " ~" ++ desc
-      Delta {} -> " delta-" ++ desc
-      Hbond {} -> " H." ++ desc
-      Ionic {} -> " +/-" ++ desc
+      Delta    {} -> " delta-" ++ desc
+      Hbond    {} -> " H." ++ desc
+      Ionic    {} -> " +/-" ++ desc
       Antibond {} -> " !" ++ desc
 
