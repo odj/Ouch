@@ -86,7 +86,7 @@ data Molecule =   Small    {atomMap::(Map Int Atom)
 {------------------------------------------------------------------------------}
 checkMolFunSmall :: Molecule -> Molecule -> String -> Molecule
 checkMolFunSmall mIn mOut s = if (moleculeHasError mIn) then mIn else case mIn of
-    Small {}       -> mOut
+    Small    {}    -> mOut
     Markush  {}    -> giveMoleculeError mIn $ "Can't perform on Markush: "  ++ s
     Polymer  {}    -> giveMoleculeError mIn $ "Can't perform on Polymer: "  ++ s
     Biologic {}    -> giveMoleculeError mIn $ "Can't perform on Biologic: " ++ s
