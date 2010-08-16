@@ -30,12 +30,14 @@ module Ouch.Structure.Molecule
      , addAtom
      , addBond
      , setAtom
+     , getAtomAtIndex
      , addMarkerToAtomAtIndex
      , addMolecule
      , numberOfAtoms
      , makeMoleculeFromAtom
      , numberOfHeavyAtoms
      , fillMoleculeValence
+     , fillValenceAtIndex
      , hasHangingClosure
      , molecularWeight
      , exactMass
@@ -466,7 +468,8 @@ numberOfHeavyAtoms m = case m of
 -- If cannot fill because of an error, adds error to molecule and gives it back.
 {------------------------------------------------------------------------------}
 fillMoleculeValence :: Molecule -> Molecule
-fillMoleculeValence m = undefined
+fillMoleculeValence m = Map.foldWithKey foldMol m $ atomMap m
+  where foldMol k atomMap' molecule = fillValenceAtIndex molecule k
 
 
 -- moleculeHasError
