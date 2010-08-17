@@ -305,19 +305,21 @@ getMatchingClosureBondType a1 a2 = newClosureBond
 instance Show Atom where
     show a = case a of
           Element i _ b m ->  name i ++ "\t" ++ show b ++ "\t" ++ show m ++ "\n"
-          LonePair b m -> "LP" ++ show b ++ " " ++ show m ++ "\n"
-          Electron b m -> "E" ++ show b ++ " " ++ show m ++ "\n"
-          Unfilled {} -> ""
+          LonePair b m -> "LP\t" ++ show b ++ " " ++ show m ++ "\n"
+          Electron b m -> "E\t" ++ show b ++ " " ++ show m ++ "\n"
+          Unfilled {} -> "\t"
           where name b = fromJust $ Map.lookup b atomicSymbols
 
 -- Instance Eq and instance Ord are going to be where all the action is.
 -- Everything broken until then!
 {------------------------------------------------------------------------------}
 instance Eq Atom where
-    a == b = True
+    a == b = (getIndexForAtom a) == (getIndexForAtom b)
 
 
 {------------------------------------------------------------------------------}
 instance Ord Atom where
-    a > b = True
-    a < b = False
+    compare a b | (getIndexForAtom a) >  (getIndexForAtom b) = GT
+                | (getIndexForAtom a) <  (getIndexForAtom b) = LT
+                | (getIndexForAtom a) == (getIndexForAtom b) = EQ
+

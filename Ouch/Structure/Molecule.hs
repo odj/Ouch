@@ -29,6 +29,11 @@ module Ouch.Structure.Molecule
        Molecule(..)
      , addAtom
      , addBond
+     , atomAtIndex
+     , addHydrogenAtIndex
+     , addLonePairAtIndex
+     , addElectronAtIndex
+     , bondTargetSetForIndex
      , setAtom
      , getAtomAtIndex
      , addMarkerToAtomAtIndex
@@ -43,6 +48,9 @@ module Ouch.Structure.Molecule
      , exactMass
      , giveMoleculeError
      , moleculeHasError
+     , numberBondsAtIndex
+     , numberBondsToAtomsAtIndex
+     , numberBondsToRadicalsAtIndex
      , numberOfHydrogenBondDonors
      , numberOfHydrogenBondAcceptors
      , numberOfRings
@@ -208,22 +216,22 @@ addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
 {------------------------------------------------------------------------------}
 addLonePairAtIndex :: Molecule -> Int -> Molecule
 addLonePairAtIndex m i  = checkMolFunSmall m mOut "addLonePairAtIndex"
-    where mOut = addAtom newAtom m
-          newAtom = LonePair (Set.singleton $ Sigma i) Set.empty
+    where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
+          newAtom = LonePair Set.empty Set.empty
 
 --addHydrogenAtIndex
 {------------------------------------------------------------------------------}
 addHydrogenAtIndex :: Molecule -> Int -> Molecule
 addHydrogenAtIndex m i  = checkMolFunSmall m mOut "addHydrogenAtIndex"
-    where mOut = addAtom newAtom m
-          newAtom = Element 1 0 (Set.singleton $ Sigma i) Set.empty
+    where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
+          newAtom = (Element 1 0) Set.empty Set.empty
 
 --addElectronAtIndex
 {------------------------------------------------------------------------------}
 addElectronAtIndex :: Molecule -> Int -> Molecule
 addElectronAtIndex m i  = checkMolFunSmall m mOut "addElectronAtIndex"
-    where mOut = addAtom newAtom m
-          newAtom = Electron (Set.singleton $ Sigma i) Set.empty
+    where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
+          newAtom = Electron Set.empty Set.empty
 
 
 -- addUnfilled
@@ -232,8 +240,8 @@ addElectronAtIndex m i  = checkMolFunSmall m mOut "addElectronAtIndex"
 {------------------------------------------------------------------------------}
 addUnfilled :: Molecule -> Int -> Molecule
 addUnfilled m i  = checkMolFunSmall m mOut "addUnfilled"
-    where mOut = addAtom newAtom m
-          newAtom = Unfilled (Set.singleton $ Sigma i) Set.empty
+    where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
+          newAtom = Unfilled Set.empty Set.empty
 
 
 -- checkValence
@@ -245,7 +253,7 @@ checkValenceAtIndex m i = True
 
 
 
--- fillValence
+-- fillValenceAtIndex
 -- Populate free valences with hydrogens/lone-pairs.  Return new atom plus an
 -- atom list containing all the hydrogens added (adding to second arg).
 -- Lone pairs (i.e. for Nitrgen atoms) and empty orbitals (i.e. on Boron)
@@ -253,22 +261,22 @@ checkValenceAtIndex m i = True
 {------------------------------------------------------------------------------}
 fillValenceAtIndex :: Molecule -> Int -> Molecule
 fillValenceAtIndex m i = checkMolFunSmall m mOut "fillValenceAtIndex"
-  where atom         = getAtomAtIndex m i
-        mOut = case atom of
+  where atom  = getAtomAtIndex m i
+        mOut  = case atom of
           Just _  -> output
           Nothing -> giveMoleculeError m $ "Cannot fill valence at position: " ++ (show i)
-        val          = valence a
-        a            = (\(Just a) -> a) atom
-        hBool        = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
-        h            | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
-                     | otherwise = 0
-        nba          = (numberBondsToAtomsAtIndex m i) + (numberBondsToRadicalsAtIndex m i)
-        nb           = numberBondsAtIndex m i
-        nbh          = numberBondsToHydrogensAtIndex m i
-        nbrB         = (numberBondsToRadicalsAtIndex m i) == 0
-        mH           = addHydrogenAtIndex m i
-        mLP          = addLonePairAtIndex m i
-        mEL          = addElectronAtIndex m i
+        val   = valence a
+        a     = fromJust atom
+        hBool = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
+        h | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
+          | otherwise = 0
+        nba   = (numberBondsToAtomsAtIndex m i) + (numberBondsToRadicalsAtIndex m i)
+        nb    = numberBondsAtIndex m i
+        nbh   = numberBondsToHydrogensAtIndex m i
+        nbrB  = (numberBondsToRadicalsAtIndex m i) == 0
+        mH    = addHydrogenAtIndex m i
+        mLP   = addLonePairAtIndex m i
+        mEL   = addElectronAtIndex m i
 
         outputXH   | nbh < h                            = fillValenceAtIndex mH i
                    | nb >= ((fst val) + (abs(snd val))) = m
@@ -448,6 +456,8 @@ numberOfAtoms m = if (moleculeHasError m) then Nothing else case m of
     Polymer  {}               -> Nothing
     Biologic {}               -> Nothing
     where num a = fromIntegral $ Map.size $ Map.filter isElement a
+
+
 
 
 -- numberOfHeavyAtoms
