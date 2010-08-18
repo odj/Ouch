@@ -33,6 +33,7 @@ module Ouch.Structure.Marker (
 
 import {-# SOURCE #-} Ouch.Structure.Atom
 
+
 {------------------------------------------------------------------------------}
 data AtomMarker =
     Label            {labelNumber::Int}   -- Same as atomMap number
@@ -57,6 +58,7 @@ data AtomMarker =
 data MoleculeMarker =
     Info            {molMarker::String}
   | Name            {molMarker::String}
+  -- | Property        {molMarker::String, key::String, value::Data}
   | Warning         {molMarker::String}
   | MError          {molMarker::String}
   deriving (Eq)

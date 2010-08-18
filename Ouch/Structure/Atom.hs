@@ -32,10 +32,12 @@ module Ouch.Structure.Atom (
     , atomExactMass
     , atomMW
     , valence
+    , occupiedValence
     , isHeavyAtom
     , isElement
     , isHydrogen
     , isElectron
+    , isLonePair
     , hasMarker
     , incrementAtom
     , markAtom
@@ -122,6 +124,20 @@ atomicSymbolForAtom a = case a of
           symbol d = case d of
                  Just d -> d
                  Nothing -> ""
+
+occupiedValence :: Atom -> Integer
+occupiedValence a = output
+  where output = Set.fold (\b acc -> acc + bondOrder b) 0 (atomBondSet a)
+        bondOrder b = case b of
+          Sigma    {}   -> 1
+          Pi       {}   -> 2
+          PiPi     {}   -> 3
+          Aromatic {} -> 2
+          Delta    {} -> 4
+          Hbond    {} -> 0
+          Ionic    {} -> 0
+          Antibond {} -> 1
+          Any      {} -> 0
 
 
 -- valence
@@ -238,8 +254,8 @@ isElement a = case a of
   Electron {} -> False
   Unfilled {} -> False
 
--- isElementOrRadical
--- Returns TRUE if atom is a "real" element
+
+
 {------------------------------------------------------------------------------}
 isElectron :: Atom -> Bool
 isElectron a = case a of
@@ -248,13 +264,23 @@ isElectron a = case a of
     Electron {} -> True
     Unfilled {} -> False
 
--- isElementOrRadical
--- Returns TRUE if atom is a "real" element
+
+
 {------------------------------------------------------------------------------}
 isHydrogen :: Atom -> Bool
 isHydrogen a = case a of
     Element 1 _ _ _ -> True
     LonePair {} -> False
+    Electron {} -> False
+    Unfilled {} -> False
+
+
+
+{------------------------------------------------------------------------------}
+isLonePair :: Atom -> Bool
+isLonePair a = case a of
+    Element  {} -> False
+    LonePair {} -> True
     Electron {} -> False
     Unfilled {} -> False
 

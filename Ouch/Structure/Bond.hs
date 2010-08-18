@@ -62,6 +62,7 @@ instance Show Bond where
    case b of
       Sigma    {} -> " -" ++ desc
       Pi       {} -> " =" ++ desc
+      PiPi     {} -> "#"  ++ desc
       Aromatic {} -> " ~" ++ desc
       Delta    {} -> " delta-" ++ desc
       Hbond    {} -> " H." ++ desc

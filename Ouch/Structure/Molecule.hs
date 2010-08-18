@@ -49,12 +49,10 @@ module Ouch.Structure.Molecule
      , giveMoleculeError
      , moleculeHasError
      , numberBondsAtIndex
+     , occupiedValenceAtIndex
      , numberBondsToAtomsAtIndex
      , numberBondsToRadicalsAtIndex
-     , numberOfHydrogenBondDonors
-     , numberOfHydrogenBondAcceptors
-     , numberOfRings
-     , numberOfRotatableBonds
+     , numberBondsToHydrogensAtIndex
      , molecularFormula
      , connectMoleculesAtIndicesWithBond
      , incrementAtomMap
@@ -136,6 +134,12 @@ addAtom a m = checkMolFunSmall m mOut "addAtom"
           newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
 
 
+occupiedValenceAtIndex :: Molecule -> Int -> Integer
+occupiedValenceAtIndex m i = case atomAtIndex m i of
+  Just a  -> occupiedValence a
+  Nothing -> 0
+
+
 bondTargetSetForIndex :: Molecule -> Int -> (Set Atom)
 bondTargetSetForIndex m i = let atom = atomAtIndex m i in
   case atom of
@@ -186,8 +190,16 @@ numberAromaticBondsToAtomsAtIndex m i = numberOfBondToAtomWithProperty m i
 
 -- numberBondsToHeavyAtomsAtIndices
 {------------------------------------------------------------------------------}
-numberBondsToHeavyAtomsAtIndices :: Molecule -> Int -> Integer
-numberBondsToHeavyAtomsAtIndices m i  = numberOfBondToAtomWithProperty m i isHeavyAtom
+numberBondsToHeavyAtomsAtIndex :: Molecule -> Int -> Integer
+numberBondsToHeavyAtomsAtIndex m i  = numberOfBondToAtomWithProperty m i isHeavyAtom
+
+
+-- numberBondsToLonePairAtIndices
+{------------------------------------------------------------------------------}
+numberBondsToLonePairAtIndex :: Molecule -> Int -> Integer
+numberBondsToLonePairAtIndex m i  = numberOfBondToAtomWithProperty m i isLonePair
+
+
 
 -- addBond
 -- Connects two atom positions with a new bond
@@ -270,8 +282,8 @@ fillValenceAtIndex m i = checkMolFunSmall m mOut "fillValenceAtIndex"
         hBool = Set.member (ExplicitHydrogen 0) (atomMarkerSet a)
         h | hBool = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet a)
           | otherwise = 0
-        nba   = (numberBondsToAtomsAtIndex m i) + (numberBondsToRadicalsAtIndex m i)
-        nb    = numberBondsAtIndex m i
+        nba   = (occupiedValenceAtIndex m i) - (numberBondsToLonePairAtIndex m i)
+        nb    = occupiedValenceAtIndex m i
         nbh   = numberBondsToHydrogensAtIndex m i
         nbrB  = (numberBondsToRadicalsAtIndex m i) == 0
         mH    = addHydrogenAtIndex m i
