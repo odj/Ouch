@@ -270,9 +270,7 @@ isElectron a = case a of
 isHydrogen :: Atom -> Bool
 isHydrogen a = case a of
     Element 1 _ _ _ -> True
-    LonePair {} -> False
-    Electron {} -> False
-    Unfilled {} -> False
+    _               -> False
 
 
 

@@ -31,6 +31,7 @@ module Ouch.Input.Smiles (
    , findNextSubSmile
    , parseSmiles
    , parseClosureAtomMarkers
+   , makeAtomMoleculeFromBracketChop
    , chop
    ) where
 
@@ -150,7 +151,7 @@ growMoleculeAtIndexWithString m i smi
 -- Right if successful
 -- Left if error somewhere, with brief error description
 {------------------------------------------------------------------------------}
-makeAtomMoleculeFromChop::ChoppedSmile -> Molecule
+makeAtomMoleculeFromChop :: ChoppedSmile -> Molecule
 makeAtomMoleculeFromChop nb = case nb of
     SmilesError {} -> giveMoleculeError emptyMol
                       ("Could not make molecule from smile with string: "
@@ -248,10 +249,7 @@ makeAtomMoleculeFromBracketChop sb = mol
                      | otherwise = Null
 
           -- Now make the molecule
-          mol = Small (Map.singleton 0
-              $ Element atomicNumber (isotope-atomicNumber)
-                Set.empty markSetAll) Set.empty
-
+          mol = makeMoleculeFromAtom $ Element atomicNumber (isotope - atomicNumber) Set.empty markSetAll
           markSetAll = Set.union (mark sb)
                      $ Set.fromList ([markAromatic, markClass, markH, markStereo, markCharge]
                      ++ (parseClosureAtomMarkers s3 []))
