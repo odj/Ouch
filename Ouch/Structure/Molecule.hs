@@ -44,6 +44,7 @@ module Ouch.Structure.Molecule
      , fillMoleculeValence
      , fillValenceAtIndex
      , hasHangingClosure
+     , cyclizeMolecule
      , molecularWeight
      , exactMass
      , giveMoleculeError
@@ -385,8 +386,9 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
             Nothing -> (giveMoleculeError m
                        ("Could not connect molecules at index: "
                     ++ (show i1) ++ " " ++ (show i2)))
-            Just atom2 -> cyclizeMoleculeAtAtomsWithBond m atom1 atom2 b
-                where cyclizeMoleculeAtAtomsWithBond m a1 a2 b
+            Just atom2  | hasClosure mOut -> cyclizeMolecule mOut
+                        | otherwise       -> mOut
+                where mOut
                         | errorTest = addBond (m {atomMap=newMap}) i1 i2 b
                         | otherwise = giveMoleculeError m
                           "Could not cyclize molecule"
@@ -394,9 +396,9 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
                               errorTest = case markerLabel of
                                   Nothing -> False
                                   Just label -> True
-                              label = (\(Just l) -> l) markerLabel
-                              newAtom1 = removeClosureAtomMarker a1 label
-                              newAtom2 = removeClosureAtomMarker a2 label
+                              label = fromJust markerLabel
+                              newAtom1 = removeClosureAtomMarker atom1 label
+                              newAtom2 = removeClosureAtomMarker atom2 label
                               newMap = Map.insert i1 newAtom1 $ Map.insert i2 newAtom2 (atomMap m)
 
 
@@ -408,7 +410,7 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = checkMolFunSmall m1 mOut "connectMoleculesAtIndicesWithBond"
   where mOut | hasClosure m2 = cyclizeMolecule $ connectMolecules m1 i1 m2 i2 b
-             | otherwise  = connectMolecules m1 i1 m2 i2 b
+             | otherwise     = connectMolecules m1 i1 m2 i2 b
         connectMolecules m1 i1 m2 i2 b | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
                                        | otherwise = output
         a1 = getAtomAtIndex m1 i1
@@ -565,27 +567,6 @@ exactMass :: Molecule -> Maybe [(Integer, Double)]
 exactMass m = undefined
 
 
---Function Stubs
-
---numberOfHydrogenBondDonors
-{------------------------------------------------------------------------------}
-numberOfHydrogenBondDonors :: Molecule -> Maybe Integer
-numberOfHydrogenBondDonors m = undefined
-
---numberOfHydrogenBondAcceptors
-{------------------------------------------------------------------------------}
-numberOfHydrogenBondAcceptors :: Molecule -> Maybe Integer
-numberOfHydrogenBondAcceptors m = undefined
-
---numberOfRings
-{------------------------------------------------------------------------------}
-numberOfRings :: Molecule -> Maybe Integer
-numberOfRings m = Just (0::Integer)
-
---numberOfRotatableBonds
-{------------------------------------------------------------------------------}
-numberOfRotatableBonds :: Molecule -> Maybe Integer
-numberOfRotatableBonds m = Just (0::Integer)
 
 --molecularFormula
 {------------------------------------------------------------------------------}
