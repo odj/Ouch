@@ -58,7 +58,7 @@ data Bond = Sigma    {bondsTo::Int}
 {-------------------------------Typeclass Intances-----------------------------}
 {------------------------------------------------------------------------------}
 instance Show Bond where
-  show b = let desc = "Element at position: " ++  show (bondsTo b) in
+  show b = let desc = show (bondsTo b) in
    case b of
       Sigma    {} -> " -" ++ desc
       Pi       {} -> " =" ++ desc

@@ -85,6 +85,7 @@ data ChoppedSmile = Smile        {smile::String
 makeMoleculeFromSmiles::String -> Molecule
 makeMoleculeFromSmiles smi = mol' {molMarkerSet=newMolInfo}
     where mol'  =   fillMoleculeValence
+                  $ cyclizeMolecule
                   $ makeScaffoldFromSmiles smi
           info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
           closureWarning | hasHangingClosure mol'

@@ -409,8 +409,7 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
 {------------------------------------------------------------------------------}
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = checkMolFunSmall m1 mOut "connectMoleculesAtIndicesWithBond"
-  where mOut | hasClosure m2 = cyclizeMolecule $ connectMolecules m1 i1 m2 i2 b
-             | otherwise     = connectMolecules m1 i1 m2 i2 b
+  where mOut = connectMolecules m1 i1 m2 i2 b
         connectMolecules m1 i1 m2 i2 b | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
                                        | otherwise = output
         a1 = getAtomAtIndex m1 i1
@@ -445,7 +444,7 @@ hasClosure m = List.elem True $ List.map (isClosure) markers
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
                     if (moleculeHasError m1) then m2 else m12
-    where m12 = cyclizeMolecule (Small {atomMap=newMap, molMarkerSet=newMarkerSet})
+    where m12 = Small {atomMap=newMap, molMarkerSet=newMarkerSet}
           newMap = Map.union (atomMap m1) incMap
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
           m1Length = Map.size $ atomMap m1
