@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Molecules - a module to manage molecule data types
+    Molecule - a module to manage molecule data types
 
     Copyright (c) 2010 Orion D. Jankowski
 
