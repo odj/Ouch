@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Atom.hs-boot - a file to define import recursion for the Atom module
+    Property - a module to manage property data types
 
     Copyright (c) 2010 Orion D. Jankowski
 
@@ -23,34 +23,18 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
--- This file is needed to terminate recursive import relationships
+module Ouch.Property.Property (
+   ) where
 
-module Ouch.Structure.Atom (
-      Atom(..)
-    , atomicSymbolForAtom
-    ) where
+
+import Ouch.Structure.Atom
+import Ouch.Structure.Molecule
+import Ouch.Structure.Bond
+import Ouch.Structure.Marker
 
 import Data.Maybe
-import {-# SOURCE #-} Ouch.Structure.Bond
-import {-# SOURCE #-} Ouch.Structure.Marker
 import Data.Set as Set
-import Data.Map as Map
 import Data.List as List
-
-data Atom   = Element {atomicNumber::Integer
-            , neutronNumber::Integer
-            , atomBondSet::(Set Bond)
-            , atomMarkerSet::(Set AtomMarker)}
-            | LonePair {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Electron {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unfilled {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Unspecified {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
-            | Open {atomBondSet::(Set Bond), atomMarkerSet::(Set AtomMarker)}
+import Data.Map as Map
 
 
-atomicSymbolForAtom :: Atom -> String
-
-
-instance Eq Atom
-instance Show Atom
-instance Ord Atom
