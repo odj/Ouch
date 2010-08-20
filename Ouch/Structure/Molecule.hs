@@ -64,6 +64,8 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Data.Atom
+import {-# SOURCE #-} Ouch.Property.Property
+
 import Data.Either
 import Data.Maybe
 import Data.Map as Map
@@ -79,7 +81,8 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 
 data Molecule =   Small    {atomMap::(Map Int Atom)
-                          , molMarkerSet::(Set MoleculeMarker)}
+                          , molMarkerSet::(Set MoleculeMarker)
+                          , molPropertyMap::(Map String Property)}
                 | Markush  {molMarkerSet::(Set MoleculeMarker)}
                 | Polymer  {molMarkerSet::(Set MoleculeMarker)}
                 | Biologic {molMarkerSet::(Set MoleculeMarker)}
@@ -444,7 +447,7 @@ hasClosure m = List.elem True $ List.map (isClosure) markers
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
                     if (moleculeHasError m1) then m2 else m12
-    where m12 = Small {atomMap=newMap, molMarkerSet=newMarkerSet}
+    where m12 = Small {atomMap=newMap, molMarkerSet=newMarkerSet, molPropertyMap=Map.empty}
           newMap = Map.union (atomMap m1) incMap
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
           m1Length = Map.size $ atomMap m1
@@ -457,7 +460,8 @@ addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
 {------------------------------------------------------------------------------}
 makeMoleculeFromAtom:: Atom -> Molecule
 makeMoleculeFromAtom a = Small {atomMap=(Map.singleton 0 (markAtom a $ Label 0))
-                              , molMarkerSet=Set.empty}
+                              , molMarkerSet=Set.empty
+                              , molPropertyMap=Map.empty}
 
 
 -- numberOfAtoms

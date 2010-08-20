@@ -1,6 +1,7 @@
+
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Property - a module to manage property data types
+    Property.hs-boot - a module to manage property data types
 
     Copyright (c) 2010 Orion D. Jankowski
 
@@ -23,44 +24,8 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-module Ouch.Property.Property (
-   Property(..)
- , Value(..)
-   ) where
-
-
-import Ouch.Structure.Molecule
-import Data.Maybe
-import Data.Set as Set
-import Data.List as List
-import Data.Map as Map
-
-
-{------------------------------------------------------------------------------}
-
-data Property = Property {value::Value
-                        , key::String
-                        , func::Maybe (Molecule -> Property)}
-
-
-instance Ord Property where
-    compare a b | (key a) >  (key b) = GT
-                | (key a) <  (key b) = LT
-                | (key a) == (key b) = EQ
-
-instance Eq Property where
-    a == b = (key a) == (key b)
-
-
-instance Show Property where
-  show a = (show $ key a) ++ ": " ++ (show $ value a)
-
-
-data Value =
-    IntegerValue    Integer
-  | DoubleValue     Double
-  | BoolValue       Bool
-  | TupleArrayValue [(Double, Double)]
-  deriving (Eq, Ord, Show)
+module Ouch.Property.Property where
+data Property 
+data Value
 
 

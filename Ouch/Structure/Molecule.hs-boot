@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Property - a module to manage property data types
+    Molecule.hs-boot  - a module to manage molecule data types
 
     Copyright (c) 2010 Orion D. Jankowski
 
@@ -23,44 +23,35 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-module Ouch.Property.Property (
-   Property(..)
- , Value(..)
-   ) where
 
+module Ouch.Structure.Molecule(
+    Molecule(..)
+    ) where
 
-import Ouch.Structure.Molecule
+import Ouch.Structure.Atom
+import Ouch.Structure.Bond
+import Ouch.Structure.Marker
+import Ouch.Data.Atom
+import Ouch.Property.Property
+
+import Data.Either
 import Data.Maybe
-import Data.Set as Set
-import Data.List as List
 import Data.Map as Map
+import Data.List as List
+import Data.Set as Set
+import Data.Maybe as Maybe
+import Control.Applicative
 
 
-{------------------------------------------------------------------------------}
-
-data Property = Property {value::Value
-                        , key::String
-                        , func::Maybe (Molecule -> Property)}
 
 
-instance Ord Property where
-    compare a b | (key a) >  (key b) = GT
-                | (key a) <  (key b) = LT
-                | (key a) == (key b) = EQ
-
-instance Eq Property where
-    a == b = (key a) == (key b)
-
-
-instance Show Property where
-  show a = (show $ key a) ++ ": " ++ (show $ value a)
+data Molecule =   Small    {atomMap::(Map Int Atom)
+                          , molMarkerSet::(Set MoleculeMarker)
+                          , molPropertyMap::(Map Property)}
+                | Markush  {molMarkerSet::(Set MoleculeMarker)}
+                | Polymer  {molMarkerSet::(Set MoleculeMarker)}
+                | Biologic {molMarkerSet::(Set MoleculeMarker)}
 
 
-data Value =
-    IntegerValue    Integer
-  | DoubleValue     Double
-  | BoolValue       Bool
-  | TupleArrayValue [(Double, Double)]
-  deriving (Eq, Ord, Show)
-
-
+instance Show Molecule 
+instance Eq Molecule 
