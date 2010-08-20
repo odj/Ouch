@@ -33,6 +33,9 @@ module Ouch.Structure.Molecule
      , addHydrogenAtIndex
      , addLonePairAtIndex
      , addElectronAtIndex
+     , addMolMarker
+     , addProperty
+     , addPropertyFromFunction
      , bondTargetSetForIndex
      , setAtom
      , getAtomAtIndex
@@ -136,6 +139,16 @@ addAtom a m = checkMolFunSmall m mOut "addAtom"
     where mOut =  m {atomMap = Map.insert atomNumber newAtom $ atomMap m}
           atomNumber = Map.size $ atomMap m
           newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
+
+
+addMolMarker :: Molecule -> MoleculeMarker -> Molecule
+addMolMarker m mm = m {molMarkerSet = Set.insert mm $ molMarkerSet m}
+
+addProperty :: Molecule -> Property -> Molecule
+addProperty m p = m {molPropertyMap = Map.insert (propertyKey p) p $ molPropertyMap m}
+
+addPropertyFromFunction :: Molecule -> (Molecule -> Property) -> Molecule
+addPropertyFromFunction m f = addProperty m $ f m
 
 
 occupiedValenceAtIndex :: Molecule -> Int -> Integer
@@ -605,11 +618,12 @@ molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
 
 instance Show Molecule where
     show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
-       Small {atomMap=atoms, molMarkerSet=mm} -> "\nIs a small molecule with formula: "
+       Small {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} -> "\nIs a small molecule with formula: "
                 ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n"
                 ++ (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
                     ++ (show $ snd b))) "" (Map.toList atoms))
                 ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
+                ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"
        Markush  {}   -> "Is a markush"
        Polymer  {}   -> "Is a polymer"
        Biologic {}   -> "Is a Biologic"

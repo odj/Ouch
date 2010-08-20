@@ -25,7 +25,13 @@
 ------------------------------------------------------------------------------}
 
 module Ouch.Property.Property where
-data Property 
+data Property
+propertyKey :: Property -> String
+
+instance Show Property
+instance Eq Property
+instance Ord Property
+
 data Value
 
 

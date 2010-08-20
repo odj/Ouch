@@ -87,7 +87,7 @@ makeMoleculeFromSmiles smi = mol' {molMarkerSet=newMolInfo}
     where mol'  =   fillMoleculeValence
                   $ cyclizeMolecule
                   $ makeScaffoldFromSmiles smi
-          info  = Set.singleton (Info $ "Produced from smile string: " ++ smi)
+          info  = Set.singleton $ Info "ORIGIN" $ "Produced from smile string \"" ++ smi ++ "\""
           closureWarning | hasHangingClosure mol'
                          = Set.singleton
                          $ Warning "Molecule has unmatched bond closures."

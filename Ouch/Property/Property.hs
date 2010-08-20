@@ -38,22 +38,22 @@ import Data.Map as Map
 
 {------------------------------------------------------------------------------}
 
-data Property = Property {value::Value
-                        , key::String
+data Property = Property {propertyKey::String
+                        , value::Value
                         , func::Maybe (Molecule -> Property)}
 
 
 instance Ord Property where
-    compare a b | (key a) >  (key b) = GT
-                | (key a) <  (key b) = LT
-                | (key a) == (key b) = EQ
+    compare a b | (propertyKey a) >  (propertyKey b) = GT
+                | (propertyKey a) <  (propertyKey b) = LT
+                | (propertyKey a) == (propertyKey b) = EQ
 
 instance Eq Property where
-    a == b = (key a) == (key b)
+    a == b = (propertyKey a) == (propertyKey b)
 
 
 instance Show Property where
-  show a = (show $ key a) ++ ": " ++ (show $ value a)
+  show a = (show $ propertyKey a) ++ ": " ++ (show $ value a)
 
 
 data Value =

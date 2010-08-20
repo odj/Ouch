@@ -37,6 +37,7 @@ import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
+import Ouch.Property.Property
 import Ouch.Property.Ring
 import System.IO
 import System.Environment

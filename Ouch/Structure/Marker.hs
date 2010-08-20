@@ -56,9 +56,8 @@ data AtomMarker =
   deriving (Show)
 
 data MoleculeMarker =
-    Info            {molMarker::String}
+    Info            {infoKey::String, molMarker::String}
   | Name            {molMarker::String}
-  -- | Property        {molMarker::String, key::String, value::Data}
   | Warning         {molMarker::String}
   | MError          {molMarker::String}
   deriving (Eq)
@@ -99,7 +98,7 @@ data NewBond =
 
 instance Show MoleculeMarker where
   show m = case m of
-      Info s    -> "Info: "     ++ s ++ "\n"
+      Info k s  -> k ++ ": "    ++ s ++ "\n"
       Name s    -> "Name: "     ++ s ++ "\n"
       Warning s -> "WARNING: "  ++ s ++ "\n"
       MError s  -> "ERROR: "    ++ s ++ "\n"
@@ -425,11 +424,11 @@ instance Ord MoleculeMarker where
                       | otherwise  = EQ
           Info {}              -> GT
 
-      Info {molMarker=l1}   -> case b of
+      Info {infoKey=l1}   -> case b of
           MError {}         -> LT
           Name {}           -> LT
           Warning {}        -> LT
-          Info {molMarker=l2}   ->  a
+          Info {infoKey=l2}   ->  a
               where a | (l1 == l2) = EQ
                       | (l1 > l2)  = GT
                       | (l1 < l2)  = LT
