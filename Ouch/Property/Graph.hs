@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-    Property - a module to manage property data types
+    Graph - a module to ...
 
     Copyright (c) 2010 Orion D. Jankowski
 
@@ -23,13 +23,18 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-module Ouch.Property.Property (
-   Property(..)
- , Value(..)
-   ) where
+module Ouch.Property.Graph
+  (
+
+  ) where
 
 
-import {-# SOURCE #-} Ouch.Structure.Molecule
+
+import Ouch.Structure.Atom
+import Ouch.Structure.Bond
+import Ouch.Structure.Molecule
+import Ouch.Property.Property
+
 import Data.Maybe
 import Data.Set as Set
 import Data.List as List
@@ -37,30 +42,24 @@ import Data.Map as Map
 
 
 {------------------------------------------------------------------------------}
-
-data Property = Property {propertyKey::String
-                        , value::Value
-                        , func::Maybe (Molecule -> Property)}
+{-------------------------------Functions--------------------------------------}
+{------------------------------------------------------------------------------}
 
 
-instance Ord Property where
-    compare a b | (propertyKey a) >  (propertyKey b) = GT
-                | (propertyKey a) <  (propertyKey b) = LT
-                | (propertyKey a) == (propertyKey b) = EQ
-
-instance Eq Property where
-    a == b = (propertyKey a) == (propertyKey b)
 
 
-instance Show Property where
-  show a = (show $ propertyKey a) ++ ": " ++ (show $ value a)
 
 
-data Value =
-    IntegerValue    Integer
-  | DoubleValue     Double
-  | BoolValue       Bool
-  | TupleArrayValue [(Double, Double)]
-  deriving (Eq, Ord, Show)
+
+
+
+
+
+
+
+
+
+
+
 
 

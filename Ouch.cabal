@@ -21,9 +21,10 @@ data-dir: ""
 extra-source-files:
 extra-tmp-files:
 exposed-modules: Ouch.Data.Atom Ouch.Input.Smiles
-                 Ouch.Property.Property Ouch.Property.Ring Ouch.Structure.Atom
-                 Ouch.Structure.Bond Ouch.Structure.Marker Ouch.Structure.Molecule
-                 Ouch.Test.Methods
+                 Ouch.Property.Composition Ouch.Property.Extrinsic
+                 Ouch.Property.Geometry Ouch.Property.Graph Ouch.Property.Property
+                 Ouch.Property.Ring Ouch.Structure.Atom Ouch.Structure.Bond
+                 Ouch.Structure.Marker Ouch.Structure.Molecule Ouch.Test.Methods
 exposed: True
 buildable: True
 build-tools:

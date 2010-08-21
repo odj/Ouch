@@ -28,30 +28,11 @@ module Ouch.Structure.Molecule(
     Molecule(..)
     ) where
 
-import Ouch.Structure.Atom
-import Ouch.Structure.Bond
-import Ouch.Structure.Marker
-import Ouch.Data.Atom
-import Ouch.Property.Property
-
-import Data.Either
-import Data.Maybe
-import Data.Map as Map
-import Data.List as List
-import Data.Set as Set
-import Data.Maybe as Maybe
-import Control.Applicative
 
 
 
 
-data Molecule =   Small    {atomMap::(Map Int Atom)
-                          , molMarkerSet::(Set MoleculeMarker)
-                          , molPropertyMap::(Map Property)}
-                | Markush  {molMarkerSet::(Set MoleculeMarker)}
-                | Polymer  {molMarkerSet::(Set MoleculeMarker)}
-                | Biologic {molMarkerSet::(Set MoleculeMarker)}
+data Molecule
 
-
-instance Show Molecule 
-instance Eq Molecule 
+instance Show Molecule
+instance Eq Molecule

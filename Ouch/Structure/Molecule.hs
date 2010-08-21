@@ -67,7 +67,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Data.Atom
-import {-# SOURCE #-} Ouch.Property.Property
+import Ouch.Property.Property
 
 import Data.Either
 import Data.Maybe
@@ -83,28 +83,15 @@ import Control.Applicative
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Molecule =   Small    {atomMap::(Map Int Atom)
+data Molecule =   Molecule    {atomMap::(Map Int Atom)
                           , molMarkerSet::(Set MoleculeMarker)
                           , molPropertyMap::(Map String Property)}
-                | Markush  {molMarkerSet::(Set MoleculeMarker)}
-                | Polymer  {molMarkerSet::(Set MoleculeMarker)}
-                | Biologic {molMarkerSet::(Set MoleculeMarker)}
 
 
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
--- checkMolFunSmall
--- Performs check to make sure mIn is valid, if true, then returns mOut
--- If check fails, returns mIn.  If because of type, adds specified string.
-{------------------------------------------------------------------------------}
-checkMolFunSmall :: Molecule -> Molecule -> String -> Molecule
-checkMolFunSmall mIn mOut s = if (moleculeHasError mIn) then mIn else case mIn of
-    Small    {}    -> mOut
-    Markush  {}    -> giveMoleculeError mIn $ "Can't perform on Markush: "  ++ s
-    Polymer  {}    -> giveMoleculeError mIn $ "Can't perform on Polymer: "  ++ s
-    Biologic {}    -> giveMoleculeError mIn $ "Can't perform on Biologic: " ++ s
 
 checkMolFun :: Molecule -> Molecule -> Molecule
 checkMolFun mIn mOut = if (moleculeHasError mIn) then mIn else mOut
@@ -561,51 +548,6 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
     Just a  -> m {atomMap = Map.insert i (markAtom a am) (atomMap m)}
     where atom = atomAtIndex m i
           warning = Warning $ "Unable to add marker to atom at position " ++ show i
-
-
---molecularWeight
-{------------------------------------------------------------------------------}
-molecularWeight :: Molecule -> Either String Double
-molecularWeight m = if (moleculeHasError m) then (Left "") else case m of
-        Small {atomMap=atoms} -> Right $ mw atoms
-        Markush  {}   -> Left "No MW for Markush"
-        Polymer  {}   -> Left "No MW for Polymer"
-        Biologic {}   -> Left "No MW for Biologic"
-        where mw a = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] a
-
-
-
--- exactMass
--- This is a distribution of masses according to natural isotopic abundance, normalized to 100
--- This is the normal way in which mass-spec people report mass distribution fractions
-{------------------------------------------------------------------------------}
-exactMass :: Molecule -> Maybe [(Integer, Double)]
-exactMass m = undefined
-
-
-
---molecularFormula
-{------------------------------------------------------------------------------}
-molecularFormula :: Molecule -> Either String String
-molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
-    Small {atomMap=at}    -> Right molFm
-        where startMap = Map.empty
-              endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList at
-              -- Use foldr to accumulate and count atoms
-              updateMap a m | Map.notMember (atomicSymbolForAtom a) m = Map.insert (atomicSymbolForAtom a)  1 m
-                            | otherwise                               = Map.adjust (+ 1) (atomicSymbolForAtom a) m
-              -- Convert the map to a list of just the elements present, and in IUPAC order
-              finalList = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
-              --  Build the final output string from the map
-              molFm = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList
-              -- simple little utility function which, strangely, is not already defined in Data.Map
-              lookupPair k m = case v of
-                  Just val -> Just (k, val)
-                  Nothing -> Nothing
-                  where v = Map.lookup k m
-    Markush  {}   -> Left "No molecular formula defined for Markush"
-    Polymer  {}   -> Left "No molecular formula defined for Polymer"
-    Biologic {}   -> Left "No molecular formula defined for Biologic"
 
 
 
