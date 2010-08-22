@@ -83,7 +83,7 @@ import Control.Applicative
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Molecule =   Molecule    {atomMap::(Map Int Atom)
+data Molecule =   Molecule {atomMap::(Map Int Atom)
                           , molMarkerSet::(Set MoleculeMarker)
                           , molPropertyMap::(Map String Property)}
 
@@ -107,7 +107,7 @@ getAtomAtIndex m i = Map.lookup i $ atomMap m
 -- atom index.
 {------------------------------------------------------------------------------}
 setAtom :: Atom -> Molecule -> Molecule
-setAtom a m  = checkMolFunSmall m mOut "setAtom"
+setAtom a m  = checkMolFun m mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m
              | fromJust atomIndex > (Map.size $ atomMap m) = withWarning
              | otherwise = output
@@ -122,7 +122,7 @@ setAtom a m  = checkMolFunSmall m mOut "setAtom"
 -- Adds atom to top of the atom list with no bonds to the molecule.
 {------------------------------------------------------------------------------}
 addAtom :: Atom -> Molecule -> Molecule
-addAtom a m = checkMolFunSmall m mOut "addAtom"
+addAtom a m = checkMolFun m mOut
     where mOut =  m {atomMap = Map.insert atomNumber newAtom $ atomMap m}
           atomNumber = Map.size $ atomMap m
           newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
@@ -209,7 +209,7 @@ numberBondsToLonePairAtIndex m i  = numberOfBondToAtomWithProperty m i isLonePai
 -- Connects two atom positions with a new bond
 {------------------------------------------------------------------------------}
 addBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
+addBond m i1 i2 b  = checkMolFun m mOut
     where mOut | (isNothing a1 || isNothing a2) =
                     giveMoleculeError m $ "Cannot connect atoms at positions: "
                     ++ (show i1) ++ " " ++ (show i2)
@@ -231,21 +231,21 @@ addBond m i1 i2 b  = checkMolFunSmall m mOut "addBond"
 -- Create a new lone-pair centered on the atom.
 {------------------------------------------------------------------------------}
 addLonePairAtIndex :: Molecule -> Int -> Molecule
-addLonePairAtIndex m i  = checkMolFunSmall m mOut "addLonePairAtIndex"
+addLonePairAtIndex m i  = checkMolFun m mOut "addLonePairAtIndex"
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = LonePair Set.empty Set.empty
 
 --addHydrogenAtIndex
 {------------------------------------------------------------------------------}
 addHydrogenAtIndex :: Molecule -> Int -> Molecule
-addHydrogenAtIndex m i  = checkMolFunSmall m mOut "addHydrogenAtIndex"
+addHydrogenAtIndex m i  = checkMolFun m mOut "addHydrogenAtIndex"
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = (Element 1 0) Set.empty Set.empty
 
 --addElectronAtIndex
 {------------------------------------------------------------------------------}
 addElectronAtIndex :: Molecule -> Int -> Molecule
-addElectronAtIndex m i  = checkMolFunSmall m mOut "addElectronAtIndex"
+addElectronAtIndex m i  = checkMolFun m mOut "addElectronAtIndex"
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = Electron Set.empty Set.empty
 
@@ -255,7 +255,7 @@ addElectronAtIndex m i  = checkMolFunSmall m mOut "addElectronAtIndex"
 -- Return atom and list containing new unfilled orbital.
 {------------------------------------------------------------------------------}
 addUnfilled :: Molecule -> Int -> Molecule
-addUnfilled m i  = checkMolFunSmall m mOut "addUnfilled"
+addUnfilled m i  = checkMolFun m mOut "addUnfilled"
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = Unfilled Set.empty Set.empty
 
@@ -276,7 +276,7 @@ checkValenceAtIndex m i = True
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
 fillValenceAtIndex :: Molecule -> Int -> Molecule
-fillValenceAtIndex m i = checkMolFunSmall m mOut "fillValenceAtIndex"
+fillValenceAtIndex m i = checkMolFun m mOut "fillValenceAtIndex"
   where atom  = getAtomAtIndex m i
         mOut  = case atom of
           Just _  -> output

@@ -361,46 +361,17 @@ instance Ord AtomMarker where
 
 
           Comment {comment=l1} -> case b of
-            Label {}              -> LT
-            Charge {}             -> LT
-            Position {}           -> LT
-            Closure {}            -> LT
-            Class {}              -> LT
-            Chiral {}             -> LT
-            GeoIsomer {}          -> LT
-            AromaticAtom          -> LT
-            Traversed {}          -> LT
-            ExplicitHydrogen {}   -> LT
-            Substructure {}       -> LT
-            ValenceError {}       -> LT
-            InRing {}             -> LT
-            Skip   {}             -> LT
-            PEdge {}             -> LT
             Comment {comment=l2} -> a
                     where a | (l1 == l2) = EQ
                             | (l1 > l2)  = GT
                             | (l1 < l2)  = LT
                             | otherwise  = EQ
-            Null                  -> LT
+            Null                  -> GT
+            _                     -> LT
 
           Null -> case b of
-            Label {}              -> LT
-            Charge {}             -> LT
-            Position {}           -> LT
-            Closure {}            -> LT
-            Class {}              -> LT
-            Chiral {}             -> LT
-            GeoIsomer {}          -> LT
-            AromaticAtom          -> LT
-            Traversed {}          -> LT
-            ExplicitHydrogen {}   -> LT
-            Substructure {}       -> LT
-            ValenceError {}       -> LT
-            InRing {}             -> LT
-            Skip   {}             -> LT
-            PEdge {}              -> LT
-            Comment {}            -> LT
             Null                  -> EQ
+            _                     -> LT
 
 instance Ord MoleculeMarker where
   compare a b =  case a of
