@@ -42,7 +42,6 @@ module Ouch.Structure.Molecule
      , addMarkerToAtomAtIndex
      , addMolecule
      , makeMoleculeFromAtom
-     , numberOfHeavyAtoms
      , fillMoleculeValence
      , fillValenceAtIndex
      , hasHangingClosure
@@ -457,22 +456,6 @@ makeMoleculeFromAtom a = Molecule {atomMap=(Map.singleton 0 (markAtom a $ Label 
                               , molMarkerSet=Set.empty
                               , molPropertyMap=Map.empty}
 
-
--- numberOfAtoms
-{------------------------------------------------------------------------------}
-numberOfAtoms :: Molecule -> Integer
-numberOfAtoms m = num $ atomMap m
-  where num a = fromIntegral $ Map.size $ Map.filter isElement a
-
-
-
-
--- numberOfHeavyAtoms
-{------------------------------------------------------------------------------}
-numberOfHeavyAtoms :: Molecule -> Integer
-numberOfHeavyAtoms m = num $ atomMap m
-  where heavy a = Map.filter isHeavyAtom a
-        num a = fromIntegral $ Map.size $ heavy a
 
 
 -- fillMoleculeValence

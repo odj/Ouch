@@ -28,6 +28,8 @@ module Ouch.Test.Methods
        TestData(..)
      , performTests
      , makeTestFromString
+     , testArray
+     , testAtomCount
      , testTest
      , testFail
      , testMolForm
@@ -45,6 +47,9 @@ import Data.List as List
 import Data.Either
 import Data.Maybe
 import Data.Char as Char
+import System.IO
+import System.Environment
+import Data.Time.Clock
 
 
 -- Data structure to hold test/result pairs and descriptions.  All 'functions' should
@@ -55,6 +60,15 @@ data TestData = TestData { function :: (String -> Either String String)
                          , outcome :: String
                          } deriving (Show)
 
+
+parseAtTab :: String -> [String]
+parseAtTab s =  case dropWhile Char.isSpace s of
+                     "" -> []
+                     s' -> w : parseAtTab s''
+                           where (w, s'') = break (=='\t') s'
+
+
+
 makeTestFromString :: String -> TestData
 makeTestFromString "" = TestData {function=testTest, description="Empty test", input="", outcome=""}
 makeTestFromString s = TestData {function=func, description=l3, input=l2, outcome=l4}
@@ -63,13 +77,14 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
                | l1 == "testFail"    = testFail
                | l1 == "testMolForm" = testMolForm
                | l1 == "testMolWt"   = testMolWt
+               | l1 == "testAtomCount" = testAtomCount
                | otherwise = testTest
 
 
 performTests :: [TestData] -> (String, String)
 performTests [] = ("", "")
 performTests td = (summary, errorLog)
-   where summary = "\n++++++++++++++++++++++\nPerforming "
+   where summary = "++++++++++++++++++++++\nPerforming "
                    ++ show (length td)
                    ++ " tests.\n----------------------\n"
                    ++ "\tPassed: " ++ show ((length td) - (length $ lines errorLog)) ++ "\n"
@@ -87,6 +102,23 @@ performTests td = (summary, errorLog)
                                                   ++ s ++ " || should get: " ++ (outcome t)
                                                   ++ "\n" ++ detail ts rs
 
+testArray :: [(String, [TestData])] -> IO ()
+testArray []   = return ()
+testArray (x:xs) = do
+  let (summary, errorLog) = performTests $ snd x
+  time1 <- getCurrentTime
+  putStrLn $ "\n\nTest file: " ++ fst x
+  putStrLn $ performTests (snd x) `seq` summary
+  time2 <- getCurrentTime
+  putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)
+                  ++ " seconds."
+  appendFile "errorLog.txt" $  "\nTest file: " ++ (fst x) ++ "\n"
+                               ++ "=====================================\n"
+                               ++ errorLog
+  testArray xs
+
+
+
 -- Simple test function
 testTest::String -> Either String String
 testTest s = Right s
@@ -96,22 +128,25 @@ testFail::String -> Either String String
 testFail s = Left s
 
 -- Test smiles to formula
-testMolForm::String -> Either String String
+testMolForm :: String -> Either String String
 testMolForm s = case molecularFormula $ makeMoleculeFromSmiles s of
   Nothing   -> Left "Unable to generate Molecular Formula Property"
   Just prop -> Right mf
     where mf = case (value prop) of StringValue str -> str
 
-testMolWt::String -> Either String String
+testMolWt :: String -> Either String String
 testMolWt s = case molecularWeight $ makeMoleculeFromSmiles s of
   Nothing   -> Left "Unable to generate Molecular Formula Property"
   Just prop -> Right $ show $ floor (10 * mw)
     where mw = case (value prop) of DoubleValue num -> num
 
-parseAtTab :: String -> [String]
-parseAtTab s =  case dropWhile Char.isSpace s of
-                     "" -> []
-                     s' -> w : parseAtTab s''
-                           where (w, s'') = break (=='\t') s'
+testAtomCount :: String -> Either String String
+testAtomCount s = case atomCount $ makeMoleculeFromSmiles s of
+  Nothing   -> Left "Unable to generate Molecular Formula Property"
+  Just prop -> Right ac
+    where ac = case (value prop) of IntegerValue i -> show i
+
+
+
 
 

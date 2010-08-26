@@ -61,9 +61,24 @@ exactMass :: Molecule -> Maybe Property
 exactMass m = Just undefined
 
 
-atomCount :: Molecule -> Maybe Property
-atomCount m = Just undefined
 
+
+-- numberOfHeavyAtoms
+{------------------------------------------------------------------------------}
+numberOfHeavyAtoms :: Molecule -> Integer
+numberOfHeavyAtoms m = num $ atomMap m
+  where heavy a = Map.filter isHeavyAtom a
+        num a = fromIntegral $ Map.size $ heavy a
+
+
+
+atomCount :: Molecule -> Maybe Property
+atomCount m = Just prop
+  where num = fromIntegral $ Map.size $ Map.filter isElement $ atomMap m
+        prop = Property {propertyKey = "COUNT"
+                       , value = IntegerValue num
+                       , func = Just atomCount
+                       }
 
 heavyAtomCount :: Molecule -> Maybe Property
 heavyAtomCount m =Just undefined
@@ -89,8 +104,6 @@ molecularWeight m = if (moleculeHasError m) then Nothing else Just prop
         prop = Property {propertyKey = "MOLWT"
                        , value = DoubleValue mw
                        , func = Just molecularWeight}
-
-
 
 
 --molecularFormula

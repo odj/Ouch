@@ -23,8 +23,7 @@
 
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
--- ghc --make -O2 -fforce-recomp -prof -auto-all -caf-all Main.hs -o a.out
--- ghc --make -O2 -fforce-recomp Main.hs -o a.out
+-- ghc --make Ouch/resources/RunTest.hs -fforce-recomp -O2 -o a.out
 -- time ./a.out tests.txt +RTS -sstderr -p -K100M
 --
 {-# LANGUAGE ForeignFunctionInterface, CPP, Generics #-}
@@ -44,25 +43,18 @@ import System.Environment
 import Data.Time.Clock
 import Data.Either
 import Data.Maybe
-import Data.List as List
-import Data.Map as Map
-import Data.Set as Set
+
 
 
 
 -------------------------------------------------------------------------------
 main = do
-    (n:_) <- getArgs
-    input <- readFile n
-    let tests = List.map makeTestFromString $ lines input
-    let (summary, errorLog) = performTests tests
-    time1 <- getCurrentTime
-    putStrLn $ performTests tests `seq` summary
-    time2 <- getCurrentTime
-
-    putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)
-            ++ " seconds."
-    writeFile "errorLog.txt" errorLog
+    writeFile "errorLog.txt" ""
+    args <- getArgs
+    input <- sequence $ map readFile args
+    let tests = map (map makeTestFromString . lines) input
+    let tupleTests = zip args tests
+    testArray tupleTests
 
 -------------------------------------------------------------------------------
 

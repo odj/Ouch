@@ -6,7 +6,8 @@ license: GPL
 license-file: COPYING
 copyright: Orion Jankowski 2010
 maintainer: Orion Jankowski odj@me.com
-build-depends: base >=3 && <5, containers -any, regex-tdfa -any
+build-depends: base >=3 && <5, containers -any, regex-tdfa -any,
+               time -any
 stability: Unstable
 homepage: We don't have one
 package-url:
