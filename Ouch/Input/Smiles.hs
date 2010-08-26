@@ -118,7 +118,7 @@ makeScaffoldFromSmiles smi = case chop of
           nextSmile = smiles chop
           newAtom = makeAtomMoleculeFromChop chop
           newSubstructure = makeScaffoldFromSmiles thisSmile
-          emptyMol = Small Map.empty Set.empty Map.empty
+          emptyMol = Molecule Map.empty Set.empty Map.empty
 
 
 
@@ -168,7 +168,7 @@ makeAtomMoleculeFromChop nb = case nb of
                        (mark nb) `Set.union`
                        markSetClass
           a = [toUpper c | c <- smile nb]
-          emptyMol = Small Map.empty Set.empty Map.empty
+          emptyMol = Molecule Map.empty Set.empty Map.empty
           makeAtomMolecule nb
            | a == ""    =  giveMoleculeError emptyMol
                            "ERROR: Tried to make atom from empty string."

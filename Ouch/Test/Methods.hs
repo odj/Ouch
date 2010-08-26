@@ -37,6 +37,8 @@ module Ouch.Test.Methods
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
+import Ouch.Property.Composition
+import Ouch.Property.Property
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
 import Data.List as List
@@ -67,11 +69,11 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
 performTests :: [TestData] -> (String, String)
 performTests [] = ("", "")
 performTests td = (summary, errorLog)
-   where summary = "\tPassed: " ++ show ((length td) - (length $ lines errorLog)) ++ "\n"
-                   ++ "\tFailed: " ++ show ((length $ lines errorLog)) ++ "\n"
-                   ++ "\n"  ++ "\n++++++++++++++++++++\nPerformed "
+   where summary = "\n++++++++++++++++++++++\nPerforming "
                    ++ show (length td)
-                   ++ " tests.\n--------------------\n"
+                   ++ " tests.\n----------------------\n"
+                   ++ "\tPassed: " ++ show ((length td) - (length $ lines errorLog)) ++ "\n"
+                   ++ "\tFailed: " ++ show ((length $ lines errorLog))
          errorLog = detail td results
          results = List.map (\a -> (function a) (input a)) td
          detail [] _ = ""
@@ -95,14 +97,16 @@ testFail s = Left s
 
 -- Test smiles to formula
 testMolForm::String -> Either String String
-testMolForm s = molecularFormula $ makeMoleculeFromSmiles s
+testMolForm s = case molecularFormula $ makeMoleculeFromSmiles s of
+  Nothing   -> Left "Unable to generate Molecular Formula Property"
+  Just prop -> Right mf
+    where mf = case (value prop) of StringValue str -> str
 
 testMolWt::String -> Either String String
-testMolWt s = output
- where eitherMolWt =  molecularWeight $ makeMoleculeFromSmiles s
-       output = case eitherMolWt of
-           Left mw   -> Left mw
-           Right mw  -> Right (show $ floor (10 * mw))
+testMolWt s = case molecularWeight $ makeMoleculeFromSmiles s of
+  Nothing   -> Left "Unable to generate Molecular Formula Property"
+  Just prop -> Right $ show $ floor (10 * mw)
+    where mw = case (value prop) of DoubleValue num -> num
 
 parseAtTab :: String -> [String]
 parseAtTab s =  case dropWhile Char.isSpace s of

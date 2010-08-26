@@ -40,7 +40,7 @@ import Data.Map as Map
 
 data Property = Property {propertyKey::String
                         , value::Value
-                        , func::Maybe (Molecule -> Property)}
+                        , func::Maybe (Molecule -> Maybe Property)}
 
 
 instance Ord Property where
@@ -59,6 +59,7 @@ instance Show Property where
 data Value =
     IntegerValue    Integer
   | DoubleValue     Double
+  | StringValue     String
   | BoolValue       Bool
   | TupleArrayValue [(Double, Double)]
   deriving (Eq, Ord, Show)

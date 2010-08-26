@@ -41,15 +41,12 @@ module Ouch.Structure.Molecule
      , getAtomAtIndex
      , addMarkerToAtomAtIndex
      , addMolecule
-     , numberOfAtoms
      , makeMoleculeFromAtom
      , numberOfHeavyAtoms
      , fillMoleculeValence
      , fillValenceAtIndex
      , hasHangingClosure
      , cyclizeMolecule
-     , molecularWeight
-     , exactMass
      , giveMoleculeError
      , moleculeHasError
      , numberBondsAtIndex
@@ -57,7 +54,6 @@ module Ouch.Structure.Molecule
      , numberBondsToAtomsAtIndex
      , numberBondsToRadicalsAtIndex
      , numberBondsToHydrogensAtIndex
-     , molecularFormula
      , connectMoleculesAtIndicesWithBond
      , incrementAtomMap
      ) where
@@ -66,7 +62,7 @@ module Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
-import Ouch.Data.Atom
+
 import Ouch.Property.Property
 
 import Data.Either
@@ -231,21 +227,21 @@ addBond m i1 i2 b  = checkMolFun m mOut
 -- Create a new lone-pair centered on the atom.
 {------------------------------------------------------------------------------}
 addLonePairAtIndex :: Molecule -> Int -> Molecule
-addLonePairAtIndex m i  = checkMolFun m mOut "addLonePairAtIndex"
+addLonePairAtIndex m i  = checkMolFun m mOut
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = LonePair Set.empty Set.empty
 
 --addHydrogenAtIndex
 {------------------------------------------------------------------------------}
 addHydrogenAtIndex :: Molecule -> Int -> Molecule
-addHydrogenAtIndex m i  = checkMolFun m mOut "addHydrogenAtIndex"
+addHydrogenAtIndex m i  = checkMolFun m mOut
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = (Element 1 0) Set.empty Set.empty
 
 --addElectronAtIndex
 {------------------------------------------------------------------------------}
 addElectronAtIndex :: Molecule -> Int -> Molecule
-addElectronAtIndex m i  = checkMolFun m mOut "addElectronAtIndex"
+addElectronAtIndex m i  = checkMolFun m mOut
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = Electron Set.empty Set.empty
 
@@ -255,7 +251,7 @@ addElectronAtIndex m i  = checkMolFun m mOut "addElectronAtIndex"
 -- Return atom and list containing new unfilled orbital.
 {------------------------------------------------------------------------------}
 addUnfilled :: Molecule -> Int -> Molecule
-addUnfilled m i  = checkMolFun m mOut "addUnfilled"
+addUnfilled m i  = checkMolFun m mOut
     where mOut = addBond (addAtom newAtom m) i (Map.size $ atomMap m) Single
           newAtom = Unfilled Set.empty Set.empty
 
@@ -276,7 +272,7 @@ checkValenceAtIndex m i = True
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
 fillValenceAtIndex :: Molecule -> Int -> Molecule
-fillValenceAtIndex m i = checkMolFun m mOut "fillValenceAtIndex"
+fillValenceAtIndex m i = checkMolFun m mOut
   where atom  = getAtomAtIndex m i
         mOut  = case atom of
           Just _  -> output
@@ -329,7 +325,7 @@ fillValenceAtIndex m i = checkMolFun m mOut "fillValenceAtIndex"
 -- Find all matching closure instances and cyclize on matched pairs.
 {------------------------------------------------------------------------------}
 cyclizeMolecule :: Molecule -> Molecule
-cyclizeMolecule m = checkMolFunSmall m mOut "cyclizeMolecule"
+cyclizeMolecule m = checkMolFun m mOut
   where mOut = case tpl of
                 Nothing       -> m
                 Just (a1, a2) -> cyclizeMoleculeAtIndexesWithBond m a1 a2
@@ -361,18 +357,16 @@ getMatchingClosureBondTypeAtIndices m i1 i2 = getMatchingClosureBondType a1 a2
 --hasHangingClosure
 {------------------------------------------------------------------------------}
 hasHangingClosure :: Molecule -> Bool
-hasHangingClosure m = if (moleculeHasError m) then False else case m of
-    Small {}  -> output
-    _         -> False
-    where markers = List.map atomMarkerSet
-                  $ List.map snd
-                  $ Map.toList (atomMap m)
-          isClosure mk  = case mk of Closure {} -> True ; _ -> False
-          splitMk = List.map fst $ List.map (Set.partition isClosure) markers
-          firstClosure = List.findIndex (/=Set.empty) splitMk
-          output = case firstClosure of
-              Nothing    -> False
-              Just atom1 -> True
+hasHangingClosure m = if (moleculeHasError m) then False else output
+  where markers = List.map atomMarkerSet
+                $ List.map snd
+                $ Map.toList (atomMap m)
+        isClosure mk  = case mk of Closure {} -> True ; _ -> False
+        splitMk = List.map fst $ List.map (Set.partition isClosure) markers
+        firstClosure = List.findIndex (/=Set.empty) splitMk
+        output = case firstClosure of
+            Nothing    -> False
+            Just atom1 -> True
 
 
 --cyclizeMoleculeAtIndexesWithBond
@@ -411,7 +405,7 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
 -- invalid.
 {------------------------------------------------------------------------------}
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
-connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = checkMolFunSmall m1 mOut "connectMoleculesAtIndicesWithBond"
+connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = checkMolFun m1 mOut
   where mOut = connectMolecules m1 i1 m2 i2 b
         connectMolecules m1 i1 m2 i2 b | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
                                        | otherwise = output
@@ -447,7 +441,7 @@ hasClosure m = List.elem True $ List.map (isClosure) markers
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
                     if (moleculeHasError m1) then m2 else m12
-    where m12 = Small {atomMap=newMap, molMarkerSet=newMarkerSet, molPropertyMap=Map.empty}
+    where m12 = Molecule {atomMap=newMap, molMarkerSet=newMarkerSet, molPropertyMap=Map.empty}
           newMap = Map.union (atomMap m1) incMap
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
           m1Length = Map.size $ atomMap m1
@@ -459,34 +453,26 @@ addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
 --makeMoleculeFromAtom
 {------------------------------------------------------------------------------}
 makeMoleculeFromAtom:: Atom -> Molecule
-makeMoleculeFromAtom a = Small {atomMap=(Map.singleton 0 (markAtom a $ Label 0))
+makeMoleculeFromAtom a = Molecule {atomMap=(Map.singleton 0 (markAtom a $ Label 0))
                               , molMarkerSet=Set.empty
                               , molPropertyMap=Map.empty}
 
 
 -- numberOfAtoms
 {------------------------------------------------------------------------------}
-numberOfAtoms :: Molecule -> Maybe Integer
-numberOfAtoms m = if (moleculeHasError m) then Nothing else case m of
-    Small {atomMap=atoms}     -> Just $ num atoms
-    Markush  {}               -> Nothing
-    Polymer  {}               -> Nothing
-    Biologic {}               -> Nothing
-    where num a = fromIntegral $ Map.size $ Map.filter isElement a
+numberOfAtoms :: Molecule -> Integer
+numberOfAtoms m = num $ atomMap m
+  where num a = fromIntegral $ Map.size $ Map.filter isElement a
 
 
 
 
 -- numberOfHeavyAtoms
 {------------------------------------------------------------------------------}
-numberOfHeavyAtoms :: Molecule -> Maybe Integer
-numberOfHeavyAtoms m = case m of
-    Small {atomMap=atoms} -> Just $ num atoms
-    Markush  {}    -> Nothing
-    Polymer  {}    -> Nothing
-    Biologic {}    -> Nothing
-    where heavy a = Map.filter isHeavyAtom a
-          num a = fromIntegral $ Map.size $ heavy a
+numberOfHeavyAtoms :: Molecule -> Integer
+numberOfHeavyAtoms m = num $ atomMap m
+  where heavy a = Map.filter isHeavyAtom a
+        num a = fromIntegral $ Map.size $ heavy a
 
 
 -- fillMoleculeValence
@@ -560,15 +546,13 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 
 instance Show Molecule where
     show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
-       Small {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} -> "\nIs a small molecule with formula: "
-                ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n"
+       Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} -> "\nIs a small molecule with formula: "
+                -- ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n"
                 ++ (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
                     ++ (show $ snd b))) "" (Map.toList atoms))
                 ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
                 ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"
-       Markush  {}   -> "Is a markush"
-       Polymer  {}   -> "Is a polymer"
-       Biologic {}   -> "Is a Biologic"
+
 
 
 {------------------------------------------------------------------------------}

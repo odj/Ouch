@@ -41,6 +41,7 @@ import Ouch.Property.Property
 import Ouch.Property.Ring
 import System.IO
 import System.Environment
+import Data.Time.Clock
 import Data.Either
 import Data.Maybe
 import Data.List as List
@@ -53,9 +54,14 @@ import Data.Set as Set
 main = do
     (n:_) <- getArgs
     input <- readFile n
-    putStrLn "\nPerforming Tests....\n"
-    let (summary, errorLog) = performTests $ List.map makeTestFromString $ lines input
-    putStrLn summary
+    let tests = List.map makeTestFromString $ lines input
+    let (summary, errorLog) = performTests tests
+    time1 <- getCurrentTime
+    putStrLn $ performTests tests `seq` summary
+    time2 <- getCurrentTime
+
+    putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)
+            ++ " seconds."
     writeFile "errorLog.txt" errorLog
 
 -------------------------------------------------------------------------------

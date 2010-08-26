@@ -40,7 +40,9 @@ module Ouch.Property.Composition
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Molecule
+import Ouch.Data.Atom
 import Ouch.Property.Property
+
 
 import Data.Maybe
 import Data.Set as Set
@@ -52,58 +54,51 @@ import Data.Map as Map
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
-molecularWeight :: Molecule -> Maybe Property
-molecularWeight m = undefined
 
-
-molecularFormula :: Molecule -> Maybe Property
-molecularFormula m = undefined
 
 
 exactMass :: Molecule -> Maybe Property
-exactMass m = undefined
+exactMass m = Just undefined
 
 
 atomCount :: Molecule -> Maybe Property
-atomCount m = undefined
+atomCount m = Just undefined
 
 
-heavyAtomCount :: Molecule -> MaybeProperty
-heavyAtomCount m = undefined
+heavyAtomCount :: Molecule -> Maybe Property
+heavyAtomCount m =Just undefined
 
 
 hBondAcceptorCount :: Molecule -> Maybe Property
-hBondAcceptorCount m = undefined
+hBondAcceptorCount m = Just undefined
 
 
 hBondDonorCount :: Molecule -> Maybe Property
-hBondDonorCount m = undefined
+hBondDonorCount m = Just undefined
 
 
 netCharge :: Molecule -> Maybe Property
-netCharge m = undefined
+netCharge m = Just undefined
 
 
 --molecularWeight
 {------------------------------------------------------------------------------}
-molecularWeight :: Molecule -> Either String Double
-molecularWeight m = if (moleculeHasError m) then (Left "") else case m of
-        Small {atomMap=atoms} -> Right $ mw atoms
-        Markush  {}   -> Left "No MW for Markush"
-        Polymer  {}   -> Left "No MW for Polymer"
-        Biologic {}   -> Left "No MW for Biologic"
-        where mw a = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] a
+molecularWeight :: Molecule -> Maybe Property
+molecularWeight m = if (moleculeHasError m) then Nothing else Just prop
+  where mw = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
+        prop = Property {propertyKey = "MOLWT"
+                       , value = DoubleValue mw
+                       , func = Just molecularWeight}
 
 
 
 
 --molecularFormula
 {------------------------------------------------------------------------------}
-molecularFormula :: Molecule -> Either String String
-molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
-    Small {atomMap=at}    -> Right molFm
+molecularFormula :: Molecule -> Maybe Property
+molecularFormula m = if (moleculeHasError m) then Nothing else Just prop
         where startMap = Map.empty
-              endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList at
+              endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList (atomMap m)
               -- Use foldr to accumulate and count atoms
               updateMap a m | Map.notMember (atomicSymbolForAtom a) m = Map.insert (atomicSymbolForAtom a)  1 m
                             | otherwise                               = Map.adjust (+ 1) (atomicSymbolForAtom a) m
@@ -116,10 +111,9 @@ molecularFormula m = if (moleculeHasError m) then (Left "") else case m of
                   Just val -> Just (k, val)
                   Nothing -> Nothing
                   where v = Map.lookup k m
-    Markush  {}   -> Left "No molecular formula defined for Markush"
-    Polymer  {}   -> Left "No molecular formula defined for Polymer"
-    Biologic {}   -> Left "No molecular formula defined for Biologic"
-
+              prop = Property {propertyKey = "MOLFORM"
+                             , value = StringValue molFm
+                             , func = Just molecularFormula}
 
 
 
