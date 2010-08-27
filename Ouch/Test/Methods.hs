@@ -58,7 +58,7 @@ data TestData = TestData { function :: (String -> Either String String)
                          , description :: String
                          , input :: String
                          , outcome :: String
-                         } deriving (Show)
+                         }
 
 
 parseAtTab :: String -> [String]

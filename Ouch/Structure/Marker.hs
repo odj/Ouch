@@ -87,6 +87,11 @@ data NewBond =
     Single
   | Double
   | Triple
+  | AromaticOnly
+  | SingleOrDouble
+  | SingleOrAromatic
+  | DoubleOrAromatic
+  | AnyBond
   | NoBond
   deriving (Show, Eq, Ord)
 
