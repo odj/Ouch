@@ -78,6 +78,7 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
                | l1 == "testMolForm" = testMolForm
                | l1 == "testMolWt"   = testMolWt
                | l1 == "testAtomCount" = testAtomCount
+               | l1 == "testHeavyCount" = testHeavyCount
                | otherwise = testTest
 
 
@@ -142,6 +143,12 @@ testMolWt s = case molecularWeight $ makeMoleculeFromSmiles s of
 
 testAtomCount :: String -> Either String String
 testAtomCount s = case atomCount $ makeMoleculeFromSmiles s of
+  Nothing   -> Left "Unable to generate Molecular Formula Property"
+  Just prop -> Right ac
+    where ac = case (value prop) of IntegerValue i -> show i
+
+testHeavyCount :: String -> Either String String
+testHeavyCount s = case heavyAtomCount $ makeMoleculeFromSmiles s of
   Nothing   -> Left "Unable to generate Molecular Formula Property"
   Just prop -> Right ac
     where ac = case (value prop) of IntegerValue i -> show i

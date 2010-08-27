@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Atoms - a module to define atom data properties
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -24,7 +24,8 @@
 ------------------------------------------------------------------------------}
 
 module Ouch.Data.Atom (
-      atomicWeights
+      AtomData(..)
+    , atomicWeights
     , atomicSymbols
     , atomicNames
     , atomicNumberFromSymbol
@@ -34,8 +35,17 @@ module Ouch.Data.Atom (
 import qualified Data.Map as M
 
 
+data AtomData =   AtomData {atomNumber::Integer
+                          , atomSymbol::String
+                          , atomWeight::Double
+                          , atomIsotope::Integer
+                          , atomAbundance::[(Integer, Double)]
+                          , atomHalfLife::[(Integer, Double)]
+                          , atomMass::[(Integer, Double)]
+                          }
+
 -- atomicWeights
--- Reference: Pure Appl. Chem.,  81,  2131-2156 (2009) 
+-- Reference: Pure Appl. Chem.,  81,  2131-2156 (2009)
 atomicWeights = M.fromList [
                  (1, 1.00794)
                , (2, 4.002602)
@@ -397,7 +407,7 @@ atomicSymbols = M.fromList [
             , (116, "Uuh")
             , (118, "Uuo")
         ]
-        
+
 -- atomicWeights
 -- Reference: Pure Appl. Chem.,  81,  2131-2156 (2009)
 atomicNames = M.fromList [
@@ -519,10 +529,10 @@ atomicNames = M.fromList [
             , (116, "Ununhexium")
             , (118, "Ununoctium")
             ]
- 
+
 molecularFormulaElements = [
         "C"
-      , "H"    
+      , "H"
       , "Ac"
       , "Ag"
       , "Al"
@@ -640,4 +650,4 @@ molecularFormulaElements = [
       , "Zr"
       , "Zr"
       ]
-                     
+

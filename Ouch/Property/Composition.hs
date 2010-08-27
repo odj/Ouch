@@ -63,14 +63,13 @@ exactMass m = Just undefined
 
 
 
--- numberOfHeavyAtoms
-{------------------------------------------------------------------------------}
-numberOfHeavyAtoms :: Molecule -> Integer
-numberOfHeavyAtoms m = num $ atomMap m
-  where heavy a = Map.filter isHeavyAtom a
-        num a = fromIntegral $ Map.size $ heavy a
-
-
+heavyAtomCount :: Molecule -> Maybe Property
+heavyAtomCount m = Just prop
+  where num = fromIntegral $ Map.size $ Map.filter isHeavyAtom $ atomMap m
+        prop = Property {propertyKey = "HEAVY"
+                       , value = IntegerValue num
+                       , func = Just heavyAtomCount
+                       }
 
 atomCount :: Molecule -> Maybe Property
 atomCount m = Just prop
@@ -79,9 +78,6 @@ atomCount m = Just prop
                        , value = IntegerValue num
                        , func = Just atomCount
                        }
-
-heavyAtomCount :: Molecule -> Maybe Property
-heavyAtomCount m =Just undefined
 
 
 hBondAcceptorCount :: Molecule -> Maybe Property
