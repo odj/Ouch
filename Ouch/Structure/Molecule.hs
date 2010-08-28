@@ -224,13 +224,15 @@ addBond m i1 i2 b  =  m >>> mOut
           --newAtomMap = Map.insert i1 na1 $ Map.insert i2 na2 $ atomMap m
 
 getBondList :: Molecule -> Map (Int, Int) NewBond
-getBondList m = atomsToMap
+getBondList m = cleanMap
   where atoms = atomMap m
+        cleanMap = Map.mapKeys (\a -> sortTuple a) atomsToMap
         atomsToMap = Map.fold (\a m -> Map.union m $ bondSetToMap a) Map.empty atoms
         bondSetToMap a = Set.fold (\bond m -> Map.union m $ bondToMapElem bond $ ind a)
                          Map.empty $ atomBondSet a
         bondToMapElem b i = Map.singleton (i, bondsTo b) $ showNewBond b
         ind a = fromJust $ getIndexForAtom a
+        sortTuple a@(a1, a2) | a1 > a2 = (a2, a1) | a1 < a2 = a | otherwise = a
         showNewBond b = case b of
           Sigma {}    -> Single
           Pi {}       -> Double

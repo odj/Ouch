@@ -30,6 +30,7 @@
 
 
 import Ouch.Test.Methods
+import Ouch.Text.String
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond

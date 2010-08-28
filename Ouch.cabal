@@ -26,6 +26,7 @@ exposed-modules: Ouch.Data.Atom Ouch.Input.Smiles
                  Ouch.Property.Geometry Ouch.Property.Graph Ouch.Property.Property
                  Ouch.Property.Ring Ouch.Structure.Atom Ouch.Structure.Bond
                  Ouch.Structure.Marker Ouch.Structure.Molecule Ouch.Test.Methods
+                 Ouch.Text.String
 exposed: True
 buildable: True
 build-tools:
