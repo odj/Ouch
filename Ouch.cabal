@@ -21,7 +21,7 @@ data-files: README
 data-dir: ""
 extra-source-files:
 extra-tmp-files:
-exposed-modules: Ouch.Data.Atom Ouch.Input.Smiles
+exposed-modules: Ouch.Data.Atom Ouch.Input.Smiles Ouch.Output.Mol
                  Ouch.Property.Composition Ouch.Property.Extrinsic
                  Ouch.Property.Geometry Ouch.Property.Graph Ouch.Property.Property
                  Ouch.Property.Ring Ouch.Structure.Atom Ouch.Structure.Bond

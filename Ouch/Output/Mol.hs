@@ -1,9 +1,9 @@
 {------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Mol - a module to define export into MOL file format
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -21,4 +21,60 @@
     along with Ouch.  If not, see <http://www.gnu.org/licenses/>.
 
 -------------------------------------------------------------------------------
--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------}
+
+module Ouch.Output.Mol (
+     molfile
+   ) where
+
+
+import Ouch.Structure.Atom
+import Ouch.Structure.Molecule
+import Ouch.Structure.Bond
+import Ouch.Structure.Marker
+import Data.Maybe
+import Data.Char
+import Data.Set as Set
+import Data.List as List
+import Data.Map as Map
+import Control.Applicative
+
+
+
+{------------------------------------------------------------------------------}
+{-------------------------------Date Types-------------------------------------}
+{------------------------------------------------------------------------------}
+
+
+{------------------------------------------------------------------------------}
+{-------------------------------Functions--------------------------------------}
+{------------------------------------------------------------------------------}
+
+molfile :: Molecule -> Maybe String
+molfile m = foldr (\acc s -> (++) <$> acc <*> s) (Just "") lineList
+  where lineList = headerBlock m
+                ++ countsLine m
+                ++ atomBlock m
+                ++ propertiesBlock m
+
+
+countsLine :: Molecule -> [Maybe String]
+countsLine m = undefined
+
+atomBlock :: Molecule -> [Maybe String]
+atomBlock m = undefined
+
+propertiesBlock :: Molecule -> [Maybe String]
+propertiesBlock m = undefined
+
+headerBlock :: Molecule -> [Maybe String]
+headerBlock m = undefined
+
+{------------------------------------------------------------------------------}
+{-------------------------------Constants--------------------------------------}
+{------------------------------------------------------------------------------}
+
+_CR = "\n"
+padPosition = undefined
+
+

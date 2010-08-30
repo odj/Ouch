@@ -39,14 +39,23 @@ import Data.List
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Justify = Left | Right | Center
+data Justify = LeftJustify | RightJustify | CenterJustify
 
 
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
-padString :: Justify -> Int -> String -> String
-padString jst pad s = output
-  where padding = replicate (pad - (length s)) " "
-        output = undefined
+padString :: Justify -> Int -> Char -> String -> String
+padString jst width c s = output
+  where str = take width s
+        padWidth = (width - (length str))
+        padStr = replicate padWidth c
+        lPadStr | odd padWidth = replicate ((padWidth - 1) `div` 2) c
+                | otherwise = replicate (padWidth `div` 2) c
+        rPadStr | odd padWidth = replicate (1 + (padWidth - 1) `div` 2) c
+                | otherwise = replicate (padWidth `div` 2) c
+        output = case jst of
+          LeftJustify   -> str ++ padStr
+          RightJustify  -> padStr ++ str
+          CenterJustify -> lPadStr ++ str ++ rPadStr
