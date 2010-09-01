@@ -56,6 +56,7 @@ module Ouch.Structure.Molecule
      , numberBondsToHydrogensAtIndex
      , connectMoleculesAtIndicesWithBond
      , incrementAtomMap
+     , removeAtoms
      ) where
 
 
@@ -438,6 +439,10 @@ incrementAtomMap :: (Map Int Atom) -> Int -> (Map Int Atom)
 incrementAtomMap map i = Map.mapKeys (+i) $ Map.map (\a -> incrementAtom a i) map
 
 
+
+removeAtoms :: Molecule -> (Atom -> Bool) -> Molecule
+removeAtoms m f = filterMol
+  where filterMol = m {atomMap = Map.filter ((/=True) . f) $ atomMap m}
 
 
 -- hasClosure

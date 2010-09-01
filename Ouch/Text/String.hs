@@ -63,7 +63,7 @@ padString jst width c s = output
 
 formatNumber :: (RealFrac a) => Int -> a -> String
 formatNumber i dbl = let
-  fractionPart = padString RightJustify i '0'$ show $ round $ (dbl - fromInteger (floor dbl)) * (10^i)
+  fractionPart = padString LeftJustify i '0'$ show $ round $ (dbl - fromInteger (floor dbl)) * (10^i)
   decimalPart = show $ round dbl
   in decimalPart ++ "." ++ fractionPart
 

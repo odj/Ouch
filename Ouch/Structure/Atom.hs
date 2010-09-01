@@ -45,7 +45,8 @@ module Ouch.Structure.Atom (
     , getMatchingClosureNumber
     , removeClosureAtomMarker
     , getMatchingClosureBondType
-    , getMarkerSet -- This should be depreciated
+    , getMarker
+    --, updateBondSet
     ) where
 
 import Data.Maybe as Maybe
@@ -285,6 +286,10 @@ isLonePair a = case a of
 
 hasMarker :: Atom -> AtomMarker -> Bool
 hasMarker a mk = Set.member mk $ atomMarkerSet a
+
+getMarker :: Atom -> AtomMarker -> Maybe AtomMarker
+getMarker a mk | hasMarker a mk = Just mk' | otherwise = Nothing
+  where mk' = Set.findMax $ Set.filter (== mk) $ atomMarkerSet a
 
 
 {------------------------------------------------------------------------------}

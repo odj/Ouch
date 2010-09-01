@@ -26,7 +26,7 @@
 module Ouch.Output.Mol (
      molfile
      ---
-
+   , atomBlock
    , countsLine
    ) where
 
@@ -55,8 +55,9 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 
 molfile :: Molecule -> Maybe String
-molfile m = foldr (\acc s -> (++) <$> acc <*> s) (Just "") lineList
-  where lineList = headerBlock m
+molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
+  where lineList = List.map (>>= \s -> Just $ s ++ _CR)
+                 $ headerBlock m
                 ++ countsLine m
                 ++ atomBlock m
                 ++ propertiesBlock m
@@ -64,7 +65,7 @@ molfile m = foldr (\acc s -> (++) <$> acc <*> s) (Just "") lineList
 
 countsLine :: Molecule -> [Maybe String]
 countsLine m = let
-  aaa = padCountsElem $ show $ Map.size $ atomMap m
+  aaa = padCountsElem $ show  $ Map.size $ Map.filter isElement $ atomMap m
   bbb = padCountsElem $ show $ Map.size $ getBondMap m
   lll = padCountsElem "0"
   fff = padCountsElem "0"
@@ -83,14 +84,48 @@ countsLine m = let
           ++ mmm
           ++ _VERSION]
 
+
+
 atomBlock :: Molecule -> [Maybe String]
-atomBlock m = undefined
+atomBlock m = let
+  atomLine a = Just $ posX ++ posY ++ posZ ++ " "
+                    ++ aaa ++ dd ++ ccc ++ sss ++ hhh
+                    ++ bbb ++ vvv ++ hHH ++ rrr ++ iii
+                    ++ mmm ++ eee
+    where hasPos = hasMarker a $ Position (0, 0, 0)
+          hasChg = hasMarker a $ Charge 0
+          (x, y, z) | hasPos    = position $ fromJust $ getMarker a $ Position (0, 0, 0)
+                    | otherwise = (0 ,0, 0)
+          ccc       | hasChg    = padAtomLineElem $ showCharge $ charge $ fromJust $ getMarker a $ Charge 0
+                    | otherwise = padAtomLineElem "0"
+          posX = padPosElem x
+          posY = padPosElem y
+          posZ = padPosElem z
+          aaa  = padAtomLineElem $ show $ atomicNumber a
+          dd   = padString RightJustify 2 ' ' $ show 0
+          sss  = padAtomLineElem $ show $ 0
+          hhh  = padAtomLineElem $ show $ 0
+          bbb  = padAtomLineElem $ show $ 0
+          vvv  = padAtomLineElem $ show $ 0
+          hHH  = padAtomLineElem $ show $ 0
+          rrr  = padAtomLineElem ""
+          iii  = padAtomLineElem ""
+          mmm  = padAtomLineElem ""
+          eee  = padAtomLineElem ""
+          showCharge i | i ==  3 = "1"
+                       | i ==  2 = "2"
+                       | i ==  1 = "3"
+                       | i == -1 = "5"
+                       | i == -2 = "6"
+                       | i == -3 = "7"
+                       | otherwise = "0"
+  in Map.fold (\a acc -> [atomLine a] ++ acc ) [] $ Map.filter isElement $ atomMap m
 
 propertiesBlock :: Molecule -> [Maybe String]
-propertiesBlock m = undefined
+propertiesBlock m = [Just ""]
 
 headerBlock :: Molecule -> [Maybe String]
-headerBlock m = undefined
+headerBlock m = [Just ""]
 
 
 {------------------------------------------------------------------------------}
@@ -100,6 +135,8 @@ headerBlock m = undefined
 _CR = "\n"
 _VERSION = " V2000"
 padCountsElem = padString RightJustify 3 ' '
+padAtomLineElem = padString RightJustify 3 ' '
+padPosElem = padString RightJustify 10 ' ' . formatNumber 4
 
 
 
