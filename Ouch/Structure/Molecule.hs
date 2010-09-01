@@ -39,7 +39,7 @@ module Ouch.Structure.Molecule
      , bondTargetSetForIndex
      , setAtom
      , getAtomAtIndex
-     , getBondList
+     , getBondMap
      , addMarkerToAtomAtIndex
      , addMolecule
      , makeMoleculeFromAtom
@@ -223,8 +223,8 @@ addBond m i1 i2 b  =  m >>> mOut
           (na1, na2) = (atom1 {atomBondSet = nbs1}, atom2 {atomBondSet = nbs2})
           --newAtomMap = Map.insert i1 na1 $ Map.insert i2 na2 $ atomMap m
 
-getBondList :: Molecule -> Map (Int, Int) NewBond
-getBondList m = cleanMap
+getBondMap :: Molecule -> Map (Int, Int) NewBond
+getBondMap m = cleanMap
   where atoms = atomMap m
         cleanMap = Map.mapKeys (\a -> sortTuple a) atomsToMap
         atomsToMap = Map.fold (\a m -> Map.union m $ bondSetToMap a) Map.empty atoms

@@ -25,6 +25,9 @@
 
 module Ouch.Output.Mol (
      molfile
+     ---
+
+   , countsLine
    ) where
 
 
@@ -32,6 +35,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
+import Ouch.Text.String
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
@@ -59,7 +63,25 @@ molfile m = foldr (\acc s -> (++) <$> acc <*> s) (Just "") lineList
 
 
 countsLine :: Molecule -> [Maybe String]
-countsLine m = undefined
+countsLine m = let
+  aaa = padCountsElem $ show $ Map.size $ atomMap m
+  bbb = padCountsElem $ show $ Map.size $ getBondMap m
+  lll = padCountsElem "0"
+  fff = padCountsElem "0"
+  ccc | isChiral = padCountsElem "1" | otherwise = padCountsElem "0"
+  sss = padCountsElem "0"
+  xxx = padCountsElem "0"
+  mmm = padCountsElem "999"
+  isChiral = Map.fold (\a acc -> (&&) acc $ hasMarker a $ Chiral Dextro) False (atomMap m)
+  in [Just $ aaa
+          ++ bbb
+          ++ lll
+          ++ fff
+          ++ ccc
+          ++ sss
+          ++ xxx ++ xxx ++ xxx ++ xxx
+          ++ mmm
+          ++ _VERSION]
 
 atomBlock :: Molecule -> [Maybe String]
 atomBlock m = undefined
@@ -70,11 +92,14 @@ propertiesBlock m = undefined
 headerBlock :: Molecule -> [Maybe String]
 headerBlock m = undefined
 
+
 {------------------------------------------------------------------------------}
 {-------------------------------Constants--------------------------------------}
 {------------------------------------------------------------------------------}
 
 _CR = "\n"
-padPosition = undefined
+_VERSION = " V2000"
+padCountsElem = padString RightJustify 3 ' '
+
 
 

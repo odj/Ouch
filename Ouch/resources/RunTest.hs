@@ -39,6 +39,7 @@ import Ouch.Input.Smiles
 import Ouch.Data.Atom
 import Ouch.Property.Property
 import Ouch.Property.Ring
+import Ouch.Output.Mol
 import System.IO
 import System.Environment
 import Data.Time.Clock
