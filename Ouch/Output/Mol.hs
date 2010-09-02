@@ -56,13 +56,13 @@ import Control.Applicative
 
 molfile :: Molecule -> Maybe String
 molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
-  where --m' = removeAtoms m isLonePair
+  where m' = removeAtoms m isLonePair
         lineList = List.map (>>= \s -> Just $ s ++ _CR)
-                 $ headerBlock m
-                ++ countsLine m
-                ++ atomBlock m
-                ++ bondBlock m
-                ++ propertiesBlock m
+                 $ headerBlock m'
+                ++ countsLine m'
+                ++ atomBlock m'
+                ++ bondBlock m'
+                ++ propertiesBlock m'
 
 headerBlock :: Molecule -> [Maybe String]
 headerBlock m = [Just ""]
@@ -106,7 +106,7 @@ atomBlock m = let
           posX = padPosElem x
           posY = padPosElem y
           posZ = padPosElem z
-          aaa  = padAtomLineElem $ show $ atomicNumber a
+          aaa  = padAtomSymbolElem $ atomicSymbolForAtom a
           dd   = padString RightJustify 2 ' ' $ show 0
           sss  = padAtomLineElem $ show $ 0
           hhh  = padAtomLineElem $ show $ 0
@@ -162,6 +162,7 @@ _CR = "\n"
 _VERSION = " V2000"
 padCountsElem   = padString RightJustify 3 ' '
 padAtomLineElem = padString RightJustify 3 ' '
+padAtomSymbolElem = padString LeftJustify 3 ' '
 padBondLineElem = padString RightJustify 3 ' '
 padPosElem      = padString RightJustify 10 ' ' . formatNumber 4
 
