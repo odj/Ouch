@@ -36,6 +36,7 @@ import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Text.String
+import Ouch.Property.Property
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
@@ -65,7 +66,14 @@ molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
                 ++ propertiesBlock m'
 
 headerBlock :: Molecule -> [Maybe String]
-headerBlock m = [Just ""]
+headerBlock m = let
+  line1 = case getName m of Nothing -> [Just ""]; s -> [s]
+  line2 = [Just ""]
+  line3 = case getPropertyForKey m "COMMENT" of
+    Nothing -> [Just ""]
+    Just s -> [Just $ show $ value s]
+  in line1 ++ line2 ++ line3
+
 
 
 countsLine :: Molecule -> [Maybe String]

@@ -62,6 +62,14 @@ data Value =
   | StringValue     String
   | BoolValue       Bool
   | TupleArrayValue [(Double, Double)]
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
+
+instance Show Value where
+  show v = case v of
+    IntegerValue x    -> show x
+    DoubleValue x     -> show x
+    StringValue x     -> x
+    BoolValue x       -> show x
+    TupleArrayValue x -> show x
 
 

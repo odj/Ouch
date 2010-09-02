@@ -40,6 +40,8 @@ module Ouch.Structure.Molecule
      , setAtom
      , getAtomAtIndex
      , getBondMap
+     , getName
+     , getPropertyForKey
      , addMarkerToAtomAtIndex
      , addMolecule
      , makeMoleculeFromAtom
@@ -134,6 +136,9 @@ addProperty m p = m {molPropertyMap = Map.insert (propertyKey p) p $ molProperty
 
 addPropertyFromFunction :: Molecule -> (Molecule -> Property) -> Molecule
 addPropertyFromFunction m f = addProperty m $ f m
+
+getPropertyForKey :: Molecule -> String -> Maybe Property
+getPropertyForKey m k = Map.lookup k $ molPropertyMap m
 
 
 occupiedValenceAtIndex :: Molecule -> Int -> Integer
@@ -543,6 +548,12 @@ markMolecule :: Molecule -> MoleculeMarker -> Molecule
 markMolecule m mm = newMol
     where newSet = Set.insert mm (molMarkerSet m)
           newMol = m {molMarkerSet=newSet}
+
+getName :: Molecule -> Maybe String
+getName m | Set.size nameSet == 0 = Nothing
+          | otherwise = Just $ molMarker $ Set.findMax nameSet
+  where nameSet = Set.filter (\a ->  EQ == compare a (Name "")) $ molMarkerSet m
+
 
 -- atomAtIndex
 -- Gives you back the atom at index specified.
