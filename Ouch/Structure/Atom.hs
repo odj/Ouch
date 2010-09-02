@@ -46,12 +46,12 @@ module Ouch.Structure.Atom (
     , removeClosureAtomMarker
     , getMatchingClosureBondType
     , getMarker
-    --, updateBondSet
     ) where
 
 import Data.Maybe as Maybe
 import Ouch.Data.Atom
 import Ouch.Structure.Bond
+import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Structure.Marker
 import Data.Set as Set
 import Data.Map as Map
@@ -278,10 +278,9 @@ isHydrogen a = case a of
 {------------------------------------------------------------------------------}
 isLonePair :: Atom -> Bool
 isLonePair a = case a of
-    Element  {} -> False
     LonePair {} -> True
-    Electron {} -> False
-    Unfilled {} -> False
+    _           -> False
+
 
 
 hasMarker :: Atom -> AtomMarker -> Bool
@@ -289,7 +288,7 @@ hasMarker a mk = Set.member mk $ atomMarkerSet a
 
 getMarker :: Atom -> AtomMarker -> Maybe AtomMarker
 getMarker a mk | hasMarker a mk = Just mk' | otherwise = Nothing
-  where mk' = Set.findMax $ Set.filter (== mk) $ atomMarkerSet a
+  where mk' = Set.findMax $ Set.filter (\mk' -> EQ == compare mk mk') $ atomMarkerSet a
 
 
 {------------------------------------------------------------------------------}
@@ -320,7 +319,6 @@ getMatchingClosureBondType a1 a2 = newClosureBond
         newClosureBond    = if (Set.null intersectionSet)
                             then NoBond
                             else bondType (Set.findMax intersectionSet)
-
 
 
 {------------------------------------------------------------------------------}

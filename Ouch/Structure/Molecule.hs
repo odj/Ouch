@@ -57,6 +57,7 @@ module Ouch.Structure.Molecule
      , connectMoleculesAtIndicesWithBond
      , incrementAtomMap
      , removeAtoms
+     , updateBondSet
      ) where
 
 
@@ -106,7 +107,7 @@ getAtomAtIndex m i = Map.lookup i $ atomMap m
 setAtom :: Atom -> Molecule -> Molecule
 setAtom a m  = m >>> mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m
-             | fromJust atomIndex > (Map.size $ atomMap m) = withWarning
+            -- | fromJust atomIndex > (Map.size $ atomMap m) = withWarning
              | otherwise = output
         atomIndex = getIndexForAtom a
         withWarning = addAtom a (giveMoleculeWarning m "Tried to set atom with invalid index")
@@ -441,8 +442,27 @@ incrementAtomMap map i = Map.mapKeys (+i) $ Map.map (\a -> incrementAtom a i) ma
 
 
 removeAtoms :: Molecule -> (Atom -> Bool) -> Molecule
-removeAtoms m f = filterMol
-  where filterMol = m {atomMap = Map.filter ((/=True) . f) $ atomMap m}
+removeAtoms m f = incrementAtoms
+  where filterMol  = m {atomMap = Map.filter ((/=True) . f) $ atomMap m}
+        filterBond = Map.fold (\a acc -> setAtom (updateBondSet acc a) acc) filterMol $ atomMap filterMol
+        incrementAtoms = Map.foldlWithKey f filterBond $ atomMap filterBond
+          where f acc i1 a = let
+                  i2 = (Map.findIndex (fromJust $ getIndexForAtom a) $ atomMap acc)
+                  in mapIndex acc i1 i2
+        mapIndex m i1 i2 = mapBondxs (setAtom newAtom m') i1 i2
+          where newAtom = incrementAtomMarker (fromJust $ getAtomAtIndex m i1) (i2 - i1)
+                m' = m {atomMap = Map.delete i1 $ atomMap m}
+                mapBondxs m i1 i2 = m {atomMap = Map.map (\a -> mapBonds a i1 i2) $ atomMap m}
+                mapBonds a i1 i2 = a {atomBondSet = Set.map (\b -> mapBond b i1 i2) $ atomBondSet a}
+                mapBond b i1 i2 | bondsTo b == i1 = b {bondsTo = i2} | otherwise = b
+                incrementAtomMarker a i = markAtom a (Label $ (fromJust $ getIndexForAtom a) + i)
+
+updateBondSet :: Molecule -> Atom -> Atom
+updateBondSet m a = a {atomBondSet = valid}
+  where keyIsValid m b = case Map.lookup (bondsTo b) $ atomMap m of
+                         Just _  -> True
+                         Nothing -> False
+        (valid, _) = Set.partition (keyIsValid m) $ atomBondSet a
 
 
 -- hasClosure
@@ -552,9 +572,10 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 
 instance Show Molecule where
     show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
-       Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} -> "\nIs a small molecule with formula: "
-                -- ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n"
-                ++ (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
+       Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} ->
+               --"\nIs a small molecule with formula: "
+               -- ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n" ++
+                   (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
                     ++ (show $ snd b))) "" (Map.toList atoms))
                 ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
                 ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"

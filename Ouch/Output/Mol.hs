@@ -56,16 +56,21 @@ import Control.Applicative
 
 molfile :: Molecule -> Maybe String
 molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
-  where lineList = List.map (>>= \s -> Just $ s ++ _CR)
+  where --m' = removeAtoms m isLonePair
+        lineList = List.map (>>= \s -> Just $ s ++ _CR)
                  $ headerBlock m
                 ++ countsLine m
                 ++ atomBlock m
+                ++ bondBlock m
                 ++ propertiesBlock m
+
+headerBlock :: Molecule -> [Maybe String]
+headerBlock m = [Just ""]
 
 
 countsLine :: Molecule -> [Maybe String]
 countsLine m = let
-  aaa = padCountsElem $ show  $ Map.size $ Map.filter isElement $ atomMap m
+  aaa = padCountsElem $ show  $ Map.size $ atomMap m
   bbb = padCountsElem $ show $ Map.size $ getBondMap m
   lll = padCountsElem "0"
   fff = padCountsElem "0"
@@ -124,8 +129,29 @@ atomBlock m = let
 propertiesBlock :: Molecule -> [Maybe String]
 propertiesBlock m = [Just ""]
 
-headerBlock :: Molecule -> [Maybe String]
-headerBlock m = [Just ""]
+bondBlock :: Molecule -> [Maybe String]
+bondBlock m = let
+  bondMap = Map.toList $ getBondMap m
+  bondLine ((a1, a2), nb) = Just $ atom1 ++ atom2
+                                ++ ttt ++ sss ++ xxx
+                                ++ rrr ++ ccc
+    where atom1 = padBondLineElem $ show (a1 + 1)
+          atom2 = padBondLineElem $ show (a2 + 1)
+          ttt   = padBondLineElem $ showBondType nb
+          sss   = padBondLineElem "0"
+          xxx   = padBondLineElem ""
+          rrr   = padBondLineElem ""
+          ccc   = padBondLineElem "0"
+          showBondType b' | b' == Single           = "1"
+                          | b' == Double           = "2"
+                          | b' == Triple           = "3"
+                          | b' == AromaticOnly     = "4"
+                          | b' == SingleOrDouble   = "5"
+                          | b' == SingleOrAromatic = "6"
+                          | b' == DoubleOrAromatic = "7"
+                          | b' == AnyBond          = "8"
+                          | otherwise              = "8"
+  in List.foldr (\b acc -> [bondLine b] ++ acc ) [] bondMap
 
 
 {------------------------------------------------------------------------------}
@@ -134,9 +160,10 @@ headerBlock m = [Just ""]
 
 _CR = "\n"
 _VERSION = " V2000"
-padCountsElem = padString RightJustify 3 ' '
+padCountsElem   = padString RightJustify 3 ' '
 padAtomLineElem = padString RightJustify 3 ' '
-padPosElem = padString RightJustify 10 ' ' . formatNumber 4
+padBondLineElem = padString RightJustify 3 ' '
+padPosElem      = padString RightJustify 10 ' ' . formatNumber 4
 
 
 
