@@ -25,9 +25,6 @@
 
 module Ouch.Output.Mol (
      molfile
-     ---
-   , atomBlock
-   , countsLine
    ) where
 
 
@@ -43,12 +40,6 @@ import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
 import Control.Applicative
-
-
-
-{------------------------------------------------------------------------------}
-{-------------------------------Date Types-------------------------------------}
-{------------------------------------------------------------------------------}
 
 
 {------------------------------------------------------------------------------}
@@ -68,7 +59,13 @@ molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
 headerBlock :: Molecule -> [Maybe String]
 headerBlock m = let
   line1 = case getName m of Nothing -> [Just ""]; s -> [s]
-  line2 = [Just ""]
+  line2 = [Just $ initials ++ _PROGRAM ++ date ++ dim]
+  initials = "  "
+  date    = "          "
+  dim     = "2d"
+  scaling = "  "
+  energy  = "            "
+  registry = "      "
   line3 = case getPropertyForKey m "COMMENT" of
     Nothing -> [Just ""]
     Just s -> [Just $ show $ value s]
@@ -168,11 +165,12 @@ bondBlock m = let
 
 _CR = "\n"
 _VERSION = " V2000"
-padCountsElem   = padString RightJustify 3 ' '
-padAtomLineElem = padString RightJustify 3 ' '
+_PROGRAM = "    OUCH"
+padCountsElem     = padString RightJustify 3 ' '
+padAtomLineElem   = padString RightJustify 3 ' '
 padAtomSymbolElem = padString LeftJustify 3 ' '
-padBondLineElem = padString RightJustify 3 ' '
-padPosElem      = padString RightJustify 10 ' ' . formatNumber 4
+padBondLineElem   = padString RightJustify 3 ' '
+padPosElem        = padString RightJustify 10 ' ' . formatNumber 4
 
 
 
