@@ -1,6 +1,10 @@
 {-------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-    String -
+--  Module      :  Ouch.Text.String
+--  Maintainer  :  Orion Jankowski
+--  Stability   :  Unstable
+--  Portability :
+
 
     Copyright (c) 2010 Orion D. Jankowski
 

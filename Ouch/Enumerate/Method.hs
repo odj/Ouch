@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
---  Module      :  Ouch.Structure.Bond
+--  Module      :  Ouch.Enumerate.Method
 --  Maintainer  :  Orion Jankowski
 --  Stability   :  Unstable
 --  Portability :
@@ -27,49 +27,30 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
-{-# LANGUAGE ForeignFunctionInterface, CPP, Generics #-}
+module Ouch.Enumerate.Method (
+  Method(..)
+) where
 
-module Ouch.Structure.Bond (
-      Bond(..)
-    ) where
-
--- This line terminates recursive import sequences
-import {-# SOURCE #-} Ouch.Structure.Atom
-import Ouch.Structure.Marker
-import Data.Set as Set
-
-
-
+import Ouch.Structure.Atom
+import Ouch.Structure.Molecule
 
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
 {------------------------------------------------------------------------------}
 
-data Bond = Sigma    {bondsTo::Int}
-          | Pi       {bondsTo::Int}
-          | PiPi     {bondsTo::Int} --This is a triple bond
-          | Aromatic {bondsTo::Int}
-          | Delta    {bondsTo::Int}
-          | Hbond    {bondsTo::Int}
-          | Ionic    {bondsTo::Int}
-          | Antibond {bondsTo::Int}
-          | Any      {bondsTo::Int}
-          deriving (Eq, Ord)
+
+
+data Method   = NoMethod      {firstApply::Maybe Method}
+              | AddMethod     {firstApply::Maybe Method
+                             , selector::(Atom -> Bool)
+                             , addList::([Molecule])}
+              | InsertMethod  {firstApply::Maybe Method}
+              | ReplaceMethod {firstApply::Maybe Method}
+              | ReactMethod   {firstApply::Maybe Method}
+
 
 
 
 {------------------------------------------------------------------------------}
-{-------------------------------Typeclass Intances-----------------------------}
+{-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
-instance Show Bond where
-  show b = let desc = show (bondsTo b) in
-   case b of
-      Sigma    {} -> " -" ++ desc
-      Pi       {} -> " =" ++ desc
-      PiPi     {} -> "#"  ++ desc
-      Aromatic {} -> " ~" ++ desc
-      Delta    {} -> " delta-" ++ desc
-      Hbond    {} -> " H." ++ desc
-      Ionic    {} -> " +/-" ++ desc
-      Antibond {} -> " !" ++ desc
-

@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
---  Module      :  Ouch.Property.Extrinsic
+--  Module      :  Ouch.Enumerate.Enumerate
 --  Maintainer  :  Orion Jankowski
 --  Stability   :  Unstable
 --  Portability :
@@ -27,42 +27,10 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
-module Ouch.Property.Extrinsic
-  (
-
-  ) where
+module Ouch.Enumerate.Enumerate (
 
 
-
-import Ouch.Structure.Atom
-import Ouch.Structure.Bond
-import Ouch.Structure.Molecule
-import Ouch.Property.Property
-
-import Data.Maybe
-import Data.Set as Set
-import Data.List as List
-import Data.Map as Map
-
-
-{------------------------------------------------------------------------------}
-{-------------------------------Functions--------------------------------------}
-{------------------------------------------------------------------------------}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+) where
 
 
 

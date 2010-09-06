@@ -1,9 +1,13 @@
 {-------------------------------------------------------------------------------
--------------------------------------------------------------------------------
-    Ring - a module to perceive and report rings in Molecules
-    
+--------------------------------------------------------------------------------
+--  Module      :  Ouch.Property.Ring
+--  Maintainer  :  Orion Jankowski
+--  Stability   :  Unstable
+--  Portability :
+
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -20,13 +24,13 @@
     You should have received a copy of the GNU General Public License
     along with Ouch.  If not, see <http://www.gnu.org/licenses/>.
 
--------------------------------------------------------------------------------
-------------------------------------------------------------------------------}
+--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------}
 
-module Ouch.Property.Ring 
+module Ouch.Property.Ring
     ( PGraph
      ) where
-         
+
 
 
 import Ouch.Structure.Atom
@@ -43,10 +47,10 @@ import Data.Set as Set
 data PGraph = PGraph {molecule::Molecule, vertexList::[Int]}
 {--
 createPGraph :: Molecule -> PGraph
-createPGraph m = PGraph m' v 
+createPGraph m = PGraph m' v
     where atoms = Map.filter isHeavyAtom $ atomMap m
           v = Map.keys atoms
-          newAtomMap = Map.adjust 
+          newAtomMap = Map.adjust
           addPEdge a = (\a )(PEdge i [])
 
 
