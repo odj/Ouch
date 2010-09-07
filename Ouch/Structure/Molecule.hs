@@ -51,6 +51,7 @@ module Ouch.Structure.Molecule
      , makeMoleculeFromAtom
      , fillMoleculeValence
      , fillValenceAtIndex
+     , freedValenceAtIndex
      , hasHangingClosure
      , cyclizeMolecule
      , giveMoleculeError
@@ -149,6 +150,10 @@ occupiedValenceAtIndex m i = case atomAtIndex m i of
   Just a  -> occupiedValence a
   Nothing -> 0
 
+freeValenceAtIndex :: Molecule -> Int -> Integer
+freeValenceAtIndex m i = case atomAtIndex m i of
+  Just a  -> (fst $ valence a) - (occupiedValence a)
+  Nothing -> 0
 
 bondTargetSetForIndex :: Molecule -> Int -> (Set Atom)
 bondTargetSetForIndex m i = let atom = atomAtIndex m i in

@@ -56,7 +56,7 @@ import Data.Char as Char
 import System.IO
 import System.Environment
 import Data.Time.Clock
-import Control.Parallel (par, pseq)
+
 
 
 -- Data structure to hold test/result pairs and descriptions.  All 'functions' should

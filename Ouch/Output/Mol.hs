@@ -59,6 +59,7 @@ molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
                 ++ atomBlock m'
                 ++ bondBlock m'
                 ++ propertiesBlock m'
+                ++ [Just _END]
 
 headerBlock :: Molecule -> [Maybe String]
 headerBlock m = let
@@ -170,6 +171,7 @@ bondBlock m = let
 _CR = "\n"
 _VERSION = " V2000"
 _PROGRAM = "    OUCH"
+_END     = "M  END"
 padCountsElem     = padString RightJustify 3 ' '
 padAtomLineElem   = padString RightJustify 3 ' '
 padAtomSymbolElem = padString LeftJustify 3 ' '
