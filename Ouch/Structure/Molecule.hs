@@ -51,7 +51,7 @@ module Ouch.Structure.Molecule
      , makeMoleculeFromAtom
      , fillMoleculeValence
      , fillValenceAtIndex
-     , freedValenceAtIndex
+     , freeValenceAtIndex
      , hasHangingClosure
      , cyclizeMolecule
      , giveMoleculeError

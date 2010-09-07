@@ -21,8 +21,7 @@ data-files: README
 data-dir: ""
 extra-source-files:
 extra-tmp-files:
-exposed-modules: Ouch.Data.Atom Ouch.Enumerate.Enumerate
-                 Ouch.Enumerate.Method Ouch.Input.Smiles Ouch.Output.Mol
+exposed-modules: Ouch.Data.Atom Ouch.Input.Smiles Ouch.Output.Mol
                  Ouch.Output.SDF Ouch.Property.Composition Ouch.Property.Extrinsic
                  Ouch.Property.Geometry Ouch.Property.Graph Ouch.Property.Property
                  Ouch.Property.Ring Ouch.Structure.Atom Ouch.Structure.Bond
@@ -44,7 +43,7 @@ includes:
 install-includes:
 include-dirs:
 hs-source-dirs: .
-other-modules: Ouch.Enumerate.Method Ouch.Output.SDF
+other-modules:
 ghc-prof-options:
 ghc-shared-options:
 ghc-options:
