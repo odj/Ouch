@@ -83,8 +83,8 @@ addMethod ms method = let
   atomLists = List.map (atomList $ selector method) mols
   zipped = zip mols atomLists
   makeMol m1 i1 addItem = [connectMoleculesAtIndicesWithBond m1 i1 (snd addItem) 0 (fst addItem)]
-  newMols m i = (makeMol m i)  <$> (addList method) --(addList method) >>= (makeMol m i)
-  output = concat $ List.map (\(m, l) -> concat $ List.map (\i -> newMols m i) l ) zipped
+  newMols m i = (addList method) >>= (makeMol m i)
+  output = concat $ List.map (\(m, l) -> List.map (\i -> newMols m i) l ) zipped
   in concat output
 
 

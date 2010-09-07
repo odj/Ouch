@@ -43,8 +43,10 @@ module Ouch.Test.Methods
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
+import Ouch.Structure.Marker
 import Ouch.Property.Composition
 import Ouch.Property.Property
+import Ouch.Enumerate.Method
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
 import Data.List as List
@@ -54,6 +56,7 @@ import Data.Char as Char
 import System.IO
 import System.Environment
 import Data.Time.Clock
+import Control.Parallel (par, pseq)
 
 
 -- Data structure to hold test/result pairs and descriptions.  All 'functions' should
@@ -83,6 +86,7 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
                | l1 == "testMolWt"   = testMolWt
                | l1 == "testAtomCount" = testAtomCount
                | l1 == "testHeavyCount" = testHeavyCount
+               | l1 == "testEnum" = testEnum
                | otherwise = testTest
 
 
@@ -157,7 +161,19 @@ testHeavyCount s = case heavyAtomCount $ makeMoleculeFromSmiles s of
   Just prop -> Right ac
     where ac = case (value prop) of IntegerValue i -> show i
 
+testEnum :: String -> Either String String
+testEnum s = Right $ show $ length $ [mol] >#> method
+                                           >#> method
+                                           >#> method
+                                           >#> method
+                                           >#> method
 
 
+
+  where mol = makeScaffoldFromSmiles s
+        scaffoldList = map makeScaffoldFromSmiles ["Cl", "OC(=O)C", "C(=O)C", "C1CCCCC1"]
+        bondList = replicate 6 Single
+        list = zip bondList scaffoldList
+        method = Just $ AddMethod Nothing (\_ _ -> True) list
 
 
