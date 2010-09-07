@@ -29,10 +29,20 @@
 
 module Ouch.Enumerate.Method (
   Method(..)
+, (>#>)
+, addMethod
 ) where
 
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
+import Ouch.Structure.Marker
+
+import Data.Map as Map
+import Data.List as List
+import Data.Set as Set
+import Data.Maybe as Maybe
+import Control.Applicative
+
 
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
@@ -42,8 +52,8 @@ import Ouch.Structure.Molecule
 
 data Method   = NoMethod      {firstApply::Maybe Method}
               | AddMethod     {firstApply::Maybe Method
-                             , selector::(Atom -> Bool)
-                             , addList::([Molecule])}
+                             , selector::(Molecule -> Atom -> Bool)
+                             , addList::([(NewBond, Molecule)])}
               | InsertMethod  {firstApply::Maybe Method}
               | ReplaceMethod {firstApply::Maybe Method}
               | ReactMethod   {firstApply::Maybe Method}
@@ -54,3 +64,28 @@ data Method   = NoMethod      {firstApply::Maybe Method}
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
+
+
+(>#>) :: [Molecule] -> (Maybe Method) -> [Molecule]
+(>#>) ms mMethod = case mMethod of
+  Nothing  -> ms
+  Just method -> case method of
+    NoMethod      {} -> ms >#> (firstApply method)
+    AddMethod     {} -> addMethod ms method
+    InsertMethod  {} -> ms >#> (firstApply method)
+    ReplaceMethod {} -> ms >#> (firstApply method)
+    ReactMethod   {} -> ms >#> (firstApply method)
+
+addMethod :: [Molecule] -> Method -> [Molecule]
+addMethod ms method = let
+  mols = ms >#> (firstApply method)
+  atomList f m = Map.keys $ fst $ Map.partition (f m) (atomMap m)
+  atomLists = List.map (atomList $ selector method) mols
+  zipped = zip mols atomLists
+  makeMol m1 i1 addItem = [connectMoleculesAtIndicesWithBond m1 i1 (snd addItem) 0 (fst addItem)]
+  newMols m i = (makeMol m i)  <$> (addList method) --(addList method) >>= (makeMol m i)
+  output = concat $ List.map (\(m, l) -> concat $ List.map (\i -> newMols m i) l ) zipped
+  in concat output
+
+
+

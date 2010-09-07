@@ -74,7 +74,6 @@ import Ouch.Structure.Marker
 import Ouch.Property.Property
 
 import Data.Either
-import Data.Maybe
 import Data.Map as Map
 import Data.List as List
 import Data.Set as Set

@@ -45,6 +45,7 @@ import System.Environment
 import Data.Time.Clock
 import Data.Either
 import Data.Maybe
+import Ouch.Enumerate.Method
 
 
 
