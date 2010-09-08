@@ -34,11 +34,13 @@ module Ouch.Output.SDF (
 import Ouch.Output.Mol
 import Ouch.Structure.Molecule
 
+
 sdf :: [Molecule] -> String
 sdf [] = ""
 sdf (m:ms) = case (molfile m) >+> (properties m) >+> (Just _SEP) of
   Nothing -> sdf ms
   Just s  -> s ++ sdf ms
+
 
 (>+>) :: Maybe String -> Maybe String -> Maybe String
 (>+>) s1 s2 = case s1 of
@@ -47,8 +49,10 @@ sdf (m:ms) = case (molfile m) >+> (properties m) >+> (Just _SEP) of
     Nothing -> Nothing
     Just s' -> Just (s ++ s')
 
+
 properties :: Molecule -> (Maybe String)
 properties m = Just ""
+
 
 _CR = "\n"
 _SEP = "$$$$\n"

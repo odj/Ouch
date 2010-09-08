@@ -62,6 +62,7 @@ module Ouch.Structure.Molecule
      , numberBondsToRadicalsAtIndex
      , numberBondsToHydrogensAtIndex
      , connectMoleculesAtIndicesWithBond
+     , replaceAtomAtIndexWithBond
      , incrementAtomMap
      , removeAtoms
      , updateBondSet
@@ -503,7 +504,13 @@ addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
           incMap = incrementAtomMap (atomMap m2) m1Length
 
 
-
+-- replaceAtomAtIndexWithBond
+-- Combines the two molecules then substitutes the atom at i1 with the
+-- atom at i2 (from the old molecule's numbering system).  Most commonly, m2
+-- will be a single atom
+{------------------------------------------------------------------------------}
+replaceAtomAtIndexWithBond :: Molecule -> Int -> Molecule -> Int -> Molecule
+replaceAtomAtIndexWithBond m1 i1 m2 i2 = m1
 
 --makeMoleculeFromAtom
 {------------------------------------------------------------------------------}

@@ -28,14 +28,19 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Enumerate.Method (
-  Method(..)
-, (>#>)
-, addMethod
-) where
+    Method(..)
+  , (>#>)
+  , addMethod
+  , classSelector
+  , openValenceSelector
+  , halogens
+  , alkyls
+  ) where
 
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Marker
+import Ouch.Input.Smiles
 
 import Data.Map as Map
 import Data.List as List
@@ -50,13 +55,25 @@ import Control.Applicative
 
 
 
-data Method   = NoMethod      {firstApply::Maybe Method}
-              | AddMethod     {firstApply::Maybe Method
-                             , selector::(Molecule -> Atom -> Bool)
-                             , addList::([(NewBond, Molecule)])}
-              | InsertMethod  {firstApply::Maybe Method}
-              | ReplaceMethod {firstApply::Maybe Method}
-              | ReactMethod   {firstApply::Maybe Method}
+data Method   = NoMethod      {firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method}
+              | AddMethod     {firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method
+                             , selector     ::  (Molecule -> Atom -> Bool)
+                             , addList      ::  ([(NewBond, Molecule)])}
+              | InsertMethod  {firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method
+                             , selector     ::  (Molecule -> Atom -> Bool)
+                             , insertRule   ::  (Molecule -> [Int])
+                             , insertList   ::  [(Molecule, [Int])]}
+              | ReplaceMethod {firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method
+                             , selector     ::  (Molecule -> Atom -> Bool)
+                             , replaceList  ::  [Molecule]}
+              | ReactMethod   {firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method
+                             , selector     ::  (Molecule -> Atom -> Bool)
+                             , reactList    ::  [(Molecule -> Molecule)]}
 
 
 
@@ -73,7 +90,7 @@ data Method   = NoMethod      {firstApply::Maybe Method}
     NoMethod      {} -> ms >#> (firstApply method)
     AddMethod     {} -> addMethod ms method
     InsertMethod  {} -> ms >#> (firstApply method)
-    ReplaceMethod {} -> ms >#> (firstApply method)
+    ReplaceMethod {} -> replaceMethod ms method
     ReactMethod   {} -> ms >#> (firstApply method)
 
 addMethod :: [Molecule] -> Method -> [Molecule]
@@ -86,6 +103,66 @@ addMethod ms method = let
   newMols m i = (addList method) >>= (makeMol m i)
   output = concat $ List.map (\(m, l) -> List.map (\i -> newMols m i) l ) zipped
   in concat output
+
+
+replaceMethod :: [Molecule] -> Method -> [Molecule]
+replaceMethod ms method = let
+  mols = ms >#> (firstApply method)
+  atomList f m = Map.keys $ fst $ Map.partition (f m) (atomMap m)
+  atomLists = List.map (atomList $ selector method) mols
+  zipped = zip mols atomLists
+  output = undefined
+  in ms
+
+{------------------------------------------------------------------------------}
+{-------------------------------Convenience Functions--------------------------}
+{------------------------------------------------------------------------------}
+
+
+-- A convenience function to create a selector based on class number
+classSelector :: Integer -> (Molecule -> Atom -> Bool)
+classSelector i = mk
+  where mk _ atom = case getMarker atom (Class 0) of
+          Nothing -> False
+          Just mk -> i == classNumber mk
+
+openValenceSelector :: Molecule -> Atom -> Bool
+openValenceSelector m a | freeValence > 0 = True | otherwise = False
+  where freeValence = case getIndexForAtom a of
+          Just i  -> freeValenceAtIndex m i
+          Nothing -> 0
+
+-- Convenience to create a new selector from two with AND logic
+(>&&>) :: (Molecule -> Atom -> Bool) -> (Molecule -> Atom -> Bool) -> (Molecule -> Atom -> Bool)
+(>&&>) sel1 sel2 = (\m a -> (sel1 m a) && (sel2 m a))
+
+-- Convenience to create a new selector from two with AND logic
+(>||>) :: (Molecule -> Atom -> Bool) -> (Molecule -> Atom -> Bool) -> (Molecule -> Atom -> Bool)
+(>||>) sel1 sel2 = (\m a -> (sel1 m a) || (sel2 m a))
+
+{------------------------------------------------------------------------------}
+{-------------------------------List Generators--------------------------------}
+{------------------------------------------------------------------------------}
+
+halogens :: [(NewBond, Molecule)]
+halogens = zip bond hal
+  where hal = List.map makeScaffoldFromSmiles ["F", "Cl", "Br"]
+        bond = replicate (length hal) Single
+
+-- Create a list of all alkyls with up to 'i' carbon atoms
+alkyls :: Int -> [(NewBond, Molecule)]
+alkyls i = let
+  carbon = makeScaffoldFromSmiles "C"
+  hydrogen = makeScaffoldFromSmiles "H"
+  mth = Just $ AddMethod Nothing
+                         Nothing
+                         openValenceSelector
+                         [(Single, carbon), (Single, hydrogen)]
+  mths = replicate i (>#> mth)
+  alks = List.foldr (\enum mols -> enum mols) [carbon] mths
+  alks_noH = List.map (\m -> removeAtoms m isHydrogen ) alks
+  bond = replicate (length alks_noH) Single
+  in zip bond alks_noH
 
 
 

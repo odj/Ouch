@@ -174,6 +174,6 @@ testEnum s = Right $ show $ length $ [mol] >#> method
         scaffoldList = map makeScaffoldFromSmiles ["Cl", "OC(=O)C", "C(=O)C", "C1CCCCC1"]
         bondList = replicate 6 Single
         list = zip bondList scaffoldList
-        method = Just $ AddMethod Nothing (\_ _ -> True) list
+        method = Just $ AddMethod Nothing Nothing (\_ _ -> True) list
 
 
