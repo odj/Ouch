@@ -1,0 +1,11 @@
+*.hi
+*.o
+*.hi-boot
+*.o-boot
+Ouch.lkshs
+Ouch.lkshw
+a.out
+dist/
+errorLog.txt
+
+
