@@ -35,6 +35,7 @@ module Ouch.Property.Property (
 
 import {-# SOURCE #-} Ouch.Structure.Molecule
 import Data.Maybe
+import Data.ByteString.Lazy as L
 import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
@@ -66,6 +67,7 @@ data Value =
   | StringValue     String
   | BoolValue       Bool
   | TupleArrayValue [(Double, Double)]
+  | ByteStringValue L.ByteString
   deriving (Eq, Ord)
 
 instance Show Value where
@@ -75,5 +77,6 @@ instance Show Value where
     StringValue x     -> x
     BoolValue x       -> show x
     TupleArrayValue x -> show x
+    ByteStringValue x -> show x
 
 

@@ -39,13 +39,14 @@ module Ouch.Data.Atom (
 import qualified Data.Map as M
 
 
-data AtomData =   AtomData {atomNumber::Integer
-                          , atomSymbol::String
-                          , atomWeight::Double
-                          , atomIsotope::Integer
-                          , atomAbundance::[(Integer, Double)]
-                          , atomHalfLife::[(Integer, Double)]
-                          , atomMass::[(Integer, Double)]
+data AtomData =   AtomData {atomNumber    ::Integer
+                          , atomSymbol    ::String
+                          , atomWeight    ::Double
+                          , atomIsotope   ::Integer
+                          , atomAbundance ::[(Integer, Double)]
+                          , atomHalfLife  ::[(Integer, Double)]
+                          , atomMass      ::[(Integer, Double)]
+                          , atomKey       ::Int
                           }
 
 -- atomicWeights

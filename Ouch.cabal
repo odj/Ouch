@@ -6,8 +6,8 @@ license: GPL
 license-file: COPYING
 copyright: Orion Jankowski 2010
 maintainer: Orion Jankowski odj@me.com
-build-depends: base >=3 && <5, containers -any, regex-tdfa -any,
-               time -any
+build-depends: base >=3 && <5, binary -any, bytestring -any,
+               containers -any, regex-tdfa -any, time -any
 stability: Unstable
 homepage: We don't have one
 package-url:
@@ -21,13 +21,13 @@ data-files: README
 data-dir: ""
 extra-source-files:
 extra-tmp-files:
-exposed-modules: Ouch.Data.Atom Ouch.Enumerate.Method
-                 Ouch.Input.Smiles Ouch.Output.Mol Ouch.Output.SDF
-                 Ouch.Property.Composition Ouch.Property.Extrinsic
-                 Ouch.Property.Geometry Ouch.Property.Graph Ouch.Property.Property
-                 Ouch.Property.Ring Ouch.Structure.Atom Ouch.Structure.Bond
-                 Ouch.Structure.Marker Ouch.Structure.Molecule Ouch.Test.Methods
-                 Ouch.Text.String
+exposed-modules: Ouch.Data.Atom Ouch.Data.Bond
+                 Ouch.Enumerate.Method Ouch.Input.Smiles Ouch.Output.Mol
+                 Ouch.Output.SDF Ouch.Property.Composition Ouch.Property.Geometry
+                 Ouch.Property.Graph Ouch.Property.Property Ouch.Property.Ring
+                 Ouch.Property.Extrinsic.Fingerprint Ouch.Structure.Atom
+                 Ouch.Structure.Bond Ouch.Structure.Marker Ouch.Structure.Molecule
+                 Ouch.Test.Methods Ouch.Text.String
 exposed: True
 buildable: True
 build-tools:
