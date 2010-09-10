@@ -28,8 +28,9 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Property.Ring
-    ( PGraph
-     ) where
+  (
+    PGraph(..)
+  ) where
 
 
 
@@ -45,6 +46,18 @@ import Data.Set as Set
 
 
 data PGraph = PGraph {molecule::Molecule, vertexList::[Int]}
+
+
+
+inPath :: PGraph -> Int -> Bool
+inPath pg i = List.elem i $ vertexList pg
+
+pathLength :: PGraph -> Integer
+pathLength p = fromIntegral $ List.length $ vertexList p
+
+instance Show PGraph where
+  show p = (show $ vertexList p) ++ "\n"
+
 {--
 createPGraph :: Molecule -> PGraph
 createPGraph m = PGraph m' v
@@ -58,3 +71,13 @@ createPGraph m = PGraph m' v
 
 markAtom :: Atom -> AtomMarker -> Atom
 --}
+
+
+
+
+
+
+
+
+
+
