@@ -59,6 +59,7 @@ module Ouch.Structure.Molecule
      , numberBondsAtIndex
      , occupiedValenceAtIndex
      , numberBondsToAtomsAtIndex
+     , numberBondsToHeavyAtomsAtIndex
      , numberBondsToRadicalsAtIndex
      , numberBondsToHydrogensAtIndex
      , connectMoleculesAtIndicesWithBond

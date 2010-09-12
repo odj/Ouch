@@ -42,6 +42,7 @@ module Ouch.Structure.Atom (
     , isHydrogen
     , isElectron
     , isLonePair
+    , isOpen
     , hasMarker
     , incrementAtom
     , markAtom
@@ -207,6 +208,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
                LonePair {} -> (1, 0)
                Electron {} -> (1, 0)
                Unfilled {} -> (1, 0)
+               Open     {} -> (1, 0)
 
 
 {------------------------------------------------------------------------------}
@@ -243,9 +245,7 @@ markAtom a am = newAtom
 isHeavyAtom :: Atom -> Bool
 isHeavyAtom a = case a of
    Element i _ _ _ -> i > 1
-   LonePair {} -> False
-   Electron {} -> False
-   Unfilled {} -> False
+   _               -> False
 
 
 
@@ -255,19 +255,15 @@ isHeavyAtom a = case a of
 isElement :: Atom -> Bool
 isElement a = case a of
   Element _ _ _ _ -> True
-  LonePair {} -> False
-  Electron {} -> False
-  Unfilled {} -> False
+  _               -> False
 
 
 
 {------------------------------------------------------------------------------}
 isElectron :: Atom -> Bool
 isElectron a = case a of
-    Element _ _ _ _ -> False
-    LonePair {} -> False
     Electron {} -> True
-    Unfilled {} -> False
+    _           -> False
 
 
 
@@ -284,6 +280,12 @@ isLonePair :: Atom -> Bool
 isLonePair a = case a of
     LonePair {} -> True
     _           -> False
+
+{------------------------------------------------------------------------------}
+isOpen :: Atom -> Bool
+isOpen a = case a of
+    Open {} -> True
+    _       -> False
 
 
 
@@ -338,7 +340,8 @@ instance Show Atom where
           Element i _ b m ->  name i ++ "\t" ++ show b ++ "\t" ++ show m ++ "\n"
           LonePair b m -> "LP\t" ++ show b ++ " " ++ show m ++ "\n"
           Electron b m -> "E\t" ++ show b ++ " " ++ show m ++ "\n"
-          Unfilled {} -> "\t"
+          Unfilled  {} -> "\t"
+          Open     b m -> "OPEN\t" ++ show b ++ " " ++ show m ++ "\n"
           where name b = fromJust $ Map.lookup b atomicSymbols
 
 -- Instance Eq and instance Ord are going to be where all the action is.
