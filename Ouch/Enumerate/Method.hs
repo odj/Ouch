@@ -103,6 +103,10 @@ data Method   = NoMethod      {firstApply   ::  Maybe Method
     ReactMethod   {} -> ms >#> (firstApply method)
     FilterMethod  {} -> filterMethod ms method
 
+(>##>) :: [Molecule] -> (Maybe Method) -> [Molecule]
+(>##>) ms mMethod = ms ++ (ms >#> mMethod)
+
+
 addMethod :: [Molecule] -> Method -> [Molecule]
 addMethod ms method = let
   mols = ms >#> (firstApply method)

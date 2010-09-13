@@ -32,10 +32,13 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , bondBits_OUCH
   , molBits_OUCH
   , molBits_N
+  , molBits_ID
   , pathBits
   , findPaths
   , allPaths
   , (.||.)
+  , (.|||.)
+
 
 ) where
 
@@ -63,28 +66,51 @@ atomBits_OUCH :: Molecule -> Atom -> Builder
 atomBits_OUCH m a = let
   n = fromIntegral $ numberBondsToHeavyAtomsAtIndex m $ fromJust $ getIndexForAtom a
   i = fromInteger $ atomicNumber a
-  f n | n > 63 && n < 128 = mod n 64 | otherwise = 65
   in case a of
     Element {} ->  B.putWord64le ((bit (mod i 64)) :: Word64)
          `B.append` B.singleton ((bit n) :: Word8)
-    Open {}    ->  B.putWord64le (bit (mod i 119) :: Word64)
+    Open {}    ->  B.putWord64le ((bit 63) :: Word64)
          `B.append` B.singleton ((bit n) :: Word8)
+
+{------------------------------------------------------------------------------}
+atomBits_RECURSIVE :: Int -> Molecule -> Atom -> Builder
+atomBits_RECURSIVE depth  m a =  let
+  i = fromJust $ getIndexForAtom a
+  f_pb = pathBits atomBits_OUCH bondBits_OUCH
+  paths = findPaths depth (PGraph m []) i
+  in List.foldr (\p b -> f_pb p .||. b) B.empty paths
+
+
 
 {------------------------------------------------------------------------------}
 bondBits_OUCH :: Molecule -> Bond -> Builder
 bondBits_OUCH m b = B.singleton (bit $ bondKey b::Word8)
 
+
+{------------------------------------------------------------------------------}
 molBits_N :: Int -> Molecule -> Builder
-molBits_N n m = B.append (sizeBits_OUCH m) (moleculeBits atomBits_OUCH bondBits_OUCH n m)
+molBits_N depth m = B.append (sizeBits_OUCH m) (moleculeBits atomBits_OUCH bondBits_OUCH depth m)
 
 
+{------------------------------------------------------------------------------}
+molBits_ID :: Int -> Molecule -> Builder
+molBits_ID depth m = B.append (sizeBits_OUCH m) (moleculeBits atomBits_R bondBits_OUCH depth m)
+  where atomBits_R = atomBits_RECURSIVE depth
+
+
+
+{------------------------------------------------------------------------------}
 molBits_OUCH :: Molecule -> Builder
 molBits_OUCH m = B.append (sizeBits_OUCH m) (moleculeBits atomBits_OUCH bondBits_OUCH 7 m)
 
+
+{------------------------------------------------------------------------------}
 sizeBits_OUCH :: Molecule -> Builder
 sizeBits_OUCH m = B.singleton (n::Word8)
   where n = fromIntegral $ Map.size $ atomMap m
 
+
+{------------------------------------------------------------------------------}
 moleculeBits :: (Molecule -> Atom -> Builder) -> (Molecule -> Bond -> Builder) -> Int -> Molecule -> Builder
 moleculeBits atomB bondB depth m = let
   pathBits_OUCH = pathBits atomB bondB
@@ -108,6 +134,7 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
   in B.append bits $ pathBits atomB bondB p {vertexList=xs}
 
 
+-- Logical OR where bytes expand to the length of the longest pair
 {------------------------------------------------------------------------------}
 (.||.) :: Builder -> Builder -> Builder
 (.||.) b1 b2 = let
@@ -123,6 +150,30 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
   logicalOrList = List.map (\(a1, a2) -> a1 .|. a2) zipped
   in  B.fromLazyByteString $ L.pack logicalOrList
 
+-- Logical OR where list contracts to the length of the shortest pair
+{------------------------------------------------------------------------------}
+(.|||.) :: Builder -> Builder -> Builder
+(.|||.) b1 b2 = let
+  bytes1 = L.unpack $ B.toLazyByteString b1
+  bytes2 = L.unpack $ B.toLazyByteString b2
+  l1 = List.length bytes1
+  l2 = List.length bytes2
+  zipped = List.zip bytes1 bytes2
+  logicalOrList = List.map (\(a1, a2) -> a1 .|. a2) zipped
+  in  B.fromLazyByteString $ L.pack logicalOrList
+
+-- Logical OR where list expands to the length of the RIGHT argument
+(.||>.) :: Builder -> Builder -> Builder
+(.||>.) b1 b2 = let
+  bytes1 = L.unpack $ B.toLazyByteString b1
+  bytes2 = L.unpack $ B.toLazyByteString b2
+  l1 = List.length bytes1
+  l2 = List.length bytes2
+  bytes1' | l1 > l2 = bytes1
+          | otherwise = bytes1 ++ (List.replicate (l2 - l1) (0::Word8))
+  zipped = List.zip bytes1' bytes2
+  logicalOrList = List.map (\(a1, a2) -> a1 .|. a2) zipped
+  in  B.fromLazyByteString $ L.pack logicalOrList
 
 {------------------------------------------------------------------------------}
 allPaths :: Int -> Molecule -> [PGraph]
