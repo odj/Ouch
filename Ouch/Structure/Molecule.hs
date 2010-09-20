@@ -67,6 +67,7 @@ module Ouch.Structure.Molecule
      , incrementAtomMap
      , removeAtoms
      , updateBondSet
+     , emptyMolecule
      ) where
 
 
@@ -101,6 +102,8 @@ data Molecule =   Molecule {atomMap::(Map Int Atom)
 
 (>>>) :: Molecule -> Molecule -> Molecule
 (>>>) mIn mOut = if (moleculeHasError mIn) then mIn else mOut
+
+emptyMolecule = Molecule Map.empty Set.empty Map.empty
 
 -- getAtomAtIndex
 {------------------------------------------------------------------------------}

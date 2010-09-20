@@ -36,6 +36,9 @@ module Ouch.Enumerate.Method (
   , halogens
   , alkyls
   , fingerprintFilterBuilder
+  , addH
+  , removeH
+  , strip
   ) where
 
 import Ouch.Structure.Atom
@@ -145,7 +148,7 @@ filterMethod ms method = let
 fingerprintFilterBuilder :: (Molecule -> L.ByteString) -> ([Molecule] -> [Molecule])
 fingerprintFilterBuilder fp = let
   newFilter ms = output
-    where fingerprints = List.map fp ms
+    where fingerprints = List.map (\m -> fp m `seq` fp m) ms
           filterMap = Map.fromList $ List.zip fingerprints ms
           output = Map.elems filterMap
   in newFilter
@@ -193,32 +196,46 @@ alkyls i = let
     { firstApply=Nothing
     , lastApply=Nothing
     , selector=openValenceSelector
-    , addList=[(Single, carbon), (Single, hydrogen)]
+    , addList=[(Single, carbon)]
     }
   removeDummy = Just $ FilterMethod
     { firstApply=Nothing
     , lastApply=Nothing
     , molFilter=List.map (\m -> removeAtoms m isOpen )
     }
-  addH = Just $ FilterMethod
-    { firstApply=Nothing
-    , lastApply=Nothing
-    , molFilter=List.map (\m -> fillMoleculeValence m )
-    }
-  removeH = Just $ FilterMethod
-    { firstApply=Nothing
-    , lastApply=Nothing
-    , molFilter=List.map (\m -> removeAtoms m isHydrogen )
-    }
-  makeUnique = Just $ FilterMethod
-    { firstApply=Nothing
-    , lastApply=Nothing
-    , molFilter=fingerprintFilterBuilder (\m -> B.toLazyByteString $ molBits_OUCH m)
-    }
-  alks = List.foldr (\enum mols -> enum mols) [dummy] $ List.replicate i (>#> mth)
-  uniqueAlks = alks >#> makeUnique >#> addH >#> removeDummy
+
+  alks = List.foldr (\enum mols -> enum mols) [dummy] $ List.replicate (i - 1) (>##> mth)
+  uniqueAlks = alks >#> addH >#> makeUnique >#> removeDummy
   bond = List.replicate (List.length uniqueAlks) Single
   in List.zip bond uniqueAlks
 
 
+addH = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=List.map (\m -> fillMoleculeValence m )
+  }
+removeH = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=List.map (\m -> removeAtoms m isHydrogen )
+  }
+
+removeLP = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=List.map (\m -> removeAtoms m isLonePair )
+  }
+
+strip = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=(\ms -> ms >#> removeH >#> removeLP)
+  }
+
+makeUnique = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=fingerprintFilterBuilder (\m -> B.toLazyByteString $ molBits_ID 7 m)
+  }
 

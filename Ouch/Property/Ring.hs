@@ -30,6 +30,9 @@
 module Ouch.Property.Ring
   (
     PGraph(..)
+  , pathLength
+  , inPath
+  , hasOverlap
   ) where
 
 
@@ -47,7 +50,12 @@ import Data.Set as Set
 
 data PGraph = PGraph {molecule::Molecule, vertexList::[Int]}
 
-
+hasOverlap :: PGraph -> PGraph -> Bool
+hasOverlap p1 p2 = let
+  l1 = vertexList p1
+  l2 = vertexList p2
+  intersectList = List.intersect l1 l2
+  in List.length intersectList > 0
 
 inPath :: PGraph -> Int -> Bool
 inPath pg i = List.elem i $ vertexList pg

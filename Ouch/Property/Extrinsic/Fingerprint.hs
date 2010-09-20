@@ -36,6 +36,10 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , pathBits
   , findPaths
   , allPaths
+  , longestPaths
+  , longestLeastPath
+  , longestLeastAnchoredPath
+  , writeCanonicalPath
   , (.||.)
   , (.|||.)
 
@@ -71,7 +75,8 @@ atomBits_OUCH m a = let
          `B.append` B.singleton ((bit n) :: Word8)
     Open {}    ->  B.putWord64le ((bit 63) :: Word64)
          `B.append` B.singleton ((bit n) :: Word8)
-
+    _          -> B.putWord64le (0 :: Word64)
+         `B.append` B.singleton (0 :: Word8)
 {------------------------------------------------------------------------------}
 atomBits_RECURSIVE :: Int -> Molecule -> Atom -> Builder
 atomBits_RECURSIVE depth  m a =  let
@@ -181,20 +186,126 @@ allPaths depth m = List.foldr (\i p -> p ++ findPaths depth (PGraph m []) i) [] 
   where indexList = Map.keys $ atomMap m
 
 {------------------------------------------------------------------------------}
+longestPaths :: Molecule -> [PGraph]
+longestPaths m = let
+  depth = Map.size (atomMap m)
+  paths = allPaths depth m
+  maxLength = List.maximum $ List.map pathLength paths
+  longest = List.filter ((==maxLength) . pathLength) paths
+  in longest
+
+-- findLongestLeastAnchoredPath
+-- This takes a molecule and a starting position that is connected to the
+-- first PGraph and finds the longest chain of connections in the molecule
+-- choosing only atoms that are NOT in the first PGraph.  If more than
+-- one exists, returns the LONGEST LEAST of these.
+longestLeastAnchoredPath :: PGraph -> Int -> PGraph
+longestLeastAnchoredPath exclude@PGraph{vertexList=l} anchor = let
+  depth = fromIntegral $ pathLength exclude
+  paths = findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
+  nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
+  output | List.length nonExcludedPaths == 0 = exclude {vertexList=[]}
+         | otherwise = findLongestLeastPath nonExcludedPaths 0
+  in output
+
+
+findLongestLeastPath :: [PGraph] -> Int -> PGraph
+findLongestLeastPath [] i = PGraph emptyMolecule []
+findLongestLeastPath gs i = let
+  mol = molecule (gs!!0)
+  ranks r acc | r  ==GT || acc==GT = GT
+              | acc==EQ            = EQ
+              | r  ==EQ            = EQ
+              | r  ==LT            = LT
+  foldRanks g = List.foldl (\acc a -> ranks (ordAtom mol ((vertexList g)!!i)
+                                                         ((vertexList a)!!i)) acc ) LT gs
+  mapRanks = List.map (\a -> foldRanks a) gs
+  leastRank = List.minimum mapRanks
+  gs' = List.filter ((==leastRank) . foldRanks) gs
+  output | List.length gs == 1     = gs!!0
+         | pathLength (gs!!0) == (fromIntegral i) = gs!!0
+         | otherwise = findLongestLeastPath gs' (i+1)
+  in output
+
+
+longestLeastPath :: Molecule -> PGraph
+longestLeastPath m = let
+  paths = longestPaths m
+  in findLongestLeastPath paths 0
+
+ordAtom :: Molecule -> Int -> Int -> Ordering
+ordAtom m i1 i2 = let
+  atom1 = fromJust $ getAtomAtIndex m i1
+  atom2 = fromJust $ getAtomAtIndex m i2
+  byNumber = compare (atomicNumber atom1) (atomicNumber atom2)
+  byIsotope = compare (neutronNumber atom1) (neutronNumber atom2)
+  byVertex = compare (Set.size $ atomBondSet atom1) (Set.size $ atomBondSet atom2)
+  output = case byNumber of
+    EQ -> case byIsotope of
+      EQ -> case byVertex of
+        EQ -> EQ
+        _  -> byVertex
+      _  -> byIsotope
+    _  -> byNumber
+  in output
+
+
+{------------------------------------------------------------------------------}
+findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> [PGraph]
+findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index  = let
+  path' = path {vertexList=(l ++ [index])}
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m index
+  pathIndexSet = Set.union exclude $ Set.fromList l
+  validIndexSet = Set.difference bondIndexSet pathIndexSet
+  accPath i p = p ++ (findPaths depth path' i)
+  paths | Set.size validIndexSet == 0      = [path']
+        | List.length l > depth            = [path']
+        | otherwise = Set.fold accPath [] validIndexSet
+  in paths
+
+{------------------------------------------------------------------------------}
 findPaths :: Int ->  PGraph -> Int -> [PGraph]
 findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
-  path' = path {vertexList=index:l}
+  path' = path {vertexList=(l ++ [index])}
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m index
   pathIndexSet = Set.fromList l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
   accPath i p = p ++ (findPaths depth path' i)
   paths | Set.size validIndexSet == 0      = [path']
-        | List.length l > depth           = [path']
+        | List.length l > depth            = [path']
         | otherwise = Set.fold accPath [] validIndexSet
   in paths
 
+writeCanonicalPath :: Molecule -> String
+writeCanonicalPath m = let
+  backbone = longestLeastPath m
+  in writePath [] backbone 0 False
 
 
+writePath :: [PGraph] -> PGraph -> Int -> Bool -> String
+writePath gx g i subStructure = let
+  mol = molecule g
+  vertices = vertexList g
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex mol (vertices!!i)
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a) Set.empty (g:gx)
+  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
+  pathIndexList = Set.toList pathIndexSet
+  branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList} a) validIndexList
+  nextBranch = findLongestLeastPath branchPaths 0
+  s = writeStep g i
+  endOfPath = i == (fromInteger $ pathLength g)
+  output | endOfPath && subStructure = ")"
+         | endOfPath = ""
+         | (pathLength nextBranch) > 0 =  s ++ "(" ++ writePath (g:gx) nextBranch 0  True
+                                            ++ writePath gx g (i+1) subStructure
+         | otherwise = s ++ writePath gx g (i+1) subStructure
+  in output
+
+writeStep :: PGraph -> Int -> String
+writeStep g i = let
+  mol = molecule g
+  atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
+  in atomicSymbolForAtom atom
 
 
 
