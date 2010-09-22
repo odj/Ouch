@@ -27,7 +27,7 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
-module Ouch.Property.Property (
+module Ouch.Property.Builder (
    Property(..)
  , Value(..)
    ) where
@@ -58,7 +58,7 @@ instance Eq Property where
 
 
 instance Show Property where
-  show a = (show $ propertyKey a) ++ ": " ++ (show $ value a)
+  show a = (show $ propertyKey a) ++ ": " ++ (show $ value a) ++ "\n"
 
 
 data Value =

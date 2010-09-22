@@ -45,7 +45,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Molecule
 import Ouch.Data.Atom
-import Ouch.Property.Property
+import Ouch.Property.Builder
 
 
 import Data.Maybe

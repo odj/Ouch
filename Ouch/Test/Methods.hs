@@ -45,7 +45,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Property.Composition
-import Ouch.Property.Property
+import Ouch.Property.Builder
 import Ouch.Enumerate.Method
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
@@ -121,7 +121,7 @@ testArray (x:xs) = do
   time2 <- getCurrentTime
   putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)
                   ++ " seconds."
-  appendFile "errorLog.txt" $  "\nTest file: " ++ (fst x) ++ "\n"
+  appendFile "errorLog.txt" $  "\n\n\nTest file: " ++ (fst x) ++ "\n"
                                ++ "=====================================\n"
                                ++ errorLog
   testArray xs

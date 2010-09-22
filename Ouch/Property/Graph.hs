@@ -37,7 +37,7 @@ module Ouch.Property.Graph
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Molecule
-import Ouch.Property.Property
+import Ouch.Property.Builder
 
 import Data.Maybe
 import Data.Set as Set

@@ -181,11 +181,16 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
   in  B.fromLazyByteString $ L.pack logicalOrList
 
 {------------------------------------------------------------------------------}
+{-- allPaths --}
+-- Returns all paths up to a given depth.  Always an even numbered list.
 allPaths :: Int -> Molecule -> [PGraph]
 allPaths depth m = List.foldr (\i p -> p ++ findPaths depth (PGraph m []) i) [] indexList
   where indexList = Map.keys $ atomMap m
 
 {------------------------------------------------------------------------------}
+{-- longestPaths --}
+-- Returns the longest paths found in a molecule.  Because paths can go
+-- in either direction, this will always be an even numbered list.
 longestPaths :: Molecule -> [PGraph]
 longestPaths m = let
   depth = Map.size (atomMap m)
@@ -194,6 +199,7 @@ longestPaths m = let
   longest = List.filter ((==maxLength) . pathLength) paths
   in longest
 
+{------------------------------------------------------------------------------}
 -- findLongestLeastAnchoredPath
 -- This takes a molecule and a starting position that is connected to the
 -- first PGraph and finds the longest chain of connections in the molecule
@@ -208,7 +214,10 @@ longestLeastAnchoredPath exclude@PGraph{vertexList=l} anchor = let
          | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
 
-
+{-- findLongestLeastPath --}
+-- Takes a list of paths of the same length and from the same molecule and
+-- returns the "least" path according to atom ordering rules.  Used in selecting a
+-- path for canonicalization.
 findLongestLeastPath :: [PGraph] -> Int -> PGraph
 findLongestLeastPath [] i = PGraph emptyMolecule []
 findLongestLeastPath gs i = let
@@ -227,37 +236,66 @@ findLongestLeastPath gs i = let
          | otherwise = findLongestLeastPath gs' (i+1)
   in output
 
-
+{------------------------------------------------------------------------------}
+{-- longestLeastPath --}
+-- Finds the longest least path in a molecule.  Used for canonicalization.
 longestLeastPath :: Molecule -> PGraph
 longestLeastPath m = let
   paths = longestPaths m
   in findLongestLeastPath paths 0
 
+
+{------------------------------------------------------------------------------}
+{-- ordAtom --}
+-- Orders atoms in a path to aid in path selection.
 ordAtom :: Molecule -> Int -> Int -> Ordering
 ordAtom m i1 i2 = let
   atom1 = fromJust $ getAtomAtIndex m i1
   atom2 = fromJust $ getAtomAtIndex m i2
+  atoms = Map.size $ atomMap m
   byNumber = compare (atomicNumber atom1) (atomicNumber atom2)
   byIsotope = compare (neutronNumber atom1) (neutronNumber atom2)
   byVertex = compare (Set.size $ atomBondSet atom1) (Set.size $ atomBondSet atom2)
-  output = case byNumber of
-    EQ -> case byIsotope of
-      EQ -> case byVertex of
-        EQ -> EQ
-        _  -> byVertex
-      _  -> byIsotope
-    _  -> byNumber
+  byFinger = fAtom atoms
+  fAtom i = compared
+    where test = compare (B.toLazyByteString $ atomBits_RECURSIVE i m atom1)
+                         (B.toLazyByteString $ atomBits_RECURSIVE i m atom2)
+          compared | i >= (Map.size $ atomMap m) = test
+                   | test == EQ = fAtom (i+1)
+                   | otherwise = test
+  output
+         -- The atoms are the same index
+         | i1 == i2          = EQ
+
+         -- The atoms are the same element
+         | byNumber    /= EQ = byNumber
+
+         -- Atoms are the same isotope
+         | byIsotope   /= EQ = byIsotope
+
+         -- Atoms have the same number of connections
+         | byVertex    /= EQ = byVertex
+
+         -- Atoms have the same recursive fingerprint
+         | byFinger    /= EQ = byFinger
+
+         -- If all of the above are EQ, then the atoms REALLY ARE chemically equivalent
+         -- and cannot be distinguished.
+         | otherwise         = EQ
   in output
 
 
 {------------------------------------------------------------------------------}
+{-- findPathsExcluding --}
+-- Find all paths starting from a given index, but excluding traversal through
+-- the indices in the given exclusion set.
 findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> [PGraph]
 findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index  = let
   path' = path {vertexList=(l ++ [index])}
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m index
   pathIndexSet = Set.union exclude $ Set.fromList l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
-  accPath i p = p ++ (findPaths depth path' i)
+  accPath i p = p ++ (findPathsExcluding exclude depth path' i)
   paths | Set.size validIndexSet == 0      = [path']
         | List.length l > depth            = [path']
         | otherwise = Set.fold accPath [] validIndexSet
@@ -276,14 +314,35 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
         | otherwise = Set.fold accPath [] validIndexSet
   in paths
 
+
+{------------------------------------------------------------------------------}
+{-- writeCanonicalPath --}
+-- Writes the SMILES string for a given molecule
 writeCanonicalPath :: Molecule -> String
 writeCanonicalPath m = let
   backbone = longestLeastPath m
   in writePath [] backbone 0 False
 
-
+{------------------------------------------------------------------------------}
+{-- writePath --}
+-- Writes the SMILES string for a given path
 writePath :: [PGraph] -> PGraph -> Int -> Bool -> String
 writePath gx g i subStructure = let
+  mol = molecule g
+  s = writeStep g i
+  endOfPath = i == (fromInteger $ pathLength g)
+  output | endOfPath && subStructure = ")"
+         | endOfPath = ""
+         | otherwise =  s ++ writeSubpath gx g i
+                          ++ writePath gx g (i+1) subStructure
+  in output
+
+{------------------------------------------------------------------------------}
+{-- writeSubpath --}
+-- Writes the SMILES strings for all subpaths (if any exist) at position i in a
+-- given path g, excluding travesal through any atoms in the paths gx
+writeSubpath :: [PGraph] -> PGraph -> Int -> String
+writeSubpath gx g i = let
   mol = molecule g
   vertices = vertexList g
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex mol (vertices!!i)
@@ -294,13 +353,14 @@ writePath gx g i subStructure = let
   nextBranch = findLongestLeastPath branchPaths 0
   s = writeStep g i
   endOfPath = i == (fromInteger $ pathLength g)
-  output | endOfPath && subStructure = ")"
-         | endOfPath = ""
-         | (pathLength nextBranch) > 0 =  s ++ "(" ++ writePath (g:gx) nextBranch 0  True
-                                            ++ writePath gx g (i+1) subStructure
-         | otherwise = s ++ writePath gx g (i+1) subStructure
+  output | (pathLength nextBranch) > 0 =  "(" ++ writePath (g:gx) nextBranch 0  True
+                                              ++ writeSubpath (nextBranch:gx) g i
+         | otherwise = ""
   in output
 
+{------------------------------------------------------------------------------}
+{-- writeStep --}
+-- Writes atom and bond information from position i in a path
 writeStep :: PGraph -> Int -> String
 writeStep g i = let
   mol = molecule g

@@ -30,6 +30,7 @@
 module Ouch.Enumerate.Method (
     Method(..)
   , (>#>)
+  , (>&&>)
   , addMethod
   , classSelector
   , openValenceSelector
@@ -39,6 +40,7 @@ module Ouch.Enumerate.Method (
   , addH
   , removeH
   , strip
+  , elementSelector
   ) where
 
 import Ouch.Structure.Atom
@@ -145,7 +147,7 @@ filterMethod ms method = let
 {-------------------------------Convenience Functions--------------------------}
 {------------------------------------------------------------------------------}
 
-fingerprintFilterBuilder :: (Molecule -> L.ByteString) -> ([Molecule] -> [Molecule])
+fingerprintFilterBuilder :: (Ord a) => (Molecule -> a) -> ([Molecule] -> [Molecule])
 fingerprintFilterBuilder fp = let
   newFilter ms = output
     where fingerprints = List.map (\m -> fp m `seq` fp m) ms
@@ -153,7 +155,8 @@ fingerprintFilterBuilder fp = let
           output = Map.elems filterMap
   in newFilter
 
-
+elementSelector :: String -> (Molecule -> Atom -> Bool)
+elementSelector s = (\m a -> isElementType s a)
 
 -- A convenience function to create a selector based on class number
 classSelector :: Integer -> (Molecule -> Atom -> Bool)

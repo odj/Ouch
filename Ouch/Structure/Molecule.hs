@@ -75,7 +75,7 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 
-import Ouch.Property.Property
+import Ouch.Property.Builder
 
 import Data.Either
 import Data.Map as Map
@@ -118,7 +118,6 @@ getAtomAtIndex m i = Map.lookup i $ atomMap m
 setAtom :: Atom -> Molecule -> Molecule
 setAtom a m  = m >>> mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m
-            -- | fromJust atomIndex > (Map.size $ atomMap m) = withWarning
              | otherwise = output
         atomIndex = getIndexForAtom a
         withWarning = addAtom a (giveMoleculeWarning m "Tried to set atom with invalid index")
@@ -143,8 +142,13 @@ addMolMarker m mm = m {molMarkerSet = Set.insert mm $ molMarkerSet m}
 addProperty :: Molecule -> Property -> Molecule
 addProperty m p = m {molPropertyMap = Map.insert (propertyKey p) p $ molPropertyMap m}
 
-addPropertyFromFunction :: Molecule -> (Molecule -> Property) -> Molecule
-addPropertyFromFunction m f = addProperty m $ f m
+addPropertyFromFunction :: Molecule -> (Molecule -> Maybe Property) -> Molecule
+addPropertyFromFunction m f = let
+  prop = f m
+  output = case prop of
+    Just p ->  addProperty m p
+    Nothing -> m
+  in output
 
 getPropertyForKey :: Molecule -> String -> Maybe Property
 getPropertyForKey m k = Map.lookup k $ molPropertyMap m

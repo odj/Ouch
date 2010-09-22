@@ -51,6 +51,7 @@ module Ouch.Structure.Atom (
     , removeClosureAtomMarker
     , getMatchingClosureBondType
     , getMarker
+    , isElementType
     ) where
 
 import Data.Maybe as Maybe
@@ -248,6 +249,17 @@ isHeavyAtom a = case a of
    _               -> False
 
 
+{------------------------------------------------------------------------------}
+isElementType :: String -> Atom -> Bool
+isElementType s a = case a of
+  Element {atomicNumber=an, neutronNumber=_, atomBondSet=_, atomMarkerSet=_} ->
+    case num of
+    Nothing -> False
+    Just n  -> an == n
+  _           -> False
+  where num = Map.lookup s atomicNumberFromSymbol
+
+
 
 -- isElement
 -- Returns TRUE if atom is a "real" element
@@ -264,6 +276,7 @@ isElectron :: Atom -> Bool
 isElectron a = case a of
     Electron {} -> True
     _           -> False
+
 
 
 

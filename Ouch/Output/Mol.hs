@@ -37,7 +37,7 @@ import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Text.String
-import Ouch.Property.Property
+import Ouch.Property.Builder
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
