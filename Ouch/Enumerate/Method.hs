@@ -120,9 +120,7 @@ addMethod ms method = let
   zipped = List.zip mols atomLists
   makeMol m1 i1 addItem = [connectMoleculesAtIndicesWithBond m1 i1 (snd addItem) 0 (fst addItem)]
   newMols m i = ((addList method) >>= (makeMol m i))
-  -- If there is nothing to do, we want to original list back again unchanged
-  molMapper m l -- | List.length l == 0 = [m]
-                | otherwise = List.concat $ List.map (\i -> newMols m i) l
+  molMapper m l = List.concat $ List.map (\i -> newMols m i) l
   output  = List.concat
           $ List.map (\(m, l) -> molMapper m l ) zipped
   in  output >#> (lastApply method)

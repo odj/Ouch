@@ -99,22 +99,24 @@ data Molecule =   Molecule {atomMap::(Map Int Atom)
 {-------------------------------Functions--------------------------------------}
 {------------------------------------------------------------------------------}
 
-
+-- | Infix function to filter out molecules with errors when performing
+-- some operation on a molecule of dubious origin.
 (>>>) :: Molecule -> Molecule -> Molecule
 (>>>) mIn mOut = if (moleculeHasError mIn) then mIn else mOut
 
 emptyMolecule = Molecule Map.empty Set.empty Map.empty
 
--- getAtomAtIndex
+
 {------------------------------------------------------------------------------}
+-- | Returns the atom at the specified index, if it exists.
 getAtomAtIndex :: Molecule -> Int -> Maybe Atom
 getAtomAtIndex m i = Map.lookup i $ atomMap m
 
--- setAtom
--- Inserts atom into given molecule at whatever index the atom thinks it should
--- be at.  If the index is invalid or non-existant, then it adds to the next
--- atom index.
 {------------------------------------------------------------------------------}
+-- | Inserts atom into given molecule at whatever index the atom thinks it should
+-- be at.  If the index is invalid or non-existant, then it adds to the next
+-- atom index.  If the molecule is flagged with an error, then returns the (corrupt)
+-- molecule unchanged.
 setAtom :: Atom -> Molecule -> Molecule
 setAtom a m  = m >>> mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m

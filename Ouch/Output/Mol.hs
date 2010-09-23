@@ -73,7 +73,9 @@ headerBlock m = let
   registry = "      "
   line3 = case getPropertyForKey m "COMMENT" of
     Nothing -> [Just ""]
-    Just s -> [Just $ show $ value s]
+    Just s -> case value s of
+      Left v -> [Just $ show v]
+      Right f -> [Just "function"]
   in line1 ++ line2 ++ line3
 
 

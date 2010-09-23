@@ -39,13 +39,14 @@ import Data.ByteString.Lazy as L
 import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
+import Data.Either as Either
 
 
 {------------------------------------------------------------------------------}
 
 data Property = Property {propertyKey::String
-                        , value::Value
-                        , func::Maybe (Molecule -> Maybe Property)}
+                        , value::Either Value (Molecule -> Value)
+                         }
 
 
 instance Ord Property where
@@ -58,8 +59,9 @@ instance Eq Property where
 
 
 instance Show Property where
-  show a = (show $ propertyKey a) ++ ": " ++ (show $ value a) ++ "\n"
-
+  show a = case value a of
+    Left v  -> (show $ propertyKey a) ++ ": " ++ (show v) ++ "\n"
+    Right f -> (show $ propertyKey a) ++ ": Calculated Value\n"
 
 data Value =
     IntegerValue    Integer
@@ -72,11 +74,11 @@ data Value =
 
 instance Show Value where
   show v = case v of
-    IntegerValue x    -> show x
-    DoubleValue x     -> show x
-    StringValue x     -> x
-    BoolValue x       -> show x
-    TupleArrayValue x -> show x
-    ByteStringValue x -> show x
+      IntegerValue x    -> show x
+      DoubleValue x     -> show x
+      StringValue x     -> x
+      BoolValue x       -> show x
+      TupleArrayValue x -> show x
+      ByteStringValue x -> show x
 
 
