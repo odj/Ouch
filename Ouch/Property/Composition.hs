@@ -61,26 +61,24 @@ import Data.Map as Map
 
 
 
-exactMass :: Molecule -> Maybe Property
-exactMass m = Just undefined
+exactMass :: Property
+exactMass = undefined
 
 
 
 
-heavyAtomCount :: Molecule -> Maybe Property
-heavyAtomCount m = Just prop
-  where num = fromIntegral $ Map.size $ Map.filter isHeavyAtom $ atomMap m
+heavyAtomCount :: Property
+heavyAtomCount =  prop
+  where num m = fromIntegral $ Map.size $ Map.filter isHeavyAtom $ atomMap m
         prop = Property {propertyKey = "HEAVY"
-                       , value = IntegerValue num
-                       , func = Just heavyAtomCount
+                       , value = Right . IntegerValue . num
                        }
 
-atomCount :: Molecule -> Maybe Property
-atomCount m = Just prop
-  where num = fromIntegral $ Map.size $ Map.filter isElement $ atomMap m
+atomCount :: Property
+atomCount =  prop
+  where num m = fromIntegral $ Map.size $ Map.filter isElement $ atomMap m
         prop = Property {propertyKey = "COUNT"
-                       , value = IntegerValue num
-                       , func = Just atomCount
+                       , value = Right . IntegerValue . num
                        }
 
 
@@ -98,35 +96,35 @@ netCharge m = Just undefined
 
 --molecularWeight
 {------------------------------------------------------------------------------}
-molecularWeight :: Molecule -> Maybe Property
-molecularWeight m = if (moleculeHasError m) then Nothing else Just prop
-  where mw = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
+molecularWeight :: Property
+molecularWeight = prop
+  where mw m = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
         prop = Property {propertyKey = "MOLWT"
-                       , value = DoubleValue mw
-                       , func = Just molecularWeight}
+                       , value = Right . DoubleValue . mw
+                        }
 
 
 --molecularFormula
 {------------------------------------------------------------------------------}
-molecularFormula :: Molecule -> Maybe Property
-molecularFormula m = if (moleculeHasError m) then Nothing else Just prop
+molecularFormula :: Property
+molecularFormula = prop
         where startMap = Map.empty
-              endMap = List.foldr (updateMap) startMap $ List.map snd $ Map.toList (atomMap m)
+              endMap m = List.foldr (updateMap) startMap $ List.map snd $ Map.toList (atomMap m)
               -- Use foldr to accumulate and count atoms
               updateMap a m | Map.notMember (atomicSymbolForAtom a) m = Map.insert (atomicSymbolForAtom a)  1 m
                             | otherwise                               = Map.adjust (+ 1) (atomicSymbolForAtom a) m
               -- Convert the map to a list of just the elements present, and in IUPAC order
-              finalList = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
+              finalList m = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
               --  Build the final output string from the map
-              molFm = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList
+              molFm m = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList m
               -- simple little utility function which, strangely, is not already defined in Data.Map
               lookupPair k m = case v of
                   Just val -> Just (k, val)
                   Nothing -> Nothing
                   where v = Map.lookup k m
               prop = Property {propertyKey = "MOLFORM"
-                             , value = StringValue molFm
-                             , func = Just molecularFormula}
+                             , value = Right. StringValue . molFm
+                              }
 
 
 
