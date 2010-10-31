@@ -70,6 +70,7 @@ data Value =
   | BoolValue       Bool
   | TupleArrayValue [(Double, Double)]
   | ByteStringValue L.ByteString
+  | NoValue
   deriving (Eq, Ord)
 
 instance Show Value where
@@ -80,5 +81,6 @@ instance Show Value where
       BoolValue x       -> show x
       TupleArrayValue x -> show x
       ByteStringValue x -> show x
+      NoValue           -> "No Value"
 
 

@@ -129,37 +129,28 @@ testArray (x:xs) = do
 
 
 -- Simple test function
-testTest::String -> Either String String
+testTest :: String -> Either String String
 testTest s = Right s
 
 -- Simple test fail function
-testFail::String -> Either String String
+testFail :: String -> Either String String
 testFail s = Left s
+
+-- Little utility function, unsafe for general use.
+right p = case p of Right r -> r
 
 -- Test smiles to formula
 testMolForm :: String -> Either String String
-testMolForm s = case molecularFormula $ makeMoleculeFromSmiles s of
-  Nothing   -> Left "Unable to generate Molecular Formula Property"
-  Just prop -> Right mf
-    where mf = case (value prop) of StringValue str -> str
+testMolForm s = Right $ show $ (right $ value molecularFormula) $ makeMoleculeFromSmiles s
 
 testMolWt :: String -> Either String String
-testMolWt s = case molecularWeight $ makeMoleculeFromSmiles s of
-  Nothing   -> Left "Unable to generate Molecular Formula Property"
-  Just prop -> Right $ show $ floor (10 * mw)
-    where mw = case (value prop) of DoubleValue num -> num
+testMolWt s = Right $ show $ (right $ value molecularWeight) $ makeMoleculeFromSmiles s
 
 testAtomCount :: String -> Either String String
-testAtomCount s = case atomCount $ makeMoleculeFromSmiles s of
-  Nothing   -> Left "Unable to generate Molecular Formula Property"
-  Just prop -> Right ac
-    where ac = case (value prop) of IntegerValue i -> show i
+testAtomCount s = Right $ show $ (right $ value atomCount) $ makeMoleculeFromSmiles s
 
 testHeavyCount :: String -> Either String String
-testHeavyCount s = case heavyAtomCount $ makeMoleculeFromSmiles s of
-  Nothing   -> Left "Unable to generate Molecular Formula Property"
-  Just prop -> Right ac
-    where ac = case (value prop) of IntegerValue i -> show i
+testHeavyCount s = Right $ show $ (right $ value heavyAtomCount) $ makeMoleculeFromSmiles s
 
 testEnum :: String -> Either String String
 testEnum s = Right $ show $ length $ [mol] >#> method

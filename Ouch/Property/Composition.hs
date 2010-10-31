@@ -71,14 +71,14 @@ heavyAtomCount :: Property
 heavyAtomCount =  prop
   where num m = fromIntegral $ Map.size $ Map.filter isHeavyAtom $ atomMap m
         prop = Property {propertyKey = "HEAVY"
-                       , value = Right . IntegerValue . num
+                       , value = Right $ IntegerValue . num
                        }
 
 atomCount :: Property
 atomCount =  prop
   where num m = fromIntegral $ Map.size $ Map.filter isElement $ atomMap m
         prop = Property {propertyKey = "COUNT"
-                       , value = Right . IntegerValue . num
+                       , value = Right $ IntegerValue . num
                        }
 
 
@@ -100,7 +100,7 @@ molecularWeight :: Property
 molecularWeight = prop
   where mw m = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
         prop = Property {propertyKey = "MOLWT"
-                       , value = Right . DoubleValue . mw
+                       , value = Right $ DoubleValue . mw
                         }
 
 
@@ -114,16 +114,16 @@ molecularFormula = prop
               updateMap a m | Map.notMember (atomicSymbolForAtom a) m = Map.insert (atomicSymbolForAtom a)  1 m
                             | otherwise                               = Map.adjust (+ 1) (atomicSymbolForAtom a) m
               -- Convert the map to a list of just the elements present, and in IUPAC order
-              finalList m = catMaybes $ List.map (\e -> lookupPair e endMap) molecularFormulaElements
+              finalList m = catMaybes $ List.map (\e -> lookupPair e $ endMap m) molecularFormulaElements
               --  Build the final output string from the map
-              molFm m = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" finalList m
+              molFm m = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" (finalList m)
               -- simple little utility function which, strangely, is not already defined in Data.Map
               lookupPair k m = case v of
                   Just val -> Just (k, val)
                   Nothing -> Nothing
                   where v = Map.lookup k m
               prop = Property {propertyKey = "MOLFORM"
-                             , value = Right. StringValue . molFm
+                             , value = Right $ StringValue . molFm
                               }
 
 
