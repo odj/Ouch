@@ -39,7 +39,7 @@ module Ouch.Input.Smiles (
    , chop
    ) where
 
-
+import Text.ParserCombinators.Parsec
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
@@ -54,6 +54,18 @@ import Data.Map as Map
 import Control.Applicative
 
 
+-- Some stubs for parsec
+smi :: GenParser Char st Molecule
+smi  = undefined
+
+
+-- The parsec SMILES parser
+parsecSmiles :: String -> Molecule
+parsecSmiles = undefined
+
+
+
+
 
 {------------------------------------------------------------------------------}
 {-------------------------------Date Types-------------------------------------}
@@ -61,20 +73,25 @@ import Control.Applicative
 
 
 
-data ChoppedSmile = Smile        {smile::String
+data ChoppedSmile = Smile       { smile::String
                                 , smiles::String
                                 , newBond::NewBond
-                                , mark::(Set AtomMarker)}
-                  | SubSmile    {smile::String
+                                , mark::(Set AtomMarker)
+                                }
+
+                  | SubSmile    { smile::String
                                 , smiles::String
                                 , newBond::NewBond
-                                , mark::(Set AtomMarker)}
+                                , mark::(Set AtomMarker)
+                                }
+
                                 --Substructures don't technically
                                 --need a marker set
-                  | SmilesError {smile::String
+                  | SmilesError { smile::String
                                 , smiles::String
                                 , newBond::NewBond
-                                , mark::(Set AtomMarker)}
+                                , mark::(Set AtomMarker)
+                                }
                   deriving (Show, Eq)
 
 
