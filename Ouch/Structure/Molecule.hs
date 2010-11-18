@@ -76,6 +76,7 @@ import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 
 import Ouch.Property.Builder
+import Ouch.Property.Extrinsic.Fingerprint
 
 import Data.Either
 import Data.Map as Map
@@ -607,6 +608,12 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 {------------------------------------------------------------------------------}
 
 instance Show Molecule where
+  show m = writeCanonicalPath m
+
+
+
+{-
+instance Show Molecule where
     show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
        Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} ->
                --"\nIs a small molecule with formula: "
@@ -617,10 +624,11 @@ instance Show Molecule where
                 ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"
 
 
+-}
 
 {------------------------------------------------------------------------------}
 instance Eq Molecule where
-    a == b = True --Obviously that needs fixing!
+    a == b = (writeCanonicalPath a) == (writeCanonicalPath b)
 
 
 
