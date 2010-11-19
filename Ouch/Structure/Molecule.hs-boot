@@ -23,14 +23,10 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-
-module Ouch.Structure.Molecule(
-    Molecule(..)
-    ) where
-
-
-
-
+module Ouch.Structure.Molecule
+    (
+       Molecule(..)
+     ) where
 
 data Molecule
 

@@ -53,7 +53,7 @@ import Data.Bits
 import Data.Word
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
-import Ouch.Structure.Molecule
+import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
