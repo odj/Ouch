@@ -76,7 +76,7 @@ import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 
 import Ouch.Property.Builder
-import Ouch.Property.Extrinsic.Fingerprint
+import {-# SOURCE #-}  Ouch.Property.Extrinsic.Fingerprint
 
 import Data.Either
 import Data.Map as Map
