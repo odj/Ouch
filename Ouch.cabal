@@ -1,4 +1,4 @@
-name: Ouch
+name: ouch
 version: 0.0.1
 cabal-version: -any
 build-type: Simple
@@ -7,7 +7,7 @@ license-file: COPYING
 copyright: Orion Jankowski 2010
 maintainer: Orion Jankowski odj@me.com
 build-depends: base >=3 && <5, binary -any, bytestring -any,
-               containers -any, parsec >=2.1.0.1, regex-tdfa -any, time -any
+               containers -any, parsec -any, regex-tdfa -any, time -any
 stability: Unstable
 homepage: We don't have one
 package-url:

@@ -216,6 +216,7 @@ addH = Just $ FilterMethod
   , lastApply=Nothing
   , molFilter=List.map (\m -> fillMoleculeValence m )
   }
+
 removeH = Just $ FilterMethod
   { firstApply=Nothing
   , lastApply=Nothing
