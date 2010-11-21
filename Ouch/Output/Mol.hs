@@ -33,7 +33,7 @@ module Ouch.Output.Mol (
 
 
 import Ouch.Structure.Atom
-import Ouch.Structure.Molecule
+import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 import Ouch.Text.String

@@ -28,8 +28,10 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Input.Smiles (
-    makeMoleculeFromSmiles
+    makeMoleculeFromSmiles,
+    makeScaffoldFromSmiles
    ) where
 
 import {-# SOURCE #-} Ouch.Structure.Molecule
 makeMoleculeFromSmiles :: String -> Molecule
+makeScaffoldFromSmiles :: String -> Molecule

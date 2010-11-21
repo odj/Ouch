@@ -319,30 +319,38 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
 {-- writeCanonicalPath --}
 -- Writes the SMILES string for a given molecule
 writeCanonicalPath :: Molecule -> String
-writeCanonicalPath m = let
+writeCanonicalPath m = writeCanonicalPathWithStyle writeStep m
+
+
+{------------------------------------------------------------------------------}
+{-- writeSmiles --}
+-- Writes the SMILES string for a given molecule
+writeCanonicalPathWithStyle :: (PGraph -> Int -> String) -> Molecule -> String
+writeCanonicalPathWithStyle style m = let
   backbone = longestLeastPath m
-  in writePath [] backbone 0 False
+  in writePath style [] backbone 0 False
+
 
 {------------------------------------------------------------------------------}
 {-- writePath --}
 -- Writes the SMILES string for a given path
-writePath :: [PGraph] -> PGraph -> Int -> Bool -> String
-writePath gx g i subStructure = let
+writePath :: (PGraph -> Int -> String) -> [PGraph] -> PGraph -> Int -> Bool -> String
+writePath style gx g i subStructure = let
   mol = molecule g
-  s = writeStep g i
+  s = style g i
   endOfPath = i == (fromInteger $ pathLength g)
   output | endOfPath && subStructure = ")"
          | endOfPath = ""
-         | otherwise =  s ++ writeSubpath gx g i
-                          ++ writePath gx g (i+1) subStructure
+         | otherwise =  s ++ writeSubpath style gx g i
+                          ++ writePath style gx g (i+1) subStructure
   in output
 
 {------------------------------------------------------------------------------}
 {-- writeSubpath --}
 -- Writes the SMILES strings for all subpaths (if any exist) at position i in a
 -- given path g, excluding travesal through any atoms in the paths gx
-writeSubpath :: [PGraph] -> PGraph -> Int -> String
-writeSubpath gx g i = let
+writeSubpath :: (PGraph -> Int -> String) -> [PGraph] -> PGraph -> Int -> String
+writeSubpath style gx g i = let
   mol = molecule g
   vertices = vertexList g
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex mol (vertices!!i)
@@ -353,8 +361,8 @@ writeSubpath gx g i = let
   nextBranch = findLongestLeastPath branchPaths 0
   s = writeStep g i
   endOfPath = i == (fromInteger $ pathLength g)
-  output | (pathLength nextBranch) > 0 =  "(" ++ writePath (g:gx) nextBranch 0  True
-                                              ++ writeSubpath (nextBranch:gx) g i
+  output | (pathLength nextBranch) > 0 =  "(" ++ writePath style (g:gx) nextBranch 0 True
+                                              ++ writeSubpath style (nextBranch:gx) g i
          | otherwise = ""
   in output
 

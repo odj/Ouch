@@ -25,10 +25,42 @@
 
 module Ouch.Structure.Molecule
     (
-       Molecule(..)
+       Molecule(..),
+       removeAtoms,
+       getName,
+       atomMap,
+       getBondMap,
+       getPropertyForKey,
+       connectMoleculesAtIndicesWithBond,
+       freeValenceAtIndex,
+       fillMoleculeValence,
+       makeMoleculeFromAtom,
+
+
      ) where
+
+import {-# SOURCE #-} Ouch.Structure.Atom
+import Ouch.Structure.Bond
+import Ouch.Structure.Marker
+import {-# SOURCE #-} Ouch.Property.Builder
+import Data.Map as Map
+
 
 data Molecule
 
 instance Show Molecule
 instance Eq Molecule
+
+atomMap :: Molecule -> (Map Int Atom)
+removeAtoms :: Molecule -> (Atom -> Bool) -> Molecule
+getName :: Molecule -> Maybe String
+getBondMap :: Molecule -> Map (Int, Int) NewBond
+getPropertyForKey :: Molecule -> String -> Maybe Property
+connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
+freeValenceAtIndex :: Molecule -> Int -> Integer
+fillMoleculeValence :: Molecule -> Molecule
+makeMoleculeFromAtom:: Atom -> Molecule
+
+
+
+

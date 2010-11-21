@@ -78,6 +78,7 @@ import Ouch.Structure.Marker
 import Ouch.Property.Builder
 import {-# SOURCE #-}  Ouch.Property.Extrinsic.Fingerprint
 import {-# SOURCE #-} Ouch.Input.Smiles
+import Ouch.Enumerate.Method
 
 import Data.Either
 import Data.Map as Map
@@ -609,7 +610,8 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 {------------------------------------------------------------------------------}
 
 instance Show Molecule where
-  show m = writeCanonicalPath m
+  show m = writeCanonicalPath m'
+    where m':_ = [m] >#> removeH
 
 instance Read Molecule where
   readsPrec _ s = [(makeMoleculeFromSmiles s, "")]

@@ -32,7 +32,7 @@ module Ouch.Output.SDF (
 ) where
 
 import Ouch.Output.Mol
-import Ouch.Structure.Molecule
+import {-# SOURCE #-} Ouch.Structure.Molecule
 
 
 sdf :: [Molecule] -> String

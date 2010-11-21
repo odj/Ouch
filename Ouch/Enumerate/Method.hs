@@ -44,9 +44,9 @@ module Ouch.Enumerate.Method (
   ) where
 
 import Ouch.Structure.Atom
-import Ouch.Structure.Molecule
+import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Structure.Marker
-import Ouch.Input.Smiles
+import {-# SOURCE #-} Ouch.Input.Smiles
 import Ouch.Output.SDF
 import Ouch.Output.Mol
 
@@ -55,7 +55,7 @@ import Data.List as List
 import Data.Set as Set
 import Data.Maybe as Maybe
 import Control.Applicative
-import Ouch.Property.Extrinsic.Fingerprint
+import {-# SOURCE #-} Ouch.Property.Extrinsic.Fingerprint
 import Data.ByteString.Lazy as L
 import Data.Binary.Builder as B
 
