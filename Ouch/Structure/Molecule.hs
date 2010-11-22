@@ -41,6 +41,7 @@ module Ouch.Structure.Molecule
      , addProperty
      , addPropertyFromFunction
      , bondTargetSetForIndex
+     , debugShow
      , setAtom
      , getAtomAtIndex
      , getBondMap
@@ -610,25 +611,24 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 {------------------------------------------------------------------------------}
 
 instance Show Molecule where
-  show m = writeCanonicalPath m'
+  show m = writeSmiles m'
     where m':_ = [m] >#> removeH
 
 instance Read Molecule where
   readsPrec _ s = [(makeMoleculeFromSmiles s, "")]
 
-{-
-instance Show Molecule where
-    show m = if (moleculeHasError m) then ("Molecule has error.") else case m of
-       Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} ->
-               --"\nIs a small molecule with formula: "
-               -- ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n" ++
-                   (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
-                    ++ (show $ snd b))) "" (Map.toList atoms))
-                ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
-                ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"
+
+debugShow m = if (moleculeHasError m) then ("Molecule has error.") else case m of
+   Molecule {atomMap=atoms, molMarkerSet=mm, molPropertyMap=mp} ->
+           --"\nIs a small molecule with formula: "
+           -- ++ (\(Right a) -> a) (molecularFormula $ m) ++ "\n" ++
+               (List.foldr (\b ->  (++) ((show $ fst b) ++ " -- "
+                ++ (show $ snd b))) "" (Map.toList atoms))
+            ++ (List.foldr (\b ->  (++) (show b)) "" (Set.toList mm)) ++ "\n"
+            ++ (Map.fold (\b ->  (++) (show b)) "" mp) ++ "\n"
 
 
--}
+
 
 {------------------------------------------------------------------------------}
 instance Eq Molecule where

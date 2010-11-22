@@ -40,6 +40,8 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , longestLeastPath
   , longestLeastAnchoredPath
   , writeCanonicalPath
+  , writeCanonicalPathWithStyle
+  , writeSmiles
   , (.||.)
   , (.|||.)
 
@@ -57,6 +59,7 @@ import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
+import Ouch.Structure.Marker
 import Ouch.Input.Smiles
 import Data.Maybe
 import Data.Set as Set
@@ -263,9 +266,17 @@ ordAtom m i1 i2 = let
           compared | i >= (Map.size $ atomMap m) = test
                    | test == EQ = fAtom (i+1)
                    | otherwise = test
-  output
-         -- The atoms are the same index
-         | i1 == i2          = EQ
+  output = case atom1 of
+            Element {} -> case atom2 of
+              Element {} -> ordElements
+              _  -> GT
+            _  -> case atom2 of
+              Element {} -> LT
+              _ -> compare i1 i2
+
+  ordElements
+           -- The atoms are the same index
+         | i1 == i2     = EQ
 
          -- The atoms are the same element
          | byNumber    /= EQ = byNumber
@@ -319,11 +330,18 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
 {-- writeCanonicalPath --}
 -- Writes the SMILES string for a given molecule
 writeCanonicalPath :: Molecule -> String
-writeCanonicalPath m = writeCanonicalPathWithStyle writeStep m
+writeCanonicalPath m = writeCanonicalPathWithStyle writeAtomOnly m
 
 
 {------------------------------------------------------------------------------}
 {-- writeSmiles --}
+-- Writes the SMILES string for a given molecule
+writeSmiles :: Molecule -> String
+writeSmiles m = writeCanonicalPathWithStyle writeAtom m
+
+
+{------------------------------------------------------------------------------}
+{-- writeCanonicalPathWithStyle --}
 -- Writes the SMILES string for a given molecule
 writeCanonicalPathWithStyle :: (PGraph -> Int -> String) -> Molecule -> String
 writeCanonicalPathWithStyle style m = let
@@ -350,7 +368,7 @@ writePath style gx g i subStructure = let
 -- Writes the SMILES strings for all subpaths (if any exist) at position i in a
 -- given path g, excluding travesal through any atoms in the paths gx
 writeSubpath :: (PGraph -> Int -> String) -> [PGraph] -> PGraph -> Int -> String
-writeSubpath style gx g i = let
+writeSubpath outputStyle gx g i = let
   mol = molecule g
   vertices = vertexList g
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex mol (vertices!!i)
@@ -359,21 +377,40 @@ writeSubpath style gx g i = let
   pathIndexList = Set.toList pathIndexSet
   branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList} a) validIndexList
   nextBranch = findLongestLeastPath branchPaths 0
-  s = writeStep g i
+  s = outputStyle g i
   endOfPath = i == (fromInteger $ pathLength g)
-  output | (pathLength nextBranch) > 0 =  "(" ++ writePath style (g:gx) nextBranch 0 True
-                                              ++ writeSubpath style (nextBranch:gx) g i
+  output | (pathLength nextBranch) > 0 =  "(" ++ writePath outputStyle (g:gx) nextBranch 0 True
+                                              ++ writeSubpath outputStyle (nextBranch:gx) g i
          | otherwise = ""
   in output
 
 {------------------------------------------------------------------------------}
 {-- writeStep --}
 -- Writes atom and bond information from position i in a path
-writeStep :: PGraph -> Int -> String
-writeStep g i = let
+writeAtomOnly :: PGraph -> Int -> String
+writeAtomOnly g i = let
   mol = molecule g
   atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
   in atomicSymbolForAtom atom
+
+  {------------------------------------------------------------------------------}
+{-- writeStep --}
+-- Writes atom and bond information from position i in a path
+writeAtom :: PGraph -> Int -> String
+writeAtom g i = let
+  mol = molecule g
+  atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
+  hasExplicitH = Set.member (ExplicitHydrogen 0) (atomMarkerSet atom)
+  hasCharge = Set.member (Charge 0) (atomMarkerSet atom)
+  isAnyCharge charge = case charge of Charge {} -> True; _ -> False
+  h | hasExplicitH = "H" ++ (show $ numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet atom))
+    | otherwise = ""
+  c | hasCharge = show $ charge $ Set.findMax $ Set.filter isAnyCharge (atomMarkerSet atom)
+    | otherwise = ""
+  symbol = atomicSymbolForAtom atom
+  output | hasExplicitH || hasCharge = "[" ++ symbol  ++ h ++ c ++ "]"
+         | otherwise = symbol
+  in output
 
 
 
