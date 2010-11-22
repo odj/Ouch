@@ -41,7 +41,6 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , longestLeastAnchoredPath
   , writeCanonicalPathWithStyle
   , writeCanonicalPath
-  , writeSmiles
   , (.||.)
   , (.|||.)
 

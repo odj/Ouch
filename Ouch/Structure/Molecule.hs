@@ -41,6 +41,7 @@ module Ouch.Structure.Molecule
      , addProperty
      , addPropertyFromFunction
      , bondTargetSetForIndex
+     , bondBetweenIndices
      , debugShow
      , setAtom
      , getAtomAtIndex
@@ -79,6 +80,7 @@ import Ouch.Structure.Marker
 import Ouch.Property.Builder
 import {-# SOURCE #-}  Ouch.Property.Extrinsic.Fingerprint
 import {-# SOURCE #-} Ouch.Input.Smiles
+import Ouch.Output.Smiles
 import Ouch.Enumerate.Method
 
 import Data.Either
@@ -183,6 +185,27 @@ bondTargetSetForIndex m i = let atom = atomAtIndex m i in
 numberOfBondToAtomWithProperty :: Molecule -> Int -> (Atom -> Bool) -> Integer
 numberOfBondToAtomWithProperty m i f = let atoms = bondTargetSetForIndex m i in
   fromIntegral $ Set.size $ Set.filter f atoms
+
+
+-- | Find the bond type between two atom indices
+bondBetweenIndices :: Molecule -> Int -> Int -> NewBond
+bondBetweenIndices m i1 i2 = let
+  a1 = getAtomAtIndex m i1
+  a2 = getAtomAtIndex m i2
+  newBond = case a1 of
+              Nothing -> NoBond
+              Just atom1 -> case a2 of
+                Nothing -> NoBond
+                Just atom2 -> bondBetweenAtoms atom1 atom2
+  bondBetweenAtoms a b | (Set.size filteredSet1) /= 1 = NoBond
+                       | (Set.size filteredSet2) /= 1 = NoBond
+                       | newBondForBond (Set.findMax filteredSet1) ==
+                         newBondForBond (Set.findMax filteredSet2) = newBondForBond (Set.findMax filteredSet2)
+                       | otherwise = NoBond
+  filteredSet1 = Set.filter (hasBondTo i2) (atomBondSet $ fromJust a1)
+  filteredSet2 = Set.filter (hasBondTo i1) (atomBondSet $ fromJust a2)
+  hasBondTo i b = (bondsTo b) == i
+  in newBond
 
 
 
@@ -611,8 +634,8 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
 {------------------------------------------------------------------------------}
 
 instance Show Molecule where
-  show m = writeSmiles m'
-    where m':_ = [m] >#> removeH
+  show m = writeSmiles m
+
 
 instance Read Molecule where
   readsPrec _ s = [(makeMoleculeFromSmiles s, "")]

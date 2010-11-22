@@ -1,9 +1,9 @@
 {-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
     Bond.hs-boot - a file to define import recursion for the Bond.hs module
-    
+
     Copyright (c) 2010 Orion D. Jankowski
-    
+
     This file is part of Ouch, a chemical informatics toolkit
     written entirely in Haskell.
 
@@ -26,5 +26,13 @@
 -- This file is needed to terminate recursive import relationships
 
 module Ouch.Structure.Bond where
-    
-data Bond
+
+data Bond = Sigma    {bondsTo::Int}
+          | Pi       {bondsTo::Int}
+          | PiPi     {bondsTo::Int} --This is a triple bond
+          | Aromatic {bondsTo::Int}
+          | Delta    {bondsTo::Int}
+          | Hbond    {bondsTo::Int}
+          | Ionic    {bondsTo::Int}
+          | Antibond {bondsTo::Int}
+          | Any      {bondsTo::Int}

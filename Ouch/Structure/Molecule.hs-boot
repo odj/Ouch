@@ -32,9 +32,11 @@ module Ouch.Structure.Molecule
        getBondMap,
        getPropertyForKey,
        connectMoleculesAtIndicesWithBond,
+       bondBetweenIndices,
        freeValenceAtIndex,
        fillMoleculeValence,
        makeMoleculeFromAtom,
+       getAtomAtIndex
 
 
      ) where
@@ -56,10 +58,12 @@ removeAtoms :: Molecule -> (Atom -> Bool) -> Molecule
 getName :: Molecule -> Maybe String
 getBondMap :: Molecule -> Map (Int, Int) NewBond
 getPropertyForKey :: Molecule -> String -> Maybe Property
+getAtomAtIndex :: Molecule -> Int -> Maybe Atom
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
 freeValenceAtIndex :: Molecule -> Int -> Integer
 fillMoleculeValence :: Molecule -> Molecule
 makeMoleculeFromAtom:: Atom -> Molecule
+bondBetweenIndices :: Molecule -> Int -> Int -> NewBond
 
 
 

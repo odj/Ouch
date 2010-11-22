@@ -33,9 +33,11 @@ module Ouch.Structure.Marker (
     , MoleculeMarker(..)
     , NewBond(..)
     , Geometry(..)
+    , newBondForBond
     ) where
 
 import {-# SOURCE #-} Ouch.Structure.Atom
+import {-# SOURCE #-} Ouch.Structure.Bond
 
 
 {------------------------------------------------------------------------------}
@@ -98,6 +100,18 @@ data NewBond =
   | AnyBond
   | NoBond
   deriving (Show, Eq, Ord)
+
+
+
+-- | Translates a Bond into the closest approximate NewBond
+newBondForBond :: Bond -> NewBond
+newBondForBond b = case b of
+  Sigma {}    -> Single
+  Pi {}       -> Double
+  PiPi {}     -> Triple
+  Aromatic {} -> AromaticOnly
+  _           -> AnyBond
+
 
 
 {------------------------------------------------------------------------------}

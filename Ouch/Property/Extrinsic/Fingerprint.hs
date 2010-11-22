@@ -41,7 +41,6 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , longestLeastAnchoredPath
   , writeCanonicalPath
   , writeCanonicalPathWithStyle
-  , writeSmiles
   , (.||.)
   , (.|||.)
 
@@ -56,6 +55,7 @@ import Data.Word
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Molecule
+import Ouch.Enumerate.Method
 import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
@@ -203,8 +203,7 @@ longestPaths m = let
   in longest
 
 {------------------------------------------------------------------------------}
--- findLongestLeastAnchoredPath
--- This takes a molecule and a starting position that is connected to the
+-- | Takes a molecule and a starting position that is connected to the
 -- first PGraph and finds the longest chain of connections in the molecule
 -- choosing only atoms that are NOT in the first PGraph.  If more than
 -- one exists, returns the LONGEST LEAST of these.
@@ -217,8 +216,8 @@ longestLeastAnchoredPath exclude@PGraph{vertexList=l} anchor = let
          | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
 
-{-- findLongestLeastPath --}
--- Takes a list of paths of the same length and from the same molecule and
+{------------------------------------------------------------------------------}
+-- | Takes a list of paths of the same length and from the same molecule and
 -- returns the "least" path according to atom ordering rules.  Used in selecting a
 -- path for canonicalization.
 findLongestLeastPath :: [PGraph] -> Int -> PGraph
@@ -240,8 +239,7 @@ findLongestLeastPath gs i = let
   in output
 
 {------------------------------------------------------------------------------}
-{-- longestLeastPath --}
--- Finds the longest least path in a molecule.  Used for canonicalization.
+-- | Finds the longest least path in a molecule.  Used for canonicalization.
 longestLeastPath :: Molecule -> PGraph
 longestLeastPath m = let
   paths = longestPaths m
@@ -249,8 +247,7 @@ longestLeastPath m = let
 
 
 {------------------------------------------------------------------------------}
-{-- ordAtom --}
--- Orders atoms in a path to aid in path selection.
+-- | Orders atoms in a path to aid in path selection.
 ordAtom :: Molecule -> Int -> Int -> Ordering
 ordAtom m i1 i2 = let
   atom1 = fromJust $ getAtomAtIndex m i1
@@ -297,8 +294,7 @@ ordAtom m i1 i2 = let
 
 
 {------------------------------------------------------------------------------}
-{-- findPathsExcluding --}
--- Find all paths starting from a given index, but excluding traversal through
+-- | Find all paths starting from a given index, but excluding traversal through
 -- the indices in the given exclusion set.
 findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> [PGraph]
 findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index  = let
@@ -327,36 +323,36 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
 
 
 {------------------------------------------------------------------------------}
-{-- writeCanonicalPath --}
--- Writes the SMILES string for a given molecule
+-- | Writes the SMILES string for a given molecule
 writeCanonicalPath :: Molecule -> String
 writeCanonicalPath m = writeCanonicalPathWithStyle writeAtomOnly m
 
 
 {------------------------------------------------------------------------------}
-{-- writeSmiles --}
--- Writes the SMILES string for a given molecule
-writeSmiles :: Molecule -> String
-writeSmiles m = writeCanonicalPathWithStyle writeAtom m
-
-
-{------------------------------------------------------------------------------}
-{-- writeCanonicalPathWithStyle --}
--- Writes the SMILES string for a given molecule
-writeCanonicalPathWithStyle :: (PGraph -> Int -> String) -> Molecule -> String
+-- | Writes the SMILES string for a given molecule with specified atom rendering function
+writeCanonicalPathWithStyle :: (PGraph -> Int -> String)  -- ^ The method used to render atoms to text
+                            -> Molecule                   -- ^ The molecule to process
+                            -> String                     -- ^ The output string
 writeCanonicalPathWithStyle style m = let
   backbone = longestLeastPath m
   in writePath style [] backbone 0 False
 
 
 {------------------------------------------------------------------------------}
-{-- writePath --}
--- Writes the SMILES string for a given path
-writePath :: (PGraph -> Int -> String) -> [PGraph] -> PGraph -> Int -> Bool -> String
+-- | Writes the SMILES string for a given path with a provided atom rendering function
+writePath :: (PGraph -> Int -> String)    -- ^ The method used to render atoms to text
+          -> [PGraph]                     -- ^ The list of subgraphs we've already traversed
+          -> PGraph                       -- ^ The subgraph we are currently traversing
+          -> Int                          -- ^ The position in our current subgraph
+          -> Bool                         -- ^ Are we part of a SMILES substructure
+          -> String                       -- ^ The string being rendered
 writePath style gx g i subStructure = let
   mol = molecule g
   s = style g i
   endOfPath = i == (fromInteger $ pathLength g)
+  nextBond = (vertexList g)!!(i+1)
+  nextBondString | endOfPath = ""
+                 | otherwise = "="
   output | endOfPath && subStructure = ")"
          | endOfPath = ""
          | otherwise =  s ++ writeSubpath style gx g i
@@ -364,14 +360,11 @@ writePath style gx g i subStructure = let
   in output
 
 {------------------------------------------------------------------------------}
-{-- writeSubpath --}
--- Writes the SMILES strings for all subpaths (if any exist) at position i in a
+-- | Writes the SMILES strings for all subpaths (if any exist) at position i in a
 -- given path g, excluding travesal through any atoms in the paths gx
 writeSubpath :: (PGraph -> Int -> String) -> [PGraph] -> PGraph -> Int -> String
-writeSubpath outputStyle gx g i = let
-  mol = molecule g
-  vertices = vertexList g
-  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex mol (vertices!!i)
+writeSubpath outputStyle gx g@PGraph {molecule=m, vertexList=l} i = let
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m (l!!i)
   pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a) Set.empty (g:gx)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
@@ -385,32 +378,14 @@ writeSubpath outputStyle gx g i = let
   in output
 
 {------------------------------------------------------------------------------}
-{-- writeStep --}
--- Writes atom and bond information from position i in a path
+-- | Writes atom information from position i in a path
 writeAtomOnly :: PGraph -> Int -> String
 writeAtomOnly g i = let
   mol = molecule g
   atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
   in atomicSymbolForAtom atom
 
-  {------------------------------------------------------------------------------}
-{-- writeStep --}
--- Writes atom and bond information from position i in a path
-writeAtom :: PGraph -> Int -> String
-writeAtom g i = let
-  mol = molecule g
-  atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
-  hasExplicitH = Set.member (ExplicitHydrogen 0) (atomMarkerSet atom)
-  hasCharge = Set.member (Charge 0) (atomMarkerSet atom)
-  isAnyCharge charge = case charge of Charge {} -> True; _ -> False
-  h | hasExplicitH = "H" ++ (show $ numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet atom))
-    | otherwise = ""
-  c | hasCharge = show $ charge $ Set.findMax $ Set.filter isAnyCharge (atomMarkerSet atom)
-    | otherwise = ""
-  symbol = atomicSymbolForAtom atom
-  output | hasExplicitH || hasCharge = "[" ++ symbol  ++ h ++ c ++ "]"
-         | otherwise = symbol
-  in output
+
 
 
 

@@ -39,7 +39,8 @@ module Ouch.Enumerate.Method (
   , fingerprintFilterBuilder
   , addH
   , removeH
-  , strip
+  , stripMol
+  , removeE
   , elementSelector
   ) where
 
@@ -229,10 +230,16 @@ removeLP = Just $ FilterMethod
   , molFilter=List.map (\m -> removeAtoms m isLonePair )
   }
 
-strip = Just $ FilterMethod
+removeE = Just $ FilterMethod
   { firstApply=Nothing
   , lastApply=Nothing
-  , molFilter=(\ms -> ms >#> removeH >#> removeLP)
+  , molFilter=List.map (\m -> removeAtoms m isElectron )
+  }
+
+stripMol = Just $ FilterMethod
+  { firstApply=Nothing
+  , lastApply=Nothing
+  , molFilter=(\ms -> ms >#> removeH >#> removeLP >#> removeE)
   }
 
 makeUnique = Just $ FilterMethod
