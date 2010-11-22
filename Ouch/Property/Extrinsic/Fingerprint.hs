@@ -346,17 +346,16 @@ writePath :: (PGraph -> Int -> String)    -- ^ The method used to render atoms t
           -> Int                          -- ^ The position in our current subgraph
           -> Bool                         -- ^ Are we part of a SMILES substructure
           -> String                       -- ^ The string being rendered
-writePath style gx g i subStructure = let
-  mol = molecule g
+writePath style gx g@PGraph {molecule=m, vertexList=l} i subStructure = let
   s = style g i
   endOfPath = i == (fromInteger $ pathLength g)
-  nextBond = (vertexList g)!!(i+1)
-  nextBondString | endOfPath = ""
-                 | otherwise = "="
+  hasNext = i + 1 < (fromInteger $ pathLength g)
+  nb | hasNext = writeBond (bondBetweenIndices m  (l!!i) $ l!!(i+1) )
+     | otherwise = ""
   output | endOfPath && subStructure = ")"
          | endOfPath = ""
          | otherwise =  s ++ writeSubpath style gx g i
-                          ++ writePath style gx g (i+1) subStructure
+                          ++ nb ++ writePath style gx g (i+1) subStructure
   in output
 
 {------------------------------------------------------------------------------}
@@ -386,6 +385,14 @@ writeAtomOnly g i = let
   in atomicSymbolForAtom atom
 
 
+{------------------------------------------------------------------------------}
+-- | Basic rendering of bond information for SMILES
+writeBond :: NewBond -> String
+writeBond nb = case nb of
+  Single -> ""
+  Double -> "="
+  Triple -> "#"
+  NoBond -> "."
 
 
 
