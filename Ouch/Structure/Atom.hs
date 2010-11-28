@@ -52,6 +52,7 @@ module Ouch.Structure.Atom (
     , getMatchingClosureBondType
     , getMarker
     , isElementType
+
     ) where
 
 import Data.Maybe as Maybe
@@ -238,6 +239,7 @@ markAtom :: Atom -> AtomMarker -> Atom
 markAtom a am = newAtom
    where newSet = Set.insert am (atomMarkerSet a)
          newAtom = a {atomMarkerSet=newSet}
+
 
 
 -- isHeavyAtom

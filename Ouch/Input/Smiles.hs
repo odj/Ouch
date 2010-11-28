@@ -26,6 +26,7 @@
 
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
+{-# LANGUAGE NoMonomorphismRestriction #-} --Need this for Parsec to work
 
 module Ouch.Input.Smiles (
      nextChoppedSmile
@@ -39,7 +40,7 @@ module Ouch.Input.Smiles (
    , chop
    ) where
 
-import Text.ParserCombinators.Parsec
+
 import Ouch.Structure.Atom
 import Ouch.Structure.Molecule
 import Ouch.Structure.Bond
@@ -51,19 +52,94 @@ import Data.Char
 import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
-import Control.Applicative
+import Control.Applicative hiding ((<|>), optional, many)
+
+{------------------------------------------------------------------------------}
+{-------------------------------  Parsec  -------------------------------------}
+{------------------------------------------------------------------------------}
+
+import Text.Parsec
+import Text.ParserCombinators.Parsec (GenParser)
+import Text.Parsec.Language (haskellDef)
+import qualified Text.Parsec.Token as P
 
 
--- Some stubs for parsec
-smi :: GenParser Char st Molecule
-smi  = undefined
+-- Define what we can from an established lexer (any one would do)
+lexer = P.makeTokenParser haskellDef
+natural = P.natural lexer
+bracket = P.brackets lexer
+parens = between (string "(") (string ")")
 
+pSmiles = --(emptyMolecule, Single) <$ char ')' <|>
+          (emptyMolecule, Single) <$ eof <|>
+            do bond <- pBond
+               atom  <- pAtom
+               subsmiles <- many (parens pSmiles)
+               atoms <- pSmiles
+               let branched = List.foldr addSub atom subsmiles
+               return $ ((addSub atoms branched), bond)
 
--- The parsec SMILES parser
-parsecSmiles :: String -> Molecule
-parsecSmiles = undefined
+addSub (smi, bnd) mol = connectMoleculesAtIndicesWithBond mol 0 smi 0 bnd
 
+pAtom = do atom    <- (try pSubsetAtom <|> try pBracket)
+           closure <- optionMaybe (try pClosure)  -- Needs to be  a try block so not confused with next bond
+           return (atom >@> closure)
 
+pBracket = bracket $ do isotope    <- pIsotope
+                        atomSymbol <- pAtomSymbol
+                        explicitH  <- optionMaybe pHydrogen
+                        atomCharge <- optionMaybe pCharge
+                        atomClass  <- optionMaybe pClass
+                        return $ (fromSymbol isotope atomSymbol)
+                                 >@> explicitH >@> atomCharge >@> atomClass
+
+pSubsetAtom = do atomSymbol <- (try pOrganicSubsetSymbols)
+                 return $ fromSymbol 0 atomSymbol
+
+lowerFirst s = (toLower $ head s):(tail s)
+upperFirst s = (toUpper $ head s):(tail s)
+aromatic s | (isUpper $ head s) = Just AromaticAtom | otherwise = Nothing
+
+fromSymbol :: Integer -> String -> Molecule
+fromSymbol i s = makeMoleculeFromAtom $ Element n (i - n) Set.empty Set.empty
+                 where n = case Map.lookup (upperFirst s) atomicNumberFromSymbol of
+                              Just atomicN -> atomicN
+                              Nothing -> 0
+
+organicSubsetList = ["Br", "Cl", "C", "N", "O", "H", "P", "S", "F", "B"]
+aromaticSubset = ["b", "c", "n", "o", "s", "p"]
+
+pOrganicSubsetSymbols = choice $ (List.map (try. string) organicSubsetList)
+                              ++ (List.map (try. string ) aromaticSubset)
+
+pAtomSymbol = choice $ (List.map (try . string) molecularFormulaElements)
+                    ++ (List.map (try . string . lowerFirst) molecularFormulaElements)
+
+pClass = char ':' >> (Class <$> natural)
+
+pClosure = do bond <- pBond
+              optional (char '%')
+              closure <- natural
+              return (Closure (fromIntegral closure) bond)
+
+pCharge = pPlus <|> pMinus
+
+pPlus  = (try $ Charge   1  <$ char '+') <|>
+         (char '+' >> Charge <$> natural)
+
+pMinus = (try $ Charge (-1) <$ char '-') <|>
+         (char '-' >> Charge <$> natural)
+
+pBond = option Single
+        (NoBond <$ char '.' <|>
+        Single <$ char '-' <|>
+        Double <$ char '=' <|>
+        Triple <$ char '#')
+
+pHydrogen = (try $ char 'H' >> ExplicitHydrogen <$> natural) <|>
+            (try $ ExplicitHydrogen 1 <$ char 'H')
+
+pIsotope = option 0 natural
 
 
 

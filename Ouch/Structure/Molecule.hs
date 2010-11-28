@@ -70,6 +70,7 @@ module Ouch.Structure.Molecule
      , removeAtoms
      , updateBondSet
      , emptyMolecule
+     , (>@>)
      ) where
 
 
@@ -477,12 +478,14 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
 connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = m1 >>> mOut
   where mOut = connectMolecules m1 i1 m2 i2 b
-        connectMolecules m1 i1 m2 i2 b | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
+        connectMolecules m1 i1 m2 i2 b | m2isEmpty = m1
+                                       | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
                                        | otherwise = output
         a1 = getAtomAtIndex m1 i1
         a2 = getAtomAtIndex m2 i2
         errorTest = (isJust a1 && isJust a1) /= True
         m1Length = Map.size $ atomMap m1
+        m2isEmpty = (Map.size $ atomMap m2) == 0
         output = addBond (addMolecule m1 m2) i1 (i2 + m1Length)  b
 
 
@@ -624,7 +627,9 @@ addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
     where atom = atomAtIndex m i
           warning = Warning $ "Unable to add marker to atom at position " ++ show i
 
-
+(>@>) :: Molecule -> Maybe AtomMarker -> Molecule
+(>@>) a m = case m of Nothing -> a
+                      Just m' -> addMarkerToAtomAtIndex a 0 m'
 
 
 
