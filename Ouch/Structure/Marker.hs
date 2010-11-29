@@ -73,6 +73,8 @@ data MoleculeMarker =
 data Chirality =
     Levo
   | Dextro
+  | Smiles1
+  | Smiles2
   | UnknownChirality
   deriving (Show, Eq, Ord)
 

@@ -48,6 +48,7 @@ module Ouch.Structure.Molecule
      , getBondMap
      , getName
      , getPropertyForKey
+     , getMoleculeError
      , addMarkerToAtomAtIndex
      , addMolecule
      , makeMoleculeFromAtom
@@ -593,7 +594,7 @@ giveMoleculeWarning m warning = markMolecule m $ Warning warning
  -- Adds an error marker containing a string to the molecule.
 {------------------------------------------------------------------------------}
 getMoleculeError :: Molecule -> Maybe String
-getMoleculeError m  = let err =  Set.filter (==(MError "")) $  molMarkerSet m
+getMoleculeError m  = let err =  Set.filter (\a -> EQ == compare a (MError "")) $  molMarkerSet m
                       in  if Set.size err == 0 then Nothing
                           else Just $ molMarker $ Set.findMax err
 

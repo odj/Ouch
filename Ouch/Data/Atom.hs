@@ -34,6 +34,7 @@ module Ouch.Data.Atom (
     , atomicNames
     , atomicNumberFromSymbol
     , molecularFormulaElements
+    , smilesSymbols
     ) where
 
 import qualified Data.Map as M
@@ -655,4 +656,10 @@ molecularFormulaElements = [
       , "Zr"
       , "Zr"
       ]
+
+smilesSymbols = filter ((==2) . length) molecularFormulaElements
+             ++ filter ((==1) . length) molecularFormulaElements
+
+
+
 

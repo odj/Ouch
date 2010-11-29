@@ -141,16 +141,16 @@ right p = case p of Right r -> r
 
 -- Test smiles to formula
 testMolForm :: String -> Either String String
-testMolForm s = Right $ show $ (right $ value molecularFormula) $ makeMoleculeFromSmiles s
+testMolForm s = Right $ show $ (right $ value molecularFormula) $ readSmi s
 
 testMolWt :: String -> Either String String
-testMolWt s = Right $ show $ (right $ value molecularWeight) $ makeMoleculeFromSmiles s
+testMolWt s = Right $ show $ (right $ value molecularWeight) $ readSmi s
 
 testAtomCount :: String -> Either String String
-testAtomCount s = Right $ show $ (right $ value atomCount) $ makeMoleculeFromSmiles s
+testAtomCount s = Right $ show $ (right $ value atomCount) $ readSmi s
 
 testHeavyCount :: String -> Either String String
-testHeavyCount s = Right $ show $ (right $ value heavyAtomCount) $ makeMoleculeFromSmiles s
+testHeavyCount s = Right $ show $ (right $ value heavyAtomCount) $ readSmi s
 
 testEnum :: String -> Either String String
 testEnum s = Right $ show $ length $ [mol] >#> method

@@ -38,6 +38,7 @@ module Ouch.Input.Smiles (
    , parseClosureAtomMarkers
    , makeAtomMoleculeFromBracketChop
    , chop
+   , readSmi
    ) where
 
 
@@ -67,14 +68,18 @@ import qualified Text.Parsec.Token as P
 -- Define what we can from an established lexer (any one would do)
 lexer = P.makeTokenParser haskellDef
 natural = P.natural lexer
-bracket = P.brackets lexer
-parens = between (string "(") (string ")")
+bracket = between (char '[') (char ']')
 
-pSmiles = --(emptyMolecule, Single) <$ char ')' <|>
+readSmi s = case (parse pSmiles "" s) of
+              Right (m, b) -> fillMoleculeValence $ cyclizeMolecule m
+              Left      er -> giveMoleculeError emptyMolecule (show er)
+
+pSmiles = (emptyMolecule, Single) <$ char ')' <|>
           (emptyMolecule, Single) <$ eof <|>
             do bond <- pBond
+               geometry <- optionMaybe pGeometry
                atom  <- pAtom
-               subsmiles <- many (parens pSmiles)
+               subsmiles <- many (char '(' *> pSmiles)
                atoms <- pSmiles
                let branched = List.foldr addSub atom subsmiles
                return $ ((addSub atoms branched), bond)
@@ -82,23 +87,25 @@ pSmiles = --(emptyMolecule, Single) <$ char ')' <|>
 addSub (smi, bnd) mol = connectMoleculesAtIndicesWithBond mol 0 smi 0 bnd
 
 pAtom = do atom    <- (try pSubsetAtom <|> try pBracket)
-           closure <- optionMaybe (try pClosure)  -- Needs to be  a try block so not confused with next bond
-           return (atom >@> closure)
+           closure <- many $ try pClosure  -- Needs to be  a try block so not confused with next bond
+           return $ List.foldr (\mk a -> addMarkerToAtomAtIndex a 0 mk) atom closure
 
 pBracket = bracket $ do isotope    <- pIsotope
                         atomSymbol <- pAtomSymbol
+                        chiral     <- optionMaybe pStereo
                         explicitH  <- optionMaybe pHydrogen
                         atomCharge <- optionMaybe pCharge
                         atomClass  <- optionMaybe pClass
                         return $ (fromSymbol isotope atomSymbol)
-                                 >@> explicitH >@> atomCharge >@> atomClass
+                                 >@> chiral >@> explicitH >@> atomCharge
+                                 >@> atomClass >@> aromatic atomSymbol
 
 pSubsetAtom = do atomSymbol <- (try pOrganicSubsetSymbols)
-                 return $ fromSymbol 0 atomSymbol
+                 return $ fromSymbol 0 atomSymbol >@> (aromatic atomSymbol)
 
 lowerFirst s = (toLower $ head s):(tail s)
 upperFirst s = (toUpper $ head s):(tail s)
-aromatic s | (isUpper $ head s) = Just AromaticAtom | otherwise = Nothing
+aromatic s | (isLower $ head s) = Just AromaticAtom | otherwise = Nothing
 
 fromSymbol :: Integer -> String -> Molecule
 fromSymbol i s = makeMoleculeFromAtom $ Element n (i - n) Set.empty Set.empty
@@ -112,15 +119,17 @@ aromaticSubset = ["b", "c", "n", "o", "s", "p"]
 pOrganicSubsetSymbols = choice $ (List.map (try. string) organicSubsetList)
                               ++ (List.map (try. string ) aromaticSubset)
 
-pAtomSymbol = choice $ (List.map (try . string) molecularFormulaElements)
-                    ++ (List.map (try . string . lowerFirst) molecularFormulaElements)
+pAtomSymbol = choice $ (List.map (try . string) smilesSymbols)
+                    ++ (List.map (try . string . lowerFirst) smilesSymbols)
 
 pClass = char ':' >> (Class <$> natural)
 
 pClosure = do bond <- pBond
-              optional (char '%')
-              closure <- natural
-              return (Closure (fromIntegral closure) bond)
+              closure <- ((\s -> (read [s])::Integer) <$> digit) <|>
+                         (char '%' >> natural)
+              return $ Closure (fromIntegral closure) bond
+
+
 
 pCharge = pPlus <|> pMinus
 
@@ -136,8 +145,16 @@ pBond = option Single
         Double <$ char '=' <|>
         Triple <$ char '#')
 
-pHydrogen = (try $ char 'H' >> ExplicitHydrogen <$> natural) <|>
+pStereo = try ((Chiral Smiles2) <$ string "@@") <|>
+               (Chiral Smiles1) <$ string "@"
+
+pGeometry = char '\\' <|>
+            char '/'
+
+pHydrogen = option (ExplicitHydrogen 0) $
+            (try $ char 'H' >> ExplicitHydrogen <$> natural) <|>
             (try $ ExplicitHydrogen 1 <$ char 'H')
+
 
 pIsotope = option 0 natural
 
