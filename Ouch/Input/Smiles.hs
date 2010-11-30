@@ -65,14 +65,14 @@ import Text.Parsec.Language (haskellDef)
 import qualified Text.Parsec.Token as P
 
 
+readSmi s = case (parse pSmiles "" s) of
+              Right (m, b) -> fillMoleculeValence $ cyclizeMolecule m
+              Left      er -> giveMoleculeError emptyMolecule (show er)
+
 -- Define what we can from an established lexer (any one would do)
 lexer = P.makeTokenParser haskellDef
 natural = P.natural lexer
 bracket = between (char '[') (char ']')
-
-readSmi s = case (parse pSmiles "" s) of
-              Right (m, b) -> fillMoleculeValence $ cyclizeMolecule m
-              Left      er -> giveMoleculeError emptyMolecule (show er)
 
 pSmiles = (emptyMolecule, Single) <$ char ')' <|>
           (emptyMolecule, Single) <$ eof <|>
@@ -82,13 +82,14 @@ pSmiles = (emptyMolecule, Single) <$ char ')' <|>
                subsmiles <- many (char '(' *> pSmiles)
                atoms <- pSmiles
                let branched = List.foldr addSub atom subsmiles
-               return $ ((addSub atoms branched), bond)
+               return (addSub atoms branched, bond)
 
 addSub (smi, bnd) mol = connectMoleculesAtIndicesWithBond mol 0 smi 0 bnd
 
 pAtom = do atom    <- (try pSubsetAtom <|> try pBracket)
-           closure <- many $ try pClosure  -- Needs to be  a try block so not confused with next bond
-           return $ List.foldr (\mk a -> addMarkerToAtomAtIndex a 0 mk) atom closure
+           closure <- many $ try pClosure
+           return $ List.foldr
+                    (\mk a -> addMarkerToAtomAtIndex a 0 mk) atom closure
 
 pBracket = bracket $ do isotope    <- pIsotope
                         atomSymbol <- pAtomSymbol
@@ -113,7 +114,7 @@ fromSymbol i s = makeMoleculeFromAtom $ Element n (i - n) Set.empty Set.empty
                               Just atomicN -> atomicN
                               Nothing -> 0
 
-organicSubsetList = ["Br", "Cl", "C", "N", "O", "H", "P", "S", "F", "B"]
+organicSubsetList = ["Br", "Cl", "C", "N", "O", "H", "P", "S", "F", "B", "I"]
 aromaticSubset = ["b", "c", "n", "o", "s", "p"]
 
 pOrganicSubsetSymbols = choice $ (List.map (try. string) organicSubsetList)
@@ -125,36 +126,35 @@ pAtomSymbol = choice $ (List.map (try . string) smilesSymbols)
 pClass = char ':' >> (Class <$> natural)
 
 pClosure = do bond <- pBond
+              geometry <- optionMaybe pGeometry  -- Not yet implemented
               closure <- ((\s -> (read [s])::Integer) <$> digit) <|>
                          (char '%' >> natural)
               return $ Closure (fromIntegral closure) bond
 
-
-
 pCharge = pPlus <|> pMinus
 
-pPlus  = (try $ Charge   1  <$ char '+') <|>
-         (char '+' >> Charge <$> natural)
+pPlus  = (try $ char '+' >> Charge <$> natural) <|>
+         (try $ Charge 2 <$ string "++")        <|>
+         (Charge 1 <$ char '+')
 
-pMinus = (try $ Charge (-1) <$ char '-') <|>
-         (char '-' >> Charge <$> natural)
+pMinus = (try $ char '-' >> Charge <$> natural) <|>
+         (try $ Charge (-2) <$ string "--")     <|>
+         (Charge (-1) <$ char '-')
 
-pBond = option Single
-        (NoBond <$ char '.' <|>
-        Single <$ char '-' <|>
-        Double <$ char '=' <|>
-        Triple <$ char '#')
+pBond = option Single $
+        NoBond <$ char '.' <|>
+        Single <$ char '-'  <|>
+        Double <$ char '='  <|>
+        Triple <$ char '#'
 
-pStereo = try ((Chiral Smiles2) <$ string "@@") <|>
-               (Chiral Smiles1) <$ string "@"
+pStereo = try $ (Chiral Smiles2) <$ string "@@" <|>
+                (Chiral Smiles1) <$ string "@"
 
-pGeometry = char '\\' <|>
-            char '/'
+pGeometry = char '\\' <|> char '/' -- Not yet implemented
 
 pHydrogen = option (ExplicitHydrogen 0) $
             (try $ char 'H' >> ExplicitHydrogen <$> natural) <|>
             (try $ ExplicitHydrogen 1 <$ char 'H')
-
 
 pIsotope = option 0 natural
 
