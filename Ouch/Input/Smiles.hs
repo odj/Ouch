@@ -147,8 +147,8 @@ pBond = option Single $
         Double <$ char '='  <|>
         Triple <$ char '#'
 
-pStereo = try $ (Chiral Smiles2) <$ string "@@" <|>
-                (Chiral Smiles1) <$ string "@"
+pStereo = (try $ (Chiral Smiles2) <$ string "@@") <|>
+                 (Chiral Smiles1) <$ string "@"
 
 pGeometry = char '\\' <|> char '/' -- Not yet implemented
 
