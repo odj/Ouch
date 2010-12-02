@@ -644,7 +644,7 @@ instance Show Molecule where
 
 
 instance Read Molecule where
-  readsPrec _ s = [(makeMoleculeFromSmiles s, "")]
+  readsPrec _ s = [(readSmi s, "")]
 
 
 debugShow m = if (moleculeHasError m) then ("Molecule has error.") else case m of
