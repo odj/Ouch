@@ -27,6 +27,9 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
+
+-- | Provides a framework for enumerating structures according to recursively
+-- constructed 'Method's
 module Ouch.Enumerate.Method (
     Method(..)
   , (>#>)
@@ -67,28 +70,39 @@ import Data.Binary.Builder as B
 
 
 
-data Method   = NoMethod      {firstApply   ::  Maybe Method
-                             , lastApply    ::  Maybe Method}
-              | AddMethod     {firstApply   ::  Maybe Method
+data Method   = NoMethod     { firstApply   ::  Maybe Method
+                             , lastApply    ::  Maybe Method
+                             }
+
+              | AddMethod    { firstApply   ::  Maybe Method
                              , lastApply    ::  Maybe Method
                              , selector     ::  (Molecule -> Atom -> Bool)
-                             , addList      ::  ([(NewBond, Molecule)])}
-              | InsertMethod  {firstApply   ::  Maybe Method
+                             , addList      ::  ([(NewBond, Molecule)])
+                             }
+
+              | InsertMethod { firstApply   ::  Maybe Method
                              , lastApply    ::  Maybe Method
                              , selector     ::  (Molecule -> Atom -> Bool)
                              , insertRule   ::  (Molecule -> [Int])
-                             , insertList   ::  [(Molecule, [Int])]}
-              | ReplaceMethod {firstApply   ::  Maybe Method
+                             , insertList   ::  [(Molecule, [Int])]
+                             }
+
+              | ReplaceMethod { firstApply   ::  Maybe Method
                              , lastApply    ::  Maybe Method
                              , selector     ::  (Molecule -> Atom -> Bool)
-                             , replaceList  ::  [Molecule]}
-              | ReactMethod   {firstApply   ::  Maybe Method
+                             , replaceList  ::  [Molecule]
+                             }
+
+              | ReactMethod  { firstApply   ::  Maybe Method
                              , lastApply    ::  Maybe Method
                              , selector     ::  (Molecule -> Atom -> Bool)
-                             , reactList    ::  [(Molecule -> [Molecule])]}
-              | FilterMethod  {firstApply   ::  Maybe Method
+                             , reactList    ::  [(Molecule -> [Molecule])]
+                             }
+
+              | FilterMethod { firstApply   ::  Maybe Method
                              , lastApply    ::  Maybe Method
-                             , molFilter    ::  ([Molecule] -> [Molecule])}
+                             , molFilter    ::  ([Molecule] -> [Molecule])
+                             }
 
 
 

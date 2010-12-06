@@ -661,9 +661,10 @@ debugShow m = if (moleculeHasError m) then ("Molecule has error.") else case m o
 
 {------------------------------------------------------------------------------}
 instance Eq Molecule where
-    a == b = (writeCanonicalPath a) == (writeCanonicalPath b)
+    a == b = (show a) == (show b)
 
-
+instance Ord Molecule where
+   compare a b = compare (show a) (show b)
 
 
 

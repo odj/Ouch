@@ -28,9 +28,13 @@
 -------------------------------------------------------------------------------}
 {-# LANGUAGE NoMonomorphismRestriction #-} --Need this for ParserCombinators to work
 
+-- | Handles parsing of a SMILES string into a 'Molecule' data type.
 module Ouch.Input.Smiles (
      readSmi
    , makeScaffoldFromSmiles
+   , natural
+   , pAtomSymbol
+   , fromSymbol
    ) where
 
 
@@ -54,12 +58,15 @@ import qualified Text.Parsec.Token as P
 {------------------------------------------------------------------------------}
 
 
-
+-- | Return the scaffold 'Molecule' only with no implicit hydrogens added
 makeScaffoldFromSmiles :: String -> Molecule
 makeScaffoldFromSmiles s = case (parse pSmiles "" s) of
               Right (m, b) -> cyclizeMolecule m
               Left      er -> giveMoleculeError emptyMolecule (show er)
 
+-- | Returns the complete 'Molecule' for the 'String' with implicit hydrogens
+-- added as needed.  If parsing fails, the 'Molecule' is returned with
+-- an internal error that gives the full text of the 'Parsec' error string
 readSmi :: String -> Molecule
 readSmi s = fillMoleculeValence $ makeScaffoldFromSmiles s
 
