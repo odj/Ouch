@@ -45,6 +45,8 @@ module Ouch.Enumerate.Method (
   , stripMol
   , removeE
   , elementSelector
+  , addMols
+  , makeUnique
   ) where
 
 import Ouch.Structure.Atom
@@ -226,6 +228,14 @@ alkyls i = let
   in List.zip bond uniqueAlks
 
 
+addMols :: [Molecule] -> Maybe Method
+addMols ms = Just $ AddMethod
+  { firstApply=Nothing
+  , lastApply=makeUnique
+  , selector=openValenceSelector
+  , addList=List.map (\m -> (Single, m)) ms
+  }
+
 addH = Just $ FilterMethod
   { firstApply=Nothing
   , lastApply=Nothing
@@ -259,6 +269,6 @@ stripMol = Just $ FilterMethod
 makeUnique = Just $ FilterMethod
   { firstApply=Nothing
   , lastApply=Nothing
-  , molFilter=fingerprintFilterBuilder (\m -> B.toLazyByteString $ molBits_ID 7 m)
+  , molFilter=fingerprintFilterBuilder (\m -> writeCanonicalPath m)
   }
 

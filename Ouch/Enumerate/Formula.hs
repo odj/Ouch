@@ -35,6 +35,7 @@ module Ouch.Enumerate.Formula (
 
   )  where
 
+import Ouch.Enumerate.Method
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Marker
@@ -78,6 +79,23 @@ degreeOfUnsaturation m h = (maxH - h) `div`  2
   where adds m = (fromInteger $ (freeValenceAtIndex m 0) - 2)::Int
         maxH = Map.foldrWithKey (\k n acc -> acc + n*(adds k)) 2 m
 
+decompose :: Formula -> [FormulaMonad]
+decompose f@Formula {elements=elem, unsaturation=u} = let
+  foldFunc k _ b = (FormulaMonad ([k], decrement f k)):b
+  in Map.foldWithKey (foldFunc) [] elem
+
+decrement :: Formula -> Molecule -> Formula
+decrement f@Formula {elements=elem, unsaturation=u} m = let
+  val = Map.lookup m elem
+  in case val of
+    Nothing -> f
+    Just i -> f {elements=dec}
+      where dec | i > 1 = Map.insert  m (i-1) elem
+                | i == 1 = Map.delete m elem
+                | otherwise = Map.delete m elem
+
+isEmpty :: Formula -> Bool
+isEmpty f@Formula {elements=elem, unsaturation=u} = 0 == Map.size elem
 
 instance Read Formula where
   readsPrec _ s =
@@ -92,9 +110,23 @@ instance Read Formula where
 
 
 
-data FormulaMonad = FormulaMonad ([Molecule], Formula)
+newtype FormulaMonad = FormulaMonad { formulaM :: ([Molecule], Formula) }
+                                    deriving (Show)
 
+compose :: FormulaMonad -> ([Molecule] -> Maybe Method) -> [Molecule]
+compose fm@FormulaMonad {formulaM = (mols, f)} makeMethod = let
+  dec = decompose f
+  mapFunc fm'@FormulaMonad {formulaM = (mols', f')}
+    = FormulaMonad ((mols >#> (makeMethod mols')), f')
+  output | (isEmpty f) = mols
+         | otherwise = List.foldr (\a acc -> (compose a makeMethod) ++ acc) [] (List.map mapFunc dec)
+  in output
 
+expand :: Formula -> [Molecule]
+expand f = let
+  fms = decompose f
+  mols = List.map (\fm -> compose fm addMols) fms
+  in (List.concat mols) >#> makeUnique
 
 
 
