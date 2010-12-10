@@ -32,6 +32,9 @@
 -- enumerated sets that conform to particular formula.
 
 module Ouch.Enumerate.Formula (
+    Formula (..)
+  , FormulaMonad (..)
+  , expand
 
   )  where
 
@@ -49,7 +52,9 @@ import Text.Parsec
 import Text.ParserCombinators.Parsec (GenParser)
 import Text.Parsec.Language (haskellDef)
 import qualified Text.Parsec.Token as P
-
+import Control.Parallel
+import Control.DeepSeq
+import Control.Parallel.Strategies
 
 data Formula = Formula { elements     :: Map Molecule Int
                        , unsaturation :: Int
@@ -82,7 +87,7 @@ degreeOfUnsaturation m h = (maxH - h) `div`  2
 decompose :: Formula -> [FormulaMonad]
 decompose f@Formula {elements=elem, unsaturation=u} = let
   foldFunc k _ b = (FormulaMonad ([k], decrement f k)):b
-  in Map.foldWithKey (foldFunc) [] elem
+  in Map.foldrWithKey (foldFunc) [] elem
 
 decrement :: Formula -> Molecule -> Formula
 decrement f@Formula {elements=elem, unsaturation=u} m = let
@@ -95,6 +100,7 @@ decrement f@Formula {elements=elem, unsaturation=u} m = let
                 | otherwise = Map.delete m elem
 
 isEmpty :: Formula -> Bool
+{-# INLINE isEmpty #-}
 isEmpty f@Formula {elements=elem, unsaturation=u} = 0 == Map.size elem
 
 instance Read Formula where
@@ -125,13 +131,13 @@ compose fm@FormulaMonad {formulaM = (mols, f)} makeMethod = let
 expand :: Formula -> [Molecule]
 expand f = let
   fms = decompose f
-  mols = List.map (\fm -> compose fm addMols) fms
+  mols = parMap' func fms
+  func fm = compose fm addMols
   in (List.concat mols) >#> makeUnique
 
-
-
-
-
+parMap' f (x:xs) = let r = f x
+                   in r `par` r : parMap' f xs
+parMap' _ _ = []
 
 
 
