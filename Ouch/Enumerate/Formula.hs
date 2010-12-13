@@ -131,7 +131,7 @@ compose fm@FormulaMonad {formulaM = (mols, f)} makeMethod = let
 expand :: Formula -> [Molecule]
 expand f = let
   fms = decompose f
-  mols = parMap' func fms
+  mols = List.map func fms
   func fm = compose fm addMols
   in (List.concat mols) >#> makeUnique
 
