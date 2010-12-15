@@ -25,7 +25,7 @@ ppList (x:xs) = (show x) ++ "\n"
 
 inputs n = let
   range = [1..(n-1)]
-  elements = ["Si", "N", "O"]
+  elements = ["Si", "N", "O", "Cl"]
   combinedFormulas = [ "C" ++ (show (n-num))
                            ++ elem
                            ++ (show num) | num <- range, elem <- elements]

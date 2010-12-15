@@ -187,7 +187,7 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
 {-- allPaths --}
 -- Returns all paths up to a given depth.  Always an even numbered list.
 allPaths :: Int -> Molecule -> [PGraph]
-allPaths depth m = List.foldr (\i p -> p ++ findPaths depth (PGraph m []) i) [] indexList
+allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m []) i) [] indexList
   where indexList = Map.keys $ atomMap m
 
 {------------------------------------------------------------------------------}
@@ -235,7 +235,7 @@ findLongestLeastPath gs i = let
   gs' = List.filter ((==leastRank) . foldRanks) gs
   output | List.length gs == 1     = gs!!0
          | pathLength (gs!!0) == (fromIntegral i) = gs!!0
-         | otherwise = findLongestLeastPath gs' (i+1)
+         | otherwise = gs' `seq` findLongestLeastPath gs' (i+1)
   in output
 
 {------------------------------------------------------------------------------}
@@ -243,7 +243,7 @@ findLongestLeastPath gs i = let
 longestLeastPath :: Molecule -> PGraph
 longestLeastPath m = let
   paths = longestPaths m
-  in findLongestLeastPath paths 0
+  in paths `seq` findLongestLeastPath paths 0
 
 
 {------------------------------------------------------------------------------}
@@ -302,7 +302,7 @@ findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index  =
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m index
   pathIndexSet = Set.union exclude $ Set.fromList l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
-  accPath i p = p ++ (findPathsExcluding exclude depth path' i)
+  accPath i p = p `seq` p ++ (findPathsExcluding exclude depth path' i)
   paths | Set.size validIndexSet == 0      = [path']
         | List.length l > depth            = [path']
         | otherwise = Set.fold accPath [] validIndexSet
@@ -315,7 +315,7 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index  = let
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $ getAtomAtIndex m index
   pathIndexSet = Set.fromList l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
-  accPath i p = p ++ (findPaths depth path' i)
+  accPath i p = p `seq` p ++ (findPaths depth path' i)
   paths | Set.size validIndexSet == 0      = [path']
         | List.length l > depth            = [path']
         | otherwise = Set.fold accPath [] validIndexSet

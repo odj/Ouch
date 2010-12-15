@@ -47,7 +47,7 @@ module Ouch.Property.Extrinsic.Fingerprint (
 
 ) where
 
-import Data.Binary.Get as G
+
 import Data.ByteString.Lazy as L
 import Data.Binary.Builder as B
 import Data.Bits

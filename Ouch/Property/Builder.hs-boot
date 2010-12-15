@@ -24,9 +24,21 @@
 -------------------------------------------------------------------------------
 ------------------------------------------------------------------------------}
 
-module Ouch.Property.Builder where
+
+module Ouch.Property.Builder (
+   Property(..)
+ , Value(..)
+   ) where
+
+
+
+import Data.Either
+
+
+
+{------------------------------------------------------------------------------}
+
 data Property
-propertyKey :: Property -> String
 
 instance Show Property
 instance Eq Property

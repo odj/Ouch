@@ -79,7 +79,8 @@ import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 
-import Ouch.Property.Builder
+
+import {-# SOURCE #-}  Ouch.Property.Builder
 import {-# SOURCE #-}  Ouch.Property.Extrinsic.Fingerprint
 import {-# SOURCE #-} Ouch.Input.Smiles
 import Ouch.Output.Smiles
@@ -568,7 +569,7 @@ makeMoleculeFromAtom a = Molecule {atomMap=(Map.singleton 0 (markAtom a $ Label 
 -- If cannot fill because of an error, adds error to molecule and gives it back.
 {------------------------------------------------------------------------------}
 fillMoleculeValence :: Molecule -> Molecule
-fillMoleculeValence m = Map.foldWithKey foldMol m $ atomMap m
+fillMoleculeValence m = Map.foldrWithKey foldMol m $ atomMap m
   where foldMol k atomMap' molecule = fillValenceAtIndex molecule k
 
 
@@ -661,8 +662,9 @@ debugShow m = if (moleculeHasError m) then ("Molecule has error.") else case m o
 
 {------------------------------------------------------------------------------}
 instance Eq Molecule where
-    a == b = (show a) == (show b)
-
+    (==) a b = if (Map.size $ atomMap a) /= (Map.size $ atomMap b) then False
+               else if (show a) /= (show b) then False
+               else True
 instance Ord Molecule where
    compare a b = compare (show a) (show b)
 
