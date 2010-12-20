@@ -37,6 +37,7 @@ module Ouch.Test.Methods
      , testTest
      , testFail
      , testMolForm
+     , testForm
      ) where
 
 {-# LANGUAGE RecordWildCards, CPP #-}
@@ -49,6 +50,7 @@ import Ouch.Property.Builder
 import Ouch.Enumerate.Method
 import Ouch.Input.Smiles
 import Ouch.Data.Atom
+import Ouch.Enumerate.Formula
 import Data.List as List
 import Data.Either
 import Data.Maybe
@@ -87,6 +89,7 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
                | l1 == "testAtomCount" = testAtomCount
                | l1 == "testHeavyCount" = testHeavyCount
                | l1 == "testEnum" = testEnum
+               | l1 == "testForm" = testForm
                | otherwise = testTest
 
 
@@ -158,13 +161,11 @@ testEnum s = Right $ show $ length $ [mol] >#> method
                                            >#> method
                                            >#> method
                                            >#> method
-
-
-
   where mol = makeScaffoldFromSmiles s
         scaffoldList = map makeScaffoldFromSmiles ["Cl", "OC(=O)C", "C(=O)C", "C1CCCCC1"]
         bondList = replicate 6 Single
         list = zip bondList scaffoldList
         method = Just $ AddMethod Nothing Nothing (\_ _ -> True) list
 
-
+testForm :: String -> Either String String
+testForm s = Right $ show $ List.length $ expand (read s :: Formula)
