@@ -129,11 +129,9 @@ compose fm@FormulaMonad {formulaM = (mols, f)} makeMethod = let
   in output
 
 expand :: Formula -> [Molecule]
-expand f = let
-  fms = decompose f
-  mols = List.map func fms
-  func fm = compose fm addMols
-  in (List.concat mols) >#> makeUnique
+expand f = (List.concat mols) >#> makeUnique where
+  mols = List.map (\a -> compose a addMols) $ decompose f
+
 
 parMap' f (x:xs) = let r = f x
                    in r `par` r : parMap' f xs
