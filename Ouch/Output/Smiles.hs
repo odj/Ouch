@@ -42,13 +42,29 @@ import Ouch.Data.Bond
 import Ouch.Structure.Marker
 import Data.Maybe
 import Data.Set as Set
-import Data.List as List
 import Data.Map as Map
+import Data.List as List
+
+
+-- | Stores state information used while writing SMILES
+data SmiWriterState = SmiWriterState
+  { closureMap :: Map Int Int
+  , smilogger  :: [String]
+  }
+
+-- | Look at the SMILES writer state and generate the required closure label
+getClosureLabel :: SmiWriterState         -- ^ The state
+                -> Int                    -- ^ The atom number being written
+                -> Int                    -- ^ The atom number to connect to
+                -> (Int, SmiWriterState)  -- ^ The closure label to use and new state
+getClosureLabel state atomNum connectNum = let
+
+  in undefined
+
 
 
 {------------------------------------------------------------------------------}
-{-- writeStep --}
--- Writes atom and bond information from position in a path
+-- | Writes atom and bond information from position in a path
 writeAtom :: PGraph -> Int -> String
 writeAtom g i = let
   mol = molecule g
@@ -75,14 +91,11 @@ writeAtom g i = let
   in output
 
 
-
-
-
-
+{------------------------------------------------------------------------------}
+-- | Writes the SMILES string for a given path with a provided atom rendering function
 
 {------------------------------------------------------------------------------}
-{-- writeSmiles --}
--- Writes the SMILES string for a given molecule
+-- | Writes the SMILES string for a given molecule
 writeSmiles :: Molecule -> String
 writeSmiles m = writeCanonicalPathWithStyle writeAtom m'
   where m':_ = [m] >#> stripMol

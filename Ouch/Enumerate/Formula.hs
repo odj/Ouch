@@ -115,7 +115,8 @@ instance Read Formula where
 --  show = undefined
 
 
-
+-- | A datatype that correlates a list of molecules with the atoms left to
+-- be added as part of enumeration
 newtype FormulaMonad = FormulaMonad { formulaM :: ([Molecule], Formula) }
                                     deriving (Show)
 
