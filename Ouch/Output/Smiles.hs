@@ -28,7 +28,8 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Output.Smiles (
-     writeSmiles
+     SmiWriterState (..)
+   , writeSmiles
    ) where
 
 import {-# SOURCE #-} Ouch.Property.Extrinsic.Fingerprint
@@ -48,19 +49,39 @@ import Data.List as List
 
 -- | Stores state information used while writing SMILES
 data SmiWriterState = SmiWriterState
-  { closureMap :: Map Int Int
-  , smilogger  :: [String]
-  }
+  { closureMap :: Map Int Int             -- ^ Information on how to match closures
+                                          --   Key is closure label
+                                          --   Value is atom number that was assigned the closure
+  , smilogger  :: [String]                -- ^ Free-form logging string
+  } deriving (Show)
 
 -- | Look at the SMILES writer state and generate the required closure label
 getClosureLabel :: SmiWriterState         -- ^ The state
                 -> Int                    -- ^ The atom number being written
                 -> Int                    -- ^ The atom number to connect to
                 -> (Int, SmiWriterState)  -- ^ The closure label to use and new state
-getClosureLabel state atomNum connectNum = let
+getClosureLabel state@SmiWriterState {closureMap=m} atomNum connectNum = let
+  connectionMap = Map.filter (==connectNum) m
+  isPair = 1 == Map.size connectionMap
 
-  in undefined
+  -- If there is already a pair, find it and remove its closure
+  withClosure = fst $ Map.findMax connectionMap
+  newMap = Map.delete withClosure m
 
+  -- If not, find a new closure
+  withClosure' = nextNum m
+  newMap' = Map.insert withClosure' atomNum m
+  output | isPair = (withClosure, state {closureMap=newMap})
+         | otherwise = (withClosure', state {closureMap=newMap'})
+  in output
+
+-- | Generate the next closure number
+nextNum :: (Map Int Int) -> Int
+nextNum m | 0 == Map.size m = 1
+          | otherwise = Set.findMin $ Set.difference ks ks'
+  where ks = Set.fromList $ Map.keys m
+        ks' = Set.fromList [1..maxKey]
+        maxKey = (+1) $ Set.findMax ks
 
 
 {------------------------------------------------------------------------------}

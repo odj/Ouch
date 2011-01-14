@@ -63,6 +63,11 @@ inPath pg i = List.elem i $ vertexList pg
 pathLength :: PGraph -> Integer
 pathLength p = fromIntegral $ List.length $ vertexList p
 
+instance Ord PGraph where
+  compare a b = compare (vertexList a) (vertexList b)
+
+instance Eq PGraph where
+  (==) a b = (==) (vertexList a) (vertexList b)
 instance Show PGraph where
   show p = (show $ vertexList p) ++ "\n"
 
