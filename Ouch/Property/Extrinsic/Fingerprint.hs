@@ -65,7 +65,7 @@ import Data.Maybe
 import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 data Fingerprint = SimpleFingerPrint
 
@@ -91,7 +91,7 @@ atomBits_RECURSIVE :: Int
 atomBits_RECURSIVE depth  m a =  let
   i = fromJust $ getIndexForAtom a
   f_pb = pathBits atomBits_OUCH bondBits_OUCH
-  paths = findPaths depth (PGraph m []) i
+  paths = findPaths depth (PGraph m [] Nothing) i
   in List.foldr (\p b -> f_pb p .||. b) B.empty paths
 
 
@@ -220,9 +220,36 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
 allPaths :: Int
          -> Molecule
          -> [PGraph]
-allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m []) i)
+allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m [] Nothing) i)
                               [] indexList
   where indexList = Map.keys $ atomMap m
+
+-- | Returns all paths up to a depth that start at an external position of the
+-- molecule.
+allTerminalPaths :: Int
+                 -> Molecule
+                 -> [PGraph]
+allTerminalPaths depth m = List.foldr (\i p -> p `seq`
+                                       p ++ findPaths depth
+                                       (PGraph m [] Nothing) i)
+                                       [] (allTerminalVertices m)
+
+
+-- | Returns a list of all terminal atoms in a molecule (those that have the
+-- LEAST number of vertices
+allTerminalVertices :: Molecule
+                    -> [Int]
+allTerminalVertices m = List.foldr (\a acc -> if ((snd a) == minValence)
+                                              then (fst a):acc
+                                              else acc) [] zippedIndex
+  where indexList = Map.keys $ atomMap m
+        valenceList = List.map (\m_i -> Set.size $ atomBondSet
+                                                 $ fromJust
+                                                 $ getAtomAtIndex m m_i)
+                                                 indexList
+        minValence = List.minimum $ valenceList
+        zippedIndex = List.zip indexList valenceList
+
 
 {------------------------------------------------------------------------------}
 {-- longestPaths --}
@@ -232,7 +259,7 @@ longestPaths :: Molecule
              -> [PGraph]
 longestPaths m = let
   depth = Map.size (atomMap m)
-  paths = allPaths depth m
+  paths = allTerminalPaths depth m
   maxLength = List.maximum $ List.map pathLength paths
   longest = List.filter ((==maxLength) . pathLength) paths
   in longest
@@ -245,9 +272,11 @@ longestPaths m = let
 longestLeastAnchoredPath :: PGraph
                          -> Int
                          -> PGraph
-longestLeastAnchoredPath exclude@PGraph{vertexList=l} anchor = let
+longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor = let
   depth = fromIntegral $ pathLength exclude
-  paths = findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
+  paths = case r of
+            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
+            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[]}) anchor
   nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
   output | List.length nonExcludedPaths == 0 = exclude {vertexList=[]}
          | otherwise = findLongestLeastPath nonExcludedPaths 0
@@ -263,7 +292,7 @@ findLongestLeastPath :: [PGraph]   -- ^ The paths to select from
                      -> PGraph     -- ^ The longest least path from starting list
 --findLongestLeastPath gs i | (trace $ show gs) False = undefined
 --findLongestLeastPath gs i | (trace $ "#Paths: " ++ (show $ List.length gs)) False = undefined
-findLongestLeastPath [] i = PGraph emptyMolecule []
+findLongestLeastPath [] i = PGraph emptyMolecule [] Nothing
 findLongestLeastPath gs i = let
   gsL = pLongest gs
   mol = molecule (gs!!0)
@@ -276,7 +305,7 @@ findLongestLeastPath gs i = let
   mapRanks = List.map (\a -> foldRanks a) gsL
   leastRank = List.minimum mapRanks
   gs' = List.filter ((==leastRank) . foldRanks) gsL
-  output | List.length gsL == 0 =  PGraph emptyMolecule []
+  output | List.length gsL == 0 =  PGraph emptyMolecule [] Nothing
          | List.length gsL == 1     = gsL!!0
          | pathLength (gsL!!0) <= (fromIntegral i) = gsL!!0
          | otherwise = gs' `seq` findLongestLeastPath gs' (i+1)
@@ -287,7 +316,6 @@ findLongestLeastPath gs i = let
 comparePaths :: PGraph
              -> PGraph
              -> Ordering
-comparePaths p1 p2 |  False = undefined
 comparePaths p1 p2 = let
   mol = molecule p1
   ranks r acc | acc==LT            = LT
@@ -296,7 +324,9 @@ comparePaths p1 p2 = let
               | acc==EQ && (r==EQ) = EQ
               | acc==GT            = GT
   rankMap = List.map (\i -> ordAtom p1 p2 i) [0..fromInteger ((pathLength p1) -1 )]
-  output = List.foldr (\a acc -> ranks a acc) EQ rankMap
+  output | (pathLength p1) > (pathLength p2) = GT
+         | (pathLength p1) < (pathLength p2) = LT
+         | otherwise =List.foldr (\a acc -> ranks a acc) EQ rankMap
   in output
 
 
@@ -311,23 +341,28 @@ longestLeastPath m = let
 
 -- | A comparison utility for ordAtom (below) that does the recursive path
 -- comparison at a given index position
-ordByPath :: PGraph   -- ^ The first path to compare
-          -> PGraph   -- ^ The second path to compare
-          -> Int      -- ^ The index to compare
+ordByPath :: PGraph  -- ^ The first path to compare and its root index
+          -> PGraph   -- ^ The second path to compare and its root index
+          -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
--- ordByPath p1 p2 i | (trace $ "Index:" ++ (show i) ++ " Length A:" ++ (show $ pathLength p1) ++ " Length B:" ++ (show $ pathLength p2)) False = undefined
-ordByPath p1@PGraph {molecule=m1, vertexList=l1}
-          p2@PGraph {molecule=m2, vertexList=l2}
-          index = ordPathList (branchPaths p1 index) (branchPaths p2 index)
+ordByPath p1@PGraph {molecule=m1, vertexList=l1, root=r1}
+          p2@PGraph {molecule=m2, vertexList=l2, root=r2}
+          index = ordPathList (branchPaths p1 index)
+                              (branchPaths p2 index) where
+          m_i1 = pathIndex p1 index
+          m_i2 = pathIndex p2 index
 
 
 bondIndexSet p p_i = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
                                  getAtomAtIndex (molecule p) (pathIndex p p_i)
-pathIndexSet p = Set.fromList $ vertexList p
-validIndexList p p_i = Set.toList $ Set.difference (bondIndexSet p p_i) (pathIndexSet p)
+pathIndexSet p = case (root p) of
+                  Nothing -> Set.fromList $ vertexList p
+                  Just i  -> Set.insert i $ Set.fromList $ vertexList p
+validIndexList p p_i = Set.toList $ Set.difference (bondIndexSet p p_i) (pathIndexSet p )
 pLongest ps = List.filter (\p -> longest == pathLength p) ps
                   where longest = List.maximum $ (List.map pathLength ps)
-branchPaths p p_i = pLongest $ List.map (\a -> longestLeastAnchoredPath p a) (validIndexList p p_i)
+branchPaths p p_i = pLongest $ List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
+  where pNew = p {root=(Just $ pathIndex p p_i)}
 llBranch p p_i = findLongestLeastPath (branchPaths p p_i) 0
 otherPaths p p_i = List.delete (llBranch p p_i) (branchPaths p p_i)
 
@@ -347,7 +382,8 @@ ordPathList ps1 ps2 = let
          | otherwise = ordPathList xp1 xp2
   in output
 
-pathIndex p p_i =  (vertexList p)!!p_i
+pathIndex p p_i  | p_i >= (fromIntegral $ pathLength p) = (trace $ show (pathLength p) ++ ":" ++ show p_i) 0
+                 | otherwise = (vertexList p)!!p_i
 
 
 

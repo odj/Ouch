@@ -48,7 +48,11 @@ import Data.List as List
 import Data.Set as Set
 
 
-data PGraph = PGraph {molecule::Molecule, vertexList::[Int]}
+data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
+                     , vertexList :: [Int]       -- ^ The path
+                     , root       :: Maybe Int   -- ^ The root mol index (not on path)
+                     }                           --   A root is needed to prevent infinite
+                                                 --   recursion in symmetrical graphs
 
 hasOverlap :: PGraph -> PGraph -> Bool
 hasOverlap p1 p2 = let
