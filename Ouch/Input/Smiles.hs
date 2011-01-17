@@ -115,7 +115,7 @@ fromSymbol i s = makeMoleculeFromAtom $ Element n (i - n) Set.empty Set.empty
                               Just atomicN -> atomicN
                               Nothing -> 0
 
-organicSubsetList = ["Br", "Cl", "C", "N", "O", "H", "P", "S", "F", "B", "I"]
+organicSubsetList = ["Br", "Cl", "Si", "C", "N", "O", "H", "P", "S", "F", "B", "I"]
 aromaticSubset = ["b", "c", "n", "o", "s", "p"]
 
 pOrganicSubsetSymbols = choice $ (List.map (try. string) organicSubsetList)

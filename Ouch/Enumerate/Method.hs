@@ -269,6 +269,6 @@ stripMol = Just $ FilterMethod
 makeUnique = Just $ FilterMethod
   { firstApply=Nothing
   , lastApply=Nothing
-  , molFilter=fingerprintFilterBuilder (\m -> writeCanonicalPath m)
+  , molFilter=fingerprintFilterBuilder (\m -> show m)
   }
 

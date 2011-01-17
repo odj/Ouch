@@ -229,11 +229,13 @@ allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m []
 allTerminalPaths :: Int
                  -> Molecule
                  -> [PGraph]
+allTerminalPaths = allPaths
+{--
 allTerminalPaths depth m = List.foldr (\i p -> p `seq`
                                        p ++ findPaths depth
                                        (PGraph m [] Nothing) i)
                                        [] (allTerminalVertices m)
-
+--}
 
 -- | Returns a list of all terminal atoms in a molecule (those that have the
 -- LEAST number of vertices
@@ -275,11 +277,14 @@ longestLeastAnchoredPath :: PGraph
 longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor = let
   depth = fromIntegral $ pathLength exclude
   paths = case r of
-            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
-            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[]}) anchor
+            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[], root=Nothing}) anchor
+            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[], root=Nothing}) anchor
   nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
+  rootedPaths = case r of
+            Nothing -> nonExcludedPaths
+            Just i -> List.map (\p -> p {root=(Just anchor)}) nonExcludedPaths
   output | List.length nonExcludedPaths == 0 = exclude {vertexList=[]}
-         | otherwise = findLongestLeastPath nonExcludedPaths 0
+         | otherwise = findLongestLeastPath rootedPaths 0
   in output
 
 {------------------------------------------------------------------------------}
@@ -303,11 +308,11 @@ findLongestLeastPath gs i = let
               | acc==GT            = GT
   foldRanks g = List.foldr (\a acc -> ranks (ordAtom g a i) acc ) EQ gsL
   mapRanks = List.map (\a -> foldRanks a) gsL
-  leastRank = List.minimum mapRanks
-  gs' = List.filter ((==leastRank) . foldRanks) gsL
+  topRank = List.maximum mapRanks
+  gs' = List.filter ((==topRank) . foldRanks) gsL
   output | List.length gsL == 0 =  PGraph emptyMolecule [] Nothing
-         | List.length gsL == 1     = gsL!!0
-         | pathLength (gsL!!0) <= (fromIntegral i) = gsL!!0
+         | List.length gsL == 1 = gsL!!0
+         | pathLength (gsL!!0) == (fromIntegral i) = gsL!!0
          | otherwise = gs' `seq` findLongestLeastPath gs' (i+1)
   in  output
 
@@ -324,9 +329,9 @@ comparePaths p1 p2 = let
               | acc==EQ && (r==EQ) = EQ
               | acc==GT            = GT
   rankMap = List.map (\i -> ordAtom p1 p2 i) [0..fromInteger ((pathLength p1) -1 )]
-  output | (pathLength p1) > (pathLength p2) = GT
-         | (pathLength p1) < (pathLength p2) = LT
-         | otherwise =List.foldr (\a acc -> ranks a acc) EQ rankMap
+  output | (pathLength p1) > (pathLength p2)  = GT
+         | (pathLength p1) < (pathLength p2)  = LT
+         | (pathLength p1) == (pathLength p2) = List.foldr (\a acc -> ranks a acc) EQ rankMap
   in output
 
 
@@ -345,26 +350,23 @@ ordByPath :: PGraph  -- ^ The first path to compare and its root index
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
-ordByPath p1@PGraph {molecule=m1, vertexList=l1, root=r1}
-          p2@PGraph {molecule=m2, vertexList=l2, root=r2}
-          index = ordPathList (branchPaths p1 index)
-                              (branchPaths p2 index) where
-          m_i1 = pathIndex p1 index
-          m_i2 = pathIndex p2 index
+ordByPath p1 p2 index  = ordPathList (branchPaths p1 index)
+                                     (branchPaths p2 index)
+
 
 
 bondIndexSet p p_i = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
                                  getAtomAtIndex (molecule p) (pathIndex p p_i)
 pathIndexSet p = case (root p) of
                   Nothing -> Set.fromList $ vertexList p
-                  Just i  -> Set.insert i $ Set.fromList $ vertexList p
+                  Just i  -> Set.fromList $ i:(vertexList p)
 validIndexList p p_i = Set.toList $ Set.difference (bondIndexSet p p_i) (pathIndexSet p )
 pLongest ps = List.filter (\p -> longest == pathLength p) ps
                   where longest = List.maximum $ (List.map pathLength ps)
-branchPaths p p_i = pLongest $ List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
+branchPaths p p_i = List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
   where pNew = p {root=(Just $ pathIndex p p_i)}
-llBranch p p_i = findLongestLeastPath (branchPaths p p_i) 0
-otherPaths p p_i = List.delete (llBranch p p_i) (branchPaths p p_i)
+
+
 
 
 ordPathList :: [PGraph] -> [PGraph] -> Ordering
@@ -382,8 +384,7 @@ ordPathList ps1 ps2 = let
          | otherwise = ordPathList xp1 xp2
   in output
 
-pathIndex p p_i  | p_i >= (fromIntegral $ pathLength p) = (trace $ show (pathLength p) ++ ":" ++ show p_i) 0
-                 | otherwise = (vertexList p)!!p_i
+pathIndex p p_i  = (vertexList p)!!p_i
 
 
 
@@ -538,7 +539,7 @@ writeSubpath outputStyle gx g@PGraph {molecule=m, vertexList=l} i = let
                             Set.empty (g:gx)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList} a)
+  branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList, root=(Just $ pathIndex g i)} a)
                          validIndexList
   nextBranch =  findLongestLeastPath branchPaths 0
   s = outputStyle g i
