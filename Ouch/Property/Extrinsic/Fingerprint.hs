@@ -331,7 +331,7 @@ comparePaths p1 p2 = let
   rankMap = List.map (\i -> ordAtom p1 p2 i) [0..fromInteger ((pathLength p1) -1 )]
   output | (pathLength p1) > (pathLength p2)  = GT
          | (pathLength p1) < (pathLength p2)  = LT
-         | (pathLength p1) == (pathLength p2) = List.foldr (\a acc -> ranks a acc) EQ rankMap
+         | (pathLength p1) == (pathLength p2) = List.foldl (\acc a -> ranks a acc) EQ rankMap
   in output
 
 
