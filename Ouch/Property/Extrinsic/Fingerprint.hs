@@ -277,14 +277,14 @@ longestLeastAnchoredPath :: PGraph
 longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor = let
   depth = fromIntegral $ pathLength exclude
   paths = case r of
-            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[], root=Nothing}) anchor
-            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[], root=Nothing}) anchor
+            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
+            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[]}) anchor
   nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
   rootedPaths = case r of
             Nothing -> nonExcludedPaths
             Just i -> List.map (\p -> p {root=(Just anchor)}) nonExcludedPaths
   output | List.length nonExcludedPaths == 0 = exclude {vertexList=[]}
-         | otherwise = findLongestLeastPath rootedPaths 0
+         | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
 
 {------------------------------------------------------------------------------}
@@ -301,12 +301,11 @@ findLongestLeastPath [] i = PGraph emptyMolecule [] Nothing
 findLongestLeastPath gs i = let
   gsL = pLongest gs
   mol = molecule (gs!!0)
-  ranks r acc | acc==LT            = LT
-              | acc==EQ && r  ==LT = LT
+  ranks r acc | acc==LT || r  ==LT = LT
               | acc==EQ && r  ==GT = GT
               | acc==EQ && r  ==EQ = EQ
               | acc==GT            = GT
-  foldRanks g = List.foldr (\a acc -> ranks (ordAtom g a i) acc ) EQ gsL
+  foldRanks g = List.foldl (\acc a -> ranks (ordAtom g a i) acc ) EQ gsL
   mapRanks = List.map (\a -> foldRanks a) gsL
   topRank = List.maximum mapRanks
   gs' = List.filter ((==topRank) . foldRanks) gsL
