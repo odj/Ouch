@@ -55,6 +55,8 @@ data SmiWriterState = SmiWriterState
   , smilogger  :: [String]                -- ^ Free-form logging string
   } deriving (Show)
 
+initSmiWriState = SmiWriterState Map.empty []
+
 -- | Look at the SMILES writer state and generate the required closure label
 getClosureLabel :: SmiWriterState         -- ^ The state
                 -> Int                    -- ^ The atom number being written

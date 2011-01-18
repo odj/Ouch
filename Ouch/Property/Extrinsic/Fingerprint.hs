@@ -229,13 +229,11 @@ allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m []
 allTerminalPaths :: Int
                  -> Molecule
                  -> [PGraph]
-allTerminalPaths = allPaths
-{--
 allTerminalPaths depth m = List.foldr (\i p -> p `seq`
                                        p ++ findPaths depth
                                        (PGraph m [] Nothing) i)
                                        [] (allTerminalVertices m)
---}
+
 
 -- | Returns a list of all terminal atoms in a molecule (those that have the
 -- LEAST number of vertices
