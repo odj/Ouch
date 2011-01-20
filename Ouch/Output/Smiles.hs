@@ -40,47 +40,95 @@ import Ouch.Enumerate.Method
 import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
-import Ouch.Structure.Marker
+import Ouch.Structure.Marker hiding (position)
 import Data.Maybe
 import Data.Set as Set
 import Data.Map as Map
 import Data.List as List
 
 
+newtype Logger = Logger {logger :: [String]} deriving (Show)
+newtype Pair = Pair {pair :: (Int, Int)} deriving (Show, Ord, Eq)
+
 -- | Stores state information used while writing SMILES
 data SmiWriterState = SmiWriterState
-  { closureMap :: Map Int Int             -- ^ Information on how to match closures
-                                          --   Key is closure label
-                                          --   Value is atom number that was assigned the closure
-  , smilogger  :: [String]                -- ^ Free-form logging string
-  } deriving (Show)
+  { smiString  :: String
+  , style      :: SmiStyle
+  , closureMap :: Map Int Pair
+  , position   :: Int
+  , traversing :: PGraph
+  , tranversed :: [PGraph]
+  , smiLogger  :: Logger
+  }
 
-initSmiWriState = SmiWriterState Map.empty []
+
+data SmiStyle = SmiStyle
+  { atomStyle :: Atom -> String
+  , bondStyle :: Bond -> String
+  }
+
+instance Show SmiWriterState where
+  show state = smiString state
+
+
+startAtom :: Pair -> Int
+startAtom p = fst $ pair p
+
+
+endAtom :: Pair -> Int
+endAtom p = snd $ pair p
+
+
+logString :: Logger -> String -> Logger
+logString l s =  Logger $ s:(logger l)
+
+
+smiStart :: Molecule -> SmiWriterState
+smiStart m = SmiWriterState
+  { smiString  = ""
+  , style      = writeAtom
+  , closureMap = Map.empty
+  , position   = 0
+  , traversing = longestLeastPath m
+  , tranversed = []
+  , smiLogger  = Logger []
+  }
+
+
 
 -- | Look at the SMILES writer state and generate the required closure label
 getClosureLabel :: SmiWriterState         -- ^ The state
                 -> Int                    -- ^ The atom number being written
                 -> Int                    -- ^ The atom number to connect to
                 -> (Int, SmiWriterState)  -- ^ The closure label to use and new state
-getClosureLabel state@SmiWriterState {closureMap=m} atomNum connectNum = let
-  connectionMap = Map.filter (==connectNum) m
-  isPair = 1 == Map.size connectionMap
+getClosureLabel state@SmiWriterState {closureMap=m, smiLogger=l} fromAtom toAtom = let
+  newPair = Pair (fromAtom, toAtom)
+  pairComplement = Pair (toAtom, fromAtom)
+  isPair = 1 == (Map.size $ Map.filter (==pairComplement) m)
+  isRedundant = 1 == (Map.size $ Map.filter (==newPair) m)
 
   -- If there is already a pair, find it and remove its closure
-  withClosure = fst $ Map.findMax connectionMap
-  newMap = Map.delete withClosure m
+  withMatch = fst $ Map.findMax $ Map.filter (==pairComplement) m
+  newMapMatch = Map.delete withMatch m
+
+  withRedundant = fst $ Map.findMax $ Map.filter (==newPair) m
+  newMapRedundant = m
+  logError = logString l $ "Closure already requested for pair: " ++ (show newPair)
 
   -- If not, find a new closure
-  withClosure' = nextNum m
-  newMap' = Map.insert withClosure' atomNum m
-  output | isPair = (withClosure, state {closureMap=newMap})
-         | otherwise = (withClosure', state {closureMap=newMap'})
+  withNew = nextNum m
+  newMapNew = Map.insert withNew newPair m
+  output | isPair      = (withMatch,     state {closureMap=newMapMatch})
+         | isRedundant = (withRedundant, state {closureMap=newMapRedundant, smiLogger=logError})
+         | otherwise   = (withNew,       state {closureMap=newMapNew})
   in output
 
+
+
 -- | Generate the next closure number
-nextNum :: (Map Int Int) -> Int
+nextNum :: Map Int Pair -> Int
 nextNum m | 0 == Map.size m = 1
-          | otherwise = Set.findMin $ Set.difference ks ks'
+          | otherwise = Set.findMin $ Set.difference ks' ks
   where ks = Set.fromList $ Map.keys m
         ks' = Set.fromList [1..maxKey]
         maxKey = (+1) $ Set.findMax ks
@@ -95,7 +143,7 @@ writeAtom g i = let
   hasExplicitH = Set.member (ExplicitHydrogen 0) (atomMarkerSet atom)
   hasCharge = Set.member (Charge 0) (atomMarkerSet atom)
   isAnyCharge charge = case charge of Charge {} -> True; _ -> False
-  h | hasExplicitH = numberH $ Set.findMax $ Set.filter (== (ExplicitHydrogen 0)) (atomMarkerSet atom)
+  h | hasExplicitH = numberH $ Set.findMax $ Set.filter (==(ExplicitHydrogen 0)) (atomMarkerSet atom)
     | otherwise = 0
   c | hasCharge = charge $ Set.findMax $ Set.filter isAnyCharge (atomMarkerSet atom)
     | otherwise = 0
@@ -114,8 +162,6 @@ writeAtom g i = let
   in output
 
 
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given path with a provided atom rendering function
 
 {------------------------------------------------------------------------------}
 -- | Writes the SMILES string for a given molecule
