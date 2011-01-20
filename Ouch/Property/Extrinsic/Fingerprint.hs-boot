@@ -36,11 +36,11 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , pathBits
   , findPaths
   , allPaths
+  , pathIndex
+  , findLongestLeastPath
   , longestPaths
   , longestLeastPath
   , longestLeastAnchoredPath
-  , writeCanonicalPathWithStyle
-  , writeCanonicalPath
   , (.||.)
   , (.|||.)
 
@@ -84,12 +84,7 @@ longestLeastPath :: Molecule -> PGraph
 ordAtom :: Molecule -> Int -> Int -> Ordering
 findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> [PGraph]
 findPaths :: Int ->  PGraph -> Int -> [PGraph]
-writeSmiles :: Molecule -> String
-writeCanonicalPathWithStyle :: (PGraph -> Int -> String) -> Molecule -> String
-writeCanonicalPath :: Molecule -> String
-writePath :: [PGraph] -> PGraph -> Int -> Bool -> String
-writeSubpath :: [PGraph] -> PGraph -> Int -> String
-writeStep :: PGraph -> Int -> String
+pathIndex :: PGraph -> Int -> Int
 
 
 

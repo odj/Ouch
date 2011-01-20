@@ -36,7 +36,8 @@ module Ouch.Structure.Molecule
        freeValenceAtIndex,
        fillMoleculeValence,
        makeMoleculeFromAtom,
-       getAtomAtIndex
+       getAtomAtIndex,
+       debugShow
 
 
      ) where
@@ -64,7 +65,7 @@ freeValenceAtIndex :: Molecule -> Int -> Integer
 fillMoleculeValence :: Molecule -> Molecule
 makeMoleculeFromAtom:: Atom -> Molecule
 bondBetweenIndices :: Molecule -> Int -> Int -> NewBond
-
+debugShow :: Molecule -> String
 
 
 

@@ -36,11 +36,11 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , pathBits
   , findPaths
   , allPaths
+  , pathIndex
+  , findLongestLeastPath
   , longestPaths
   , longestLeastPath
   , longestLeastAnchoredPath
-  , writeCanonicalPath
-  , writeCanonicalPathWithStyle
   , (.||.)
   , (.|||.)
 
@@ -381,6 +381,8 @@ ordPathList ps1 ps2 = let
          | otherwise = ordPathList xp1 xp2
   in output
 
+
+pathIndex :: PGraph -> Int -> Int
 pathIndex p p_i  = (vertexList p)!!p_i
 
 
@@ -485,94 +487,5 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index = let
 
 
 {------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given molecule
-writeCanonicalPath :: Molecule -> String
-writeCanonicalPath m = writeCanonicalPathWithStyle writeAtomOnly m
 
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given molecule with specified atom rendering function
-writeCanonicalPathWithStyle :: (PGraph -> Int -> String)  -- ^ The method used to render atoms to text
-                            -> Molecule                   -- ^ The molecule to process
-                            -> String                     -- ^ The output string
-writeCanonicalPathWithStyle style m = let
-  backbone = longestLeastPath m
-  in writePath style [] backbone 0 False
-
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given path with a provided atom rendering function
-writePath :: (PGraph -> Int -> String)    -- ^ The method used to render atoms to text
-          -> [PGraph]                     -- ^ The list of subgraphs we've already traversed
-          -> PGraph                       -- ^ The subgraph we are currently traversing
-          -> Int                          -- ^ The position in our current subgraph
-          -> Bool                         -- ^ Are we part of a SMILES substructure
-          -> String                       -- ^ The string being rendered
-writePath style gx g@PGraph {molecule=m, vertexList=l} i subStructure = let
-  s = style g i
-  endOfPath = i >= (fromInteger $ pathLength g)
-  hasNext = i + 1 < (fromInteger $ pathLength g)
-  nb | hasNext = writeBond (bondBetweenIndices m  (l!!i) $ l!!(i+1) )
-     | otherwise = ""
-  output | endOfPath && subStructure = ")"
-         | endOfPath = ""
-         | otherwise =  s ++ writeSubpath style gx g i
-                          ++ nb ++ writePath style gx g (i+1) subStructure
-  in output
-
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES strings for all subpaths (if any exist) at position i in a
--- given path g, excluding travesal through any atoms in the paths gx
-writeSubpath :: (PGraph -> Int -> String) -- ^ The method used to render atoms to text
-             -> [PGraph]                  -- ^ The list of subgraphs we've already traversed
-             -> PGraph                    -- ^ The subgraph we are currently traversing
-             -> Int                       -- ^ The position in our current subgraph
-             -> String                    -- ^ The string being rendered
-writeSubpath outputStyle gx g@PGraph {molecule=m, vertexList=l} i = let
-  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
-                                           $ getAtomAtIndex m (l!!i)
-  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
-                            Set.empty (g:gx)
-  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
-  pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList, root=(Just $ pathIndex g i)} a)
-                         validIndexList
-  nextBranch =  findLongestLeastPath branchPaths 0
-  s = outputStyle g i
-  output | (pathLength nextBranch) > 0 =  "(" ++ writePath outputStyle (g:gx) nextBranch 0 True
-                                              ++ writeSubpath outputStyle (nextBranch:gx) g i
-         | otherwise =  ""
-  in output
-
-
-{------------------------------------------------------------------------------}
--- | Writes atom information from position i in a path.   A debugging render
--- function.
-writeAtomOnly :: PGraph   -- ^ The path
-              -> Int      -- ^ The path position to render
-              -> String   -- ^ The output String
-writeAtomOnly g i = let
-  mol = molecule g
-  atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
-  in atomicSymbolForAtom atom
-
-bip :: PGraph
-         -> Int
-         -> String
-bip  _ _ = "*"
-
-writeBip :: Molecule -> String
-writeBip m = writeCanonicalPathWithStyle bip m'
-  where m':_ = [m] >#> stripMol
-
-{------------------------------------------------------------------------------}
--- | Basic rendering of bond information for SMILES.  Similar to Show.
-writeBond :: NewBond  -- ^ The bond to render
-          -> String   -- ^ The rendered string
-writeBond nb = case nb of
-  Single -> ""
-  Double -> "="
-  Triple -> "#"
-  NoBond -> "."
 
