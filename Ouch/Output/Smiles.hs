@@ -122,8 +122,9 @@ smiStart m = SmiWriterState
 advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state = let
   render = (renderAtomSS state) ++ (renderBondSS state)
-  newState = advancePosSS state
-  in newState {smiString=(smiString state) ++ render}
+  renderedSubpaths = List.map runSS $ findSubpathsSS state
+  advancedState = forceRenderSS (advancePosSS $ advanceClosuresSS $ state) render
+  in List.foldl (<+>) advancedState renderedSubpaths
 
 
 advancePosSS :: SmiWriterState -> SmiWriterState
@@ -151,9 +152,17 @@ renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
        | otherwise = ""
   in bond
 
+advanceClosuresSS :: SmiWriterState -> SmiWriterState
+advanceClosuresSS state = state
+
+findClosuresSS :: SmiWriterState -> [Pair]
+findClosuresSS state = undefined
+
+
 
 atEndSS :: SmiWriterState -> Bool
 atEndSS state = (position state) == (fromIntegral $ pathLength $ traversing state)
+
 
 runSS :: SmiWriterState -> SmiWriterState
 runSS state | atEndSS state = if (head $ smiString state) == '('
@@ -161,8 +170,29 @@ runSS state | atEndSS state = if (head $ smiString state) == '('
                               else state
             | otherwise = runSS $ advanceSS state
 
-forceRenderSS ::SmiWriterState -> String -> SmiWriterState
+
+forceRenderSS :: SmiWriterState -> String -> SmiWriterState
 forceRenderSS state str = state {smiString = (smiString state) ++ str}
+
+
+
+findSubpathsSS :: SmiWriterState -> [SmiWriterState]
+findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
+  mol = molecule path
+  index = pathIndex path p_i
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
+                                           $ getAtomAtIndex mol index
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
+                            Set.empty (path:paths)
+  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
+  pathIndexList = Set.toList pathIndexSet
+  branchPaths = List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(Just index)} a)
+                         validIndexList
+  in List.map (\p -> state {smiString = "("
+                          , traversing=p
+                          , traversed=(path:paths)
+                          , position=0})  branchPaths
+
 
 -- | Look at the SMILES writer state and generate the required closure label
 getClosureLabel :: SmiWriterState         -- ^ The state
@@ -246,7 +276,7 @@ writeBond nb = case nb of
   NoBond -> "."
 
 
-db m = putStrLn $ debugShow m
+db m = putStrLn $ debugShow $ head ([m] >#> stripMol)
  {--
 
 {------------------------------------------------------------------------------}
