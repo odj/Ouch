@@ -31,25 +31,9 @@
 
 import Ouch.Test.Methods
 import Ouch.Text.String
-import Ouch.Structure.Molecule
-import Ouch.Structure.Atom
-import Ouch.Structure.Bond
-import Ouch.Structure.Marker
-import Ouch.Input.Smiles
-import Ouch.Data.Atom
-import Ouch.Property.Builder
-import Ouch.Property.Ring
-import Ouch.Output.Mol
 import System.IO
 import System.Environment
 import Data.Time.Clock
-import Data.Either
-import Data.Maybe
-import Ouch.Enumerate.Method
-import Ouch.Output.SDF
-
-
-
 
 -------------------------------------------------------------------------------
 main = do

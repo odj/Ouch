@@ -49,47 +49,70 @@ import Data.List as List
 newtype Logger = Logger {logger :: [String]} deriving (Show)
 newtype Pair = Pair {pair :: (Int, Int)} deriving (Show, Ord, Eq)
 
+
+
+{------------------------------------------------------------------------------}
+-- | Writes the SMILES string for a given molecule
+writeSmiles :: Molecule -> String
+writeSmiles = smiString . runSS . smiStart
+
+
+
 -- | Stores state information used while writing SMILES
 data SmiWriterState = SmiWriterState
-  { smiString  :: String
-  , style      :: SmiStyle
-  , closureMap :: Map Int Pair
-  , position   :: Int
-  , traversing :: PGraph
-  , traversed  :: [PGraph]
-  , smiLogger  :: Logger
+  { smiString  :: String                -- ^ The SMILES String
+  , style      :: SmiStyle              -- ^ The Style to render with
+  , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
+  , position   :: Int                   -- ^ The position on the current path
+  , traversing :: PGraph                -- ^ The path currently being rendered
+  , traversed  :: [PGraph]              -- ^ Paths that have already been rendered
+  , smiLogger  :: Logger                -- ^ Logger for errors and warnings
   }
 
+
+-- | Concatonates two SMILES Writer states where the second state is
+-- typically a rendered substructure of the first state.
 (<+>) :: SmiWriterState -> SmiWriterState -> SmiWriterState
 (<+>) s1 s2 = s1 { smiString=(smiString s1) ++ (smiString s2)
                  , smiLogger=Logger $ (logger $ smiLogger s1) ++ (logger $ smiLogger s2)
-                 , traversed=(traversed s1 ++ traversed s2)
+                 , traversed=(traversing s2):(traversed s1)
                  , closureMap=(Map.union (closureMap s1) (closureMap s2))
                  }
 
+-- | Data type to pass higher-order functions to writer
 data SmiStyle = SmiStyle
   { atomStyle :: Atom -> String
   , bondStyle :: NewBond -> String
   }
 
+
+-- | Show instance for debugging writer state
 instance Show SmiWriterState where
   show state = "SMILES: " ++ smiString state ++ "\n"
             ++ "POSITION: " ++ (show $ position state) ++ "\n"
             ++ "TRAVERSING: " ++ (show $ traversing state)
+            ++ "TRAVERSED:\n" ++ (show $ traversed state) ++ "\n"
             ++ "LOGS: " ++ (show $ smiLogger state) ++ "\n"
 
 
+
+-- | Convenience method for newtype Pair
 startAtom :: Pair -> Int
 startAtom p = fst $ pair p
 
 
+-- | Convenience method for newtype Pair
 endAtom :: Pair -> Int
 endAtom p = snd $ pair p
 
 
+-- | Adds a new string to the newtype Logger
 logString :: Logger -> String -> Logger
 logString l s =  Logger $ s:(logger l)
 
+
+-- | Creates a new state from an existing state
+-- to be treated as a substructure.
 smiNewSub :: SmiWriterState -> PGraph -> SmiWriterState
 smiNewSub state@SmiWriterState { style=st
                                , traversed=tv
@@ -104,6 +127,8 @@ smiNewSub state@SmiWriterState { style=st
                  }
 
 
+-- | Creates an initial state from a Molecule with settings
+-- that should give typically good results
 smiStart :: Molecule -> SmiWriterState
 smiStart m = SmiWriterState
   { smiString  = ""
@@ -118,28 +143,33 @@ smiStart m = SmiWriterState
   }
 
 
+-- | Advances the rendering of the state by one atom along the path
 advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state = let
-  render = (renderAtomSS state) ++ (renderBondSS state)
+  render = (renderAtomSS state) ++ (renderBondSS state) ++ (renderClosuresSS state)
   renderedSubpaths = List.map runSS $ findSubpathsSS state
   advancedState = forceRenderSS (advancePosSS $ advanceClosuresSS $ state) render
   in List.foldl (<+>) advancedState renderedSubpaths
 
 
+-- | Advances the state position by one atom along the path without rendering
 advancePosSS :: SmiWriterState -> SmiWriterState
 advancePosSS s = s { position = (position s) + 1 }
 
 
+-- | Logs a string to the state logger
 logSS :: SmiWriterState -> String -> SmiWriterState
 logSS s str = s { smiLogger = logString (smiLogger s) str }
 
 
+-- | Renders the atom at the current state position according to the state's style
 renderAtomSS :: SmiWriterState -> String
 renderAtomSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
   atom = fromJust $ getAtomAtIndex (molecule path) (pathIndex path p_i)
   in atomStyle st $ atom
 
 
+-- | Renders the bond at the current state position according to the state's style
 renderBondSS :: SmiWriterState -> String
 renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
   mol = molecule path
@@ -151,14 +181,24 @@ renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
        | otherwise = ""
   in bond
 
+
+
+-- | Renders the closures at the current state position according to the state's style
+renderClosuresSS :: SmiWriterState -> String
+renderClosuresSS state = ""
+
+
+-- | Advances the closure state
 advanceClosuresSS :: SmiWriterState -> SmiWriterState
 advanceClosuresSS state = state
 
+
+-- | Generates a list of closure Pairs required at this path position
 findClosuresSS :: SmiWriterState -> [Pair]
 findClosuresSS state = undefined
 
 
-
+-- | Tests to see if the state is at the end of its current path
 atEndSS :: SmiWriterState -> Bool
 atEndSS state = (position state) == (fromIntegral $ pathLength $ traversing state)
 
@@ -258,12 +298,6 @@ writeAtom atom = let
 
 
 
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given molecule
-writeSmiles :: Molecule -> String
-writeSmiles m = undefined
-
-
 
 -- | Basic rendering of bond information for SMILES.  Similar to Show.
 writeBond :: NewBond  -- ^ The bond to render
@@ -275,98 +309,14 @@ writeBond nb = case nb of
   NoBond -> "."
 
 
+
+
 db m = putStrLn $ debugShow $ head ([m] >#> stripMol)
+
+
+
+
  {--
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given path with a provided atom rendering function
-writePath :: (PGraph -> Int -> String)    -- ^ The method used to render atoms to text
-          -> [PGraph]                     -- ^ The list of subgraphs we've already traversed
-          -> PGraph                       -- ^ The subgraph we are currently traversing
-          -> Int                          -- ^ The position in our current subgraph
-          -> Bool                         -- ^ Are we part of a SMILES substructure
-          -> String                       -- ^ The string being rendered
-writePath style gx g@PGraph {molecule=m, vertexList=l} i subStructure = let
-  s = style g i
-  endOfPath = i >= (fromInteger $ pathLength g)
-  hasNext = i + 1 < (fromInteger $ pathLength g)
-  nb | hasNext = writeBond (bondBetweenIndices m  (l!!i) $ l!!(i+1) )
-     | otherwise = ""
-  output | endOfPath && subStructure = ")"
-         | endOfPath = ""
-         | otherwise =  s ++ writeSubpath style gx g i
-                          ++ nb ++ writePath style gx g (i+1) subStructure
-  in output
-
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES strings for all subpaths (if any exist) at position i in a
--- given path g, excluding travesal through any atoms in the paths gx
-writeSubpath :: (PGraph -> Int -> String) -- ^ The method used to render atoms to text
-             -> [PGraph]                  -- ^ The list of subgraphs we've already traversed
-             -> PGraph                    -- ^ The subgraph we are currently traversing
-             -> Int                       -- ^ The position in our current subgraph
-             -> String                    -- ^ The string being rendered
-writeSubpath outputStyle gx g@PGraph {molecule=m, vertexList=l} i = let
-  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
-                                           $ getAtomAtIndex m (l!!i)
-  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
-                            Set.empty (g:gx)
-  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
-  pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.map (\a -> longestLeastAnchoredPath g {vertexList=pathIndexList, root=(Just $ pathIndex g i)} a)
-                         validIndexList
-  nextBranch =  findLongestLeastPath branchPaths 0
-  s = outputStyle g i
-  output | (pathLength nextBranch) > 0 =  "(" ++ writePath outputStyle (g:gx) nextBranch 0 True
-                                              ++ writeSubpath outputStyle (nextBranch:gx) g i
-         | otherwise =  ""
-  in output
-
-
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given molecule
-writeCanonicalPath :: Molecule -> String
-writeCanonicalPath m = writeCanonicalPathWithStyle writeAtomOnly m
-
-
-{------------------------------------------------------------------------------}
--- | Writes the SMILES string for a given molecule with specified atom rendering function
-writeCanonicalPathWithStyle :: (PGraph -> Int -> String)  -- ^ The method used to render atoms to text
-                            -> Molecule                   -- ^ The molecule to process
-                            -> String                     -- ^ The output string
-writeCanonicalPathWithStyle style m = let
-  backbone = longestLeastPath m
-  in writePath style [] backbone 0 False
-
-
-
-
-
-{------------------------------------------------------------------------------}
--- | Writes atom information from position i in a path.   A debugging render
--- function.
-writeAtomOnly :: PGraph   -- ^ The path
-              -> Int      -- ^ The path position to render
-              -> String   -- ^ The output String
-writeAtomOnly g i = let
-  mol = molecule g
-  atom = fromJust $ getAtomAtIndex mol ((vertexList g)!!i)
-  in atomicSymbolForAtom atom
-
-bip :: PGraph
-         -> Int
-         -> String
-bip  _ _ = "*"
-
-writeBip :: Molecule -> String
-writeBip m = writeCanonicalPathWithStyle bip m'
-  where m':_ = [m] >#> stripMol
-
-
-
-
 
 
   --}

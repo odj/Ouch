@@ -73,6 +73,8 @@ data PGraph = PGraph { molecule   :: Molecule
                      }
 
 instance Show PGraph
+instance Ord PGraph
+instance Eq PGraph
 
 atomBits_OUCH :: Molecule -> Atom -> Builder
 atomBits_RECURSIVE :: Int -> Molecule -> Atom -> Builder
