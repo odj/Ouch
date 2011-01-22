@@ -29,7 +29,11 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Property.Extrinsic.Fingerprint (
-    atomBits_OUCH
+    PGraph(..)
+  , pathLength
+  , inPath
+  , hasOverlap
+  , atomBits_OUCH
   , molBits_OUCH
   , molBits_N
   , molBits_ID
@@ -55,7 +59,6 @@ import Data.Word
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Molecule
-import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
 import Data.Maybe
@@ -64,10 +67,25 @@ import Data.List as List
 import Data.Map as Map
 
 
+data PGraph = PGraph { molecule   :: Molecule
+                     , vertexList :: [Int]
+                     , root       :: Maybe Int
+                     }
+
+instance Show PGraph
+
 atomBits_OUCH :: Molecule -> Atom -> Builder
 atomBits_RECURSIVE :: Int -> Molecule -> Atom -> Builder
 molBits_N :: Int -> Molecule -> Builder
 molBits_ID :: Int -> Molecule -> Builder
+
+
+hasOverlap :: PGraph -> PGraph -> Bool
+inPath :: PGraph -> Int -> Bool
+pathLength :: PGraph -> Integer
+
+
+
 
 molBits_OUCH :: Molecule -> Builder
 sizeBits_OUCH :: Molecule -> Builder

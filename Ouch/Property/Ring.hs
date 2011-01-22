@@ -29,10 +29,7 @@
 
 module Ouch.Property.Ring
   (
-    PGraph(..)
-  , pathLength
-  , inPath
-  , hasOverlap
+
   ) where
 
 
@@ -48,46 +45,10 @@ import Data.List as List
 import Data.Set as Set
 
 
-data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
-                     , vertexList :: [Int]       -- ^ The path
-                     , root       :: Maybe Int   -- ^ The root mol index (not on path)
-                     }                           --   A root is needed to prevent infinite
-                                                 --   recursion in symmetrical graphs
-
-hasOverlap :: PGraph -> PGraph -> Bool
-hasOverlap p1 p2 = let
-  l1 = vertexList p1
-  l2 = vertexList p2
-  intersectList = List.intersect l1 l2
-  in List.length intersectList > 0
-
-inPath :: PGraph -> Int -> Bool
-inPath pg i = List.elem i $ vertexList pg
-
-pathLength :: PGraph -> Integer
-pathLength p = fromIntegral $ List.length $ vertexList p
-
-instance Ord PGraph where
-  compare a b = compare (vertexList a) (vertexList b)
-
-instance Eq PGraph where
-  (==) a b = (==) (vertexList a) (vertexList b)
-instance Show PGraph where
-  show p = (show $ vertexList p) ++ "\n"
-
-{--
-createPGraph :: Molecule -> PGraph
-createPGraph m = PGraph m' v
-    where atoms = Map.filter isHeavyAtom $ atomMap m
-          v = Map.keys atoms
-          newAtomMap = Map.adjust
-          addPEdge a = (\a )(PEdge i [])
 
 
-                  | PEdge {reaches::Integer, pathList::[Integer]}
 
-markAtom :: Atom -> AtomMarker -> Atom
---}
+
 
 
 

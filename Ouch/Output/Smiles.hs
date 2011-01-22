@@ -37,7 +37,6 @@ import {-# SOURCE #-} Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Enumerate.Method
-import Ouch.Property.Ring
 import Ouch.Data.Atom
 import Ouch.Data.Bond
 import Ouch.Structure.Marker hiding (position)
@@ -186,7 +185,7 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
                             Set.empty (path:paths)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(Just index)} a)
+  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(Just index)} a)
                          validIndexList
   in List.map (\p -> state {smiString = "("
                           , traversing=p
