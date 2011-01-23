@@ -90,8 +90,9 @@ data SmiStyle = SmiStyle
 instance Show SmiWriterState where
   show state = "SMILES: " ++ smiString state ++ "\n"
             ++ "POSITION: " ++ (show $ position state) ++ "\n"
-            ++ "TRAVERSING: " ++ (show $ traversing state)
+            ++ "TRAVERSING: " ++ (show $ traversing state) ++ "\n"
             ++ "TRAVERSED:\n" ++ (show $ traversed state) ++ "\n"
+            ++ "CLOSURES: " ++ (show $ closureMap state) ++ "\n"
             ++ "LOGS: " ++ (show $ smiLogger state) ++ "\n"
 
 
@@ -145,11 +146,11 @@ smiStart m = SmiWriterState
 
 -- | Advances the rendering of the state by one atom along the path
 advanceSS :: SmiWriterState -> SmiWriterState
-advanceSS state = let
-  render = (renderAtomSS state) ++ (renderBondSS state) ++ (renderClosuresSS state)
+advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
+  render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
   renderedSubpaths = List.map runSS $ findSubpathsSS state
   advancedState = forceRenderSS (advancePosSS $ advanceClosuresSS $ state) render
-  in List.foldl (<+>) advancedState renderedSubpaths
+  in forceRenderSS (List.foldl (<+>) advancedState renderedSubpaths) (renderBondSS state)
 
 
 -- | Advances the state position by one atom along the path without rendering
@@ -181,26 +182,69 @@ renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
        | otherwise = ""
   in bond
 
+renderRootBondSS :: SmiWriterState -> String
+renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
+  mol = molecule path
+  index = pathIndex path p_i
+  r = root path
+  output = case r of
+            Nothing -> ""
+            Just m_i -> renderWithRoot m_i
+  renderWithRoot m_i | p_i /= 0 = ""
+                     | List.head (smiString state) /= '(' = ""
+                     | otherwise = bondStyle st $ (bondBetweenIndices mol index m_i)
+  in output
 
 
 -- | Renders the closures at the current state position according to the state's style
 renderClosuresSS :: SmiWriterState -> String
-renderClosuresSS state = ""
+renderClosuresSS state@SmiWriterState {closureMap=cMap} = let
+  renderClosure n | (length $ show n) > 1 = '%':(show n)
+                  | otherwise = show n
+  pairs = findClosuresSS state
+  closures = fst $ getClosureLabels cMap pairs
+  in List.foldr (\c acc -> acc ++ (renderClosure c)) "" closures
 
 
 -- | Advances the closure state
 advanceClosuresSS :: SmiWriterState -> SmiWriterState
-advanceClosuresSS state = state
+advanceClosuresSS state@SmiWriterState {closureMap=cMap} = state {closureMap=newMap}
+  where newMap = snd $ getClosureLabels cMap (findClosuresSS state)
 
 
 -- | Generates a list of closure Pairs required at this path position
 findClosuresSS :: SmiWriterState -> [Pair]
-findClosuresSS state = undefined
+findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
+  mol = molecule path
+  index = pathIndex path p_i
+  spanSet | atStartSS state && atLastSS state = Set.empty
+          | atStartSS state = Set.fromList [pathIndex path (p_i + 1)]
+          | atLastSS state = Set.fromList [pathIndex path (p_i - 1)]
+          | otherwise = Set.fromList [pathIndex path (p_i + 1), pathIndex path (p_i - 1)]
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
+                                           $ getAtomAtIndex mol index
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
+                            Set.empty (path:paths)
+  pathIndexSet' = case (root path) of
+                    Nothing -> pathIndexSet
+                    Just r  -> Set.delete r pathIndexSet
+  validIndexSet = Set.difference pathIndexSet' spanSet
+  validIndexList = Set.toList $ Set.intersection bondIndexSet validIndexSet
+  in List.map (\p -> Pair (index, p)) validIndexList
 
 
 -- | Tests to see if the state is at the end of its current path
 atEndSS :: SmiWriterState -> Bool
 atEndSS state = (position state) == (fromIntegral $ pathLength $ traversing state)
+
+-- | Tests to see if the state is at the end of its current path
+atLastSS :: SmiWriterState -> Bool
+atLastSS state = (position state) + 1 == (fromIntegral $ pathLength $ traversing state)
+
+
+-- | Tests to see if the state is at the beginning of its current path
+atStartSS :: SmiWriterState -> Bool
+atStartSS state = (position state) == 0
 
 
 runSS :: SmiWriterState -> SmiWriterState
@@ -233,31 +277,35 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
                           , position=0})  branchPaths
 
 
+getClosureLabels :: Map Int Pair
+                 -> [Pair]
+                 -> ([Int], Map Int Pair)
+getClosureLabels cMap pairs = List.foldl
+  (\(closures, cMap') pair -> (closures ++ [fst $ getClosureLabel cMap' pair]
+                             , snd $ getClosureLabel cMap' pair) ) ([], cMap) pairs
+
 -- | Look at the SMILES writer state and generate the required closure label
-getClosureLabel :: SmiWriterState         -- ^ The state
-                -> Int                    -- ^ The atom number being written
-                -> Int                    -- ^ The atom number to connect to
-                -> (Int, SmiWriterState)  -- ^ The closure label to use and new state
-getClosureLabel state@SmiWriterState {closureMap=m, smiLogger=l} fromAtom toAtom = let
-  newPair = Pair (fromAtom, toAtom)
-  pairComplement = Pair (toAtom, fromAtom)
-  isPair = 1 == (Map.size $ Map.filter (==pairComplement) m)
-  isRedundant = 1 == (Map.size $ Map.filter (==newPair) m)
+getClosureLabel :: Map Int Pair
+                -> Pair
+                -> (Int, Map Int Pair)
+getClosureLabel cMap pair = let
+  pairComplement = Pair (endAtom pair, startAtom pair)
+  isPair = 1 == (Map.size $ Map.filter (==pairComplement) cMap)
+  isRedundant = 1 == (Map.size $ Map.filter (==pair) cMap)
 
   -- If there is already a pair, find it and remove its closure
-  withMatch = fst $ Map.findMax $ Map.filter (==pairComplement) m
-  newMapMatch = Map.delete withMatch m
+  withMatch = fst $ Map.findMax $ Map.filter (==pairComplement) cMap
+  newMapMatch = Map.delete withMatch cMap
 
-  withRedundant = fst $ Map.findMax $ Map.filter (==newPair) m
-  newMapRedundant = m
-  logError = logString l $ "Closure already requested for pair: " ++ (show newPair)
+  withRedundant = fst $ Map.findMax $ Map.filter (==pair) cMap
+  newMapRedundant = cMap
 
   -- If not, find a new closure
-  withNew = nextNum m
-  newMapNew = Map.insert withNew newPair m
-  output | isPair      = (withMatch,     state {closureMap=newMapMatch})
-         | isRedundant = (withRedundant, state {closureMap=newMapRedundant, smiLogger=logError})
-         | otherwise   = (withNew,       state {closureMap=newMapNew})
+  withNew = nextNum cMap
+  newMapNew = Map.insert withNew pair cMap
+  output | isPair      = (withMatch, newMapMatch)
+         | isRedundant = (withRedundant, newMapRedundant)
+         | otherwise   = (withNew, newMapNew)
   in output
 
 

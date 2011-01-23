@@ -98,6 +98,7 @@ instance Eq PGraph where
 
 instance Show PGraph where
   show p = (show $ vertexList p) ++ "\n"
+        ++ "With root :" ++ (show $ root p)
 
 instance Ord PGraph where
   compare a b = comparePaths a b
