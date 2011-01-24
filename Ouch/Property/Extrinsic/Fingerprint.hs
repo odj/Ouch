@@ -378,6 +378,34 @@ longestLeastPath m = let
   in paths `seq` findLongestLeastPath paths 0
 
 
+ordByBond :: PGraph  -- ^ The first path to compare and its root index
+          -> PGraph   -- ^ The second path to compare and its root index
+          -> Int      -- ^ The index to comparea
+          -> Ordering -- ^ The Ord result
+ordByBond p1 p2 index = ordBondList (bondTypeList p1 index)
+                                    (bondTypeList p2 index)
+
+
+ordBondList :: [NewBond] -> [NewBond] -> Ordering
+ordBondList [] [] = EQ
+ordBondList [] p = LT
+ordBondList p [] = GT
+ordBondList (bl1:bls1) (bl2:bls2) = let
+  output | compare bl1 bl2 /= EQ = compare bl1 bl2
+         | otherwise = ordBondList bls1 bls2
+  in output
+
+bondTypeList :: PGraph -> Int -> [NewBond]
+bondTypeList path p_i = let
+  index = pathIndex path p_i
+  mol = molecule path
+  bondTypeList = List.map (\a -> bondBetweenIndices mol index (bondsTo a))
+                         $ Set.toList
+                         $ atomBondSet
+                         $ fromJust
+                         $ getAtomAtIndex mol index
+  in List.sort bondTypeList
+
 -- | A comparison utility for ordAtom (below) that does the recursive path
 -- comparison at a given index position
 ordByPath :: PGraph  -- ^ The first path to compare and its root index
@@ -443,6 +471,7 @@ ordAtom p1 p2 p_i = let
   byNumber = compare (atomicNumber atom1) (atomicNumber atom2)
   byIsotope = compare (neutronNumber atom1) (neutronNumber atom2)
   byVertex = compare (Set.size $ atomBondSet atom1) (Set.size $ atomBondSet atom2)
+  byBond = ordByBond p1 p2 p_i
   byPath = ordByPath p1 p2 p_i
   fAtom d = compared
     where test = compare (B.toLazyByteString $ atomBits_RECURSIVE d m atom1)
@@ -461,6 +490,8 @@ ordAtom p1 p2 p_i = let
   ordElements
            -- The atoms are the same index in the molecule
           | i1 == i2     = EQ
+
+          | byBond    /= EQ =  byBond
 
          -- The atoms are the same element
           | byNumber    /= EQ =  byNumber

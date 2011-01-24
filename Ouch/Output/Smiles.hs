@@ -196,14 +196,24 @@ renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} 
   in output
 
 
+pairBondType :: Molecule
+         -> Pair
+         -> NewBond
+pairBondType mol pair = bondBetweenIndices mol (startAtom pair) (endAtom pair)
+
 -- | Renders the closures at the current state position according to the state's style
 renderClosuresSS :: SmiWriterState -> String
-renderClosuresSS state@SmiWriterState {closureMap=cMap} = let
-  renderClosure n | (length $ show n) > 1 = '%':(show n)
-                  | otherwise = show n
+renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=st} = let
+  mol = molecule path
+  renderClosure (n, pair) | Map.member n cMap = renderLabel n
+                       | otherwise = (bondStyle st $ pairBondType mol pair)
+                                  ++ (renderLabel n)
+  renderLabel n | (length $ show n) > 1 = '%':(show n)
+                | otherwise = show n
   pairs = findClosuresSS state
   closures = fst $ getClosureLabels cMap pairs
-  in List.foldr (\c acc -> acc ++ (renderClosure c)) "" closures
+  zipped = List.zip closures pairs
+  in List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped
 
 
 -- | Advances the closure state

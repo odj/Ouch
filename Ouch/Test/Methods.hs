@@ -38,6 +38,7 @@ module Ouch.Test.Methods
      , testFail
      , testMolForm
      , testForm
+     , testRoundTrip
      ) where
 
 {-# LANGUAGE RecordWildCards, CPP #-}
@@ -90,6 +91,7 @@ makeTestFromString s = TestData {function=func, description=l3, input=l2, outcom
                | l1 == "testHeavyCount" = testHeavyCount
                | l1 == "testEnum" = testEnum
                | l1 == "testForm" = testForm
+               | l1 == "testRoundTrip" = testRoundTrip
                | otherwise = testTest
 
 
@@ -169,3 +171,11 @@ testEnum s = Right $ show $ length $ [mol] >#> method
 
 testForm :: String -> Either String String
 testForm s = Right $ show $ List.length $ expand (read s :: Formula)
+
+testRoundTrip :: String -> Either String String
+testRoundTrip s = let
+  mol1 = read s :: Molecule
+  smi1 = show mol1
+  mol2 = read smi1 :: Molecule
+  smi2 = show mol2
+  in Right $  show $ (smi1 == smi2)

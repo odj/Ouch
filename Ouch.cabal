@@ -49,7 +49,7 @@ hs-source-dirs: .
 other-modules:
 ghc-prof-options:
 ghc-shared-options:
-ghc-options:
+ghc-options: -O2
 hugs-options:
 nhc98-options:
 jhc-options:
