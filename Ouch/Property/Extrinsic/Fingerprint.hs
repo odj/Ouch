@@ -296,7 +296,7 @@ longestPaths :: Molecule
              -> [PGraph]
 longestPaths m = let
   depth = Map.size (atomMap m)
-  paths = allTerminalPaths depth m
+  paths = allPaths depth m
   maxLength = List.maximum $ List.map pathLength paths
   longest = List.filter ((==maxLength) . pathLength) paths
   in longest
