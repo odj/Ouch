@@ -75,9 +75,8 @@ import Debug.Trace (trace)
 
 data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
                      , vertexList :: [Int]       -- ^ The path
-                     , root       :: Maybe Int   -- ^ The root mol index (not on path)
-                     }                           --   A root is needed to prevent infinite
-                                                 --   recursion in symmetrical graphs
+                     , root       :: [Int]       -- ^ The root mol paths to break recurson
+                     }
 
 hasOverlap :: PGraph -> PGraph -> Bool
 hasOverlap p1 p2 = let
@@ -128,7 +127,7 @@ atomBits_RECURSIVE :: Int
 atomBits_RECURSIVE depth  m a =  let
   i = fromJust $ getIndexForAtom a
   f_pb = pathBits atomBits_OUCH bondBits_OUCH
-  paths = findPaths depth (PGraph m [] Nothing) i
+  paths = findPaths depth (PGraph m [] []) i
   in List.foldr (\p b -> f_pb p .||. b) B.empty paths
 
 
@@ -257,7 +256,7 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=x:xs} = let
 allPaths :: Int
          -> Molecule
          -> [PGraph]
-allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m [] Nothing) i)
+allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m [] []) i)
                               [] indexList
   where indexList = Map.keys $ atomMap m
 
@@ -268,7 +267,7 @@ allTerminalPaths :: Int
                  -> [PGraph]
 allTerminalPaths depth m = List.foldr (\i p -> p `seq`
                                        p ++ findPaths depth
-                                       (PGraph m [] Nothing) i)
+                                       (PGraph m [] []) i)
                                        [] (allTerminalVertices m)
 
 
@@ -296,7 +295,7 @@ longestPaths :: Molecule
              -> [PGraph]
 longestPaths m = let
   depth = Map.size (atomMap m)
-  paths = allPaths depth m
+  paths = allTerminalPaths depth m
   maxLength = List.maximum $ List.map pathLength paths
   longest = List.filter ((==maxLength) . pathLength) paths
   in longest
@@ -311,13 +310,9 @@ longestLeastAnchoredPath :: PGraph
                          -> PGraph
 longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor = let
   depth = fromIntegral $ pathLength exclude
-  paths = case r of
-            Nothing -> findPathsExcluding (Set.fromList l) depth (exclude {vertexList=[]}) anchor
-            Just i  -> findPathsExcluding (Set.fromList $ i:l) depth (exclude {vertexList=[]}) anchor
+  paths = findPathsExcluding (Set.fromList $ r ++ l) depth (exclude {vertexList=[]}) anchor
   nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
-  rootedPaths = case r of
-            Nothing -> nonExcludedPaths
-            Just i -> List.map (\p -> p {root=(Just anchor)}) nonExcludedPaths
+  rootedPaths = List.map (\p -> p {root=[anchor]}) nonExcludedPaths
   output | List.length nonExcludedPaths == 0 = exclude {vertexList=[]}
          | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
@@ -332,7 +327,7 @@ findLongestLeastPath :: [PGraph]   -- ^ The paths to select from
                      -> PGraph     -- ^ The longest least path from starting list
 --findLongestLeastPath gs i | (trace $ show gs) False = undefined
 --findLongestLeastPath gs i | (trace $ "#Paths: " ++ (show $ List.length gs)) False = undefined
-findLongestLeastPath [] i = PGraph emptyMolecule [] Nothing
+findLongestLeastPath [] i = PGraph emptyMolecule [] []
 findLongestLeastPath gs i = let
   gsL = pLongest gs
   mol = molecule (gs!!0)
@@ -344,7 +339,7 @@ findLongestLeastPath gs i = let
   mapRanks = List.map (\a -> foldRanks a) gsL
   topRank = List.maximum mapRanks
   gs' = List.filter ((==topRank) . foldRanks) gsL
-  output | List.length gsL == 0 =  PGraph emptyMolecule [] Nothing
+  output | List.length gsL == 0 =  PGraph emptyMolecule [] []
          | List.length gsL == 1 = gsL!!0
          | pathLength (gsL!!0) == (fromIntegral i) = gsL!!0
          | otherwise = gs' `seq` findLongestLeastPath gs' (i+1)
@@ -378,6 +373,30 @@ longestLeastPath m = let
   in paths `seq` findLongestLeastPath paths 0
 
 
+
+ordByRootBond :: PGraph  -- ^ The first path to compare and its root index
+              -> PGraph   -- ^ The second path to compare and its root index
+              -> Int      -- ^ The index to comparea
+              -> Ordering -- ^ The Ord result
+ordByRootBond p1@PGraph {root=r1}
+              p2@PGraph {root=r2} index = let
+  mol = molecule p1
+  output | index /= 0 = EQ
+         | List.length r1 == 0 || List.length r2 == 0 = EQ
+         | otherwise = compare (bondBetweenIndices mol index (List.head r1))
+                               (bondBetweenIndices   mol index (List.head r2))
+  in output
+
+
+
+ordByOffPathBond :: PGraph  -- ^ The first path to compare and its root index
+                 -> PGraph   -- ^ The second path to compare and its root index
+                 -> Int      -- ^ The index to comparea
+                 -> Ordering -- ^ The Ord result
+ordByOffPathBond p1 p2 index = ordBondList (offPathBondTypeList p1 index)
+                                           (offPathBondTypeList p2 index)
+
+
 ordByBond :: PGraph  -- ^ The first path to compare and its root index
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
@@ -394,6 +413,16 @@ ordBondList (bl1:bls1) (bl2:bls2) = let
   output | compare bl1 bl2 /= EQ = compare bl1 bl2
          | otherwise = ordBondList bls1 bls2
   in output
+
+
+offPathBondTypeList :: PGraph -> Int -> [NewBond]
+offPathBondTypeList path p_i = let
+  index = pathIndex path p_i
+  mol = molecule path
+  bondTypeList = List.map (\a -> bondBetweenIndices mol index a) offPathList
+  offPathList =  Set.toList $ Set.difference (bondIndexSet path p_i)
+                                             (Set.fromList $ vertexList path)
+  in List.sort bondTypeList
 
 bondTypeList :: PGraph -> Int -> [NewBond]
 bondTypeList path p_i = let
@@ -415,18 +444,30 @@ ordByPath :: PGraph  -- ^ The first path to compare and its root index
 ordByPath p1 p2 index  = ordPathList (branchPaths p1 index)
                                      (branchPaths p2 index)
 
-
+ordByNextBond :: PGraph  -- ^ The first path to compare and its root index
+              -> PGraph   -- ^ The second path to compare and its root index
+              -> Int      -- ^ The index to comparea
+              -> Ordering -- ^ The Ord result
+ordByNextBond p1 p2 index = let
+  output | (index + 1) == (fromIntegral $ pathLength p1) = EQ
+         | (index + 1) == (fromIntegral $ pathLength p2) = EQ
+         | otherwise = compare (bondBetweenIndices mol m_i1 m_i1')
+                               (bondBetweenIndices mol m_i2 m_i2')
+  mol = molecule p1
+  m_i1 = pathIndex p1 index
+  m_i1' = pathIndex p1 (index + 1)
+  m_i2 = pathIndex p2 index
+  m_i2' = pathIndex p2 (index + 1)
+  in output
 
 bondIndexSet p p_i = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
                                  getAtomAtIndex (molecule p) (pathIndex p p_i)
-pathIndexSet p = case (root p) of
-                  Nothing -> Set.fromList $ vertexList p
-                  Just i  -> Set.fromList $ i:(vertexList p)
+pathIndexSet p = Set.fromList $ (root p) ++ (vertexList p)
 validIndexList p p_i = Set.toList $ Set.difference (bondIndexSet p p_i) (pathIndexSet p )
 pLongest ps = List.filter (\p -> longest == pathLength p) ps
                   where longest = List.maximum $ (List.map pathLength ps)
 branchPaths p p_i = List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
-  where pNew = p {root=(Just $ pathIndex p p_i)}
+  where pNew = p {root=(vertexList p)}
 
 
 
@@ -471,7 +512,10 @@ ordAtom p1 p2 p_i = let
   byNumber = compare (atomicNumber atom1) (atomicNumber atom2)
   byIsotope = compare (neutronNumber atom1) (neutronNumber atom2)
   byVertex = compare (Set.size $ atomBondSet atom1) (Set.size $ atomBondSet atom2)
-  byBond = ordByBond p1 p2 p_i
+  byBranchBond = ordByBond p1 p2 p_i
+  byRootBond = ordByRootBond p1 p2 p_i
+  byOffPathBond = ordByOffPathBond p1 p2 p_i
+  byNextBond = ordByNextBond p1 p2 p_i
   byPath = ordByPath p1 p2 p_i
   fAtom d = compared
     where test = compare (B.toLazyByteString $ atomBits_RECURSIVE d m atom1)
@@ -488,22 +532,23 @@ ordAtom p1 p2 p_i = let
               _ -> compare i1 i2
 
   ordElements
-           -- The atoms are the same index in the molecule
-          | i1 == i2     = EQ
 
-          | byBond    /= EQ =  byBond
-
-         -- The atoms are the same element
           | byNumber    /= EQ =  byNumber
 
-         -- Atoms are the same isotope
           | byIsotope   /= EQ = byIsotope
 
-         -- Atoms have the same number of connections
-          | byVertex    /= EQ = byVertex
+          | byNextBond /= EQ = byNextBond
 
-          -- | fAtom atoms  /= EQ = fAtom atoms
+          | byOffPathBond /= EQ  = byOffPathBond
 
+          | byRootBond /= EQ = byRootBond
+
+
+          | byBranchBond    /= EQ =  byBranchBond
+
+          -- | byVertex    /= EQ = byVertex
+
+          | i1 == i2 = EQ
           | byPath      /= EQ = byPath
 
          -- If all of the above are EQ, then the atoms REALLY ARE chemically equivalent

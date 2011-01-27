@@ -69,7 +69,7 @@ import Data.Map as Map
 
 data PGraph = PGraph { molecule   :: Molecule
                      , vertexList :: [Int]
-                     , root       :: Maybe Int
+                     , root       :: [Int]
                      }
 
 instance Show PGraph

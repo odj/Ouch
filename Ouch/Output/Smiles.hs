@@ -148,7 +148,7 @@ smiStart m = SmiWriterState
 advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
   render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
-  renderedSubpaths = List.map runSS $ findSubpathsSS state
+  renderedSubpaths = findSubpathsSS state `seq` List.map runSS $ findSubpathsSS state
   advancedState = forceRenderSS (advancePosSS $ advanceClosuresSS $ state) render
   in forceRenderSS (List.foldl (<+>) advancedState renderedSubpaths) (renderBondSS state)
 
@@ -187,9 +187,8 @@ renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} 
   mol = molecule path
   index = pathIndex path p_i
   r = root path
-  output = case r of
-            Nothing -> ""
-            Just m_i -> renderWithRoot m_i
+  output | length r == 0 = ""
+         | otherwise = renderWithRoot (List.head r)
   renderWithRoot m_i | p_i /= 0 = ""
                      | List.head (smiString state) /= '(' = ""
                      | otherwise = bondStyle st $ (bondBetweenIndices mol index m_i)
@@ -235,9 +234,8 @@ findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=
                                            $ getAtomAtIndex mol index
   pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
                             Set.empty (path:paths)
-  pathIndexSet' = case (root path) of
-                    Nothing -> pathIndexSet
-                    Just r  -> Set.delete r pathIndexSet
+  pathIndexSet' | length (root path) == 0 = pathIndexSet
+                | otherwise = Set.delete (List.head $ root path) pathIndexSet
   validIndexSet = Set.difference pathIndexSet' spanSet
   validIndexList = Set.toList $ Set.intersection bondIndexSet validIndexSet
   in List.map (\p -> Pair (index, p)) validIndexList
@@ -261,11 +259,11 @@ runSS :: SmiWriterState -> SmiWriterState
 runSS state | atEndSS state = if (head $ smiString state) == '('
                               then forceRenderSS state ")"
                               else state
-            | otherwise = runSS $ advanceSS state
+            | otherwise = advanceSS state `seq` runSS $ advanceSS state
 
 
 forceRenderSS :: SmiWriterState -> String -> SmiWriterState
-forceRenderSS state str = state {smiString = (smiString state) ++ str}
+forceRenderSS state str = state `seq` state {smiString = (smiString state) ++ str}
 
 
 
@@ -279,7 +277,7 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
                             Set.empty (path:paths)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(Just index)} a)
+  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(index:pathIndexList)} a)
                          validIndexList
   in List.map (\p -> state {smiString = "("
                           , traversing=p
