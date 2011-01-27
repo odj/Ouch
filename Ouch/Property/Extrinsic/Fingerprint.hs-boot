@@ -45,6 +45,7 @@ module Ouch.Property.Extrinsic.Fingerprint (
   , longestPaths
   , longestLeastPath
   , longestLeastAnchoredPath
+  , vToSet
   , (.||.)
   , (.|||.)
 
@@ -65,12 +66,14 @@ import Data.Maybe
 import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
+import qualified Data.Vector.Unboxed as U
 
 
-data PGraph = PGraph { molecule   :: Molecule
-                     , vertexList :: [Int]
-                     , root       :: [Int]
+data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
+                     , vertexList :: U.Vector Int       -- ^ The path
+                     , root       :: U.Vector Int       -- ^ The root mol paths to break recurson
                      }
+vToSet :: (U.Unbox a, Ord a) => U.Vector a -> Set a
 
 instance Show PGraph
 instance Ord PGraph

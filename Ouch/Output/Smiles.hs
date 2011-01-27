@@ -44,6 +44,7 @@ import Data.Maybe
 import Data.Set as Set
 import Data.Map as Map
 import Data.List as List
+import qualified Data.Vector.Unboxed as U
 
 
 newtype Logger = Logger {logger :: [String]} deriving (Show)
@@ -187,8 +188,8 @@ renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} 
   mol = molecule path
   index = pathIndex path p_i
   r = root path
-  output | length r == 0 = ""
-         | otherwise = renderWithRoot (List.head r)
+  output | U.length r == 0 = ""
+         | otherwise = renderWithRoot (U.head r)
   renderWithRoot m_i | p_i /= 0 = ""
                      | List.head (smiString state) /= '(' = ""
                      | otherwise = bondStyle st $ (bondBetweenIndices mol index m_i)
@@ -232,10 +233,10 @@ findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=
           | otherwise = Set.fromList [pathIndex path (p_i + 1), pathIndex path (p_i - 1)]
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex mol index
-  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
                             Set.empty (path:paths)
-  pathIndexSet' | length (root path) == 0 = pathIndexSet
-                | otherwise = Set.delete (List.head $ root path) pathIndexSet
+  pathIndexSet' | U.length (root path) == 0 = pathIndexSet
+                | otherwise = Set.delete (U.head $ root path) pathIndexSet
   validIndexSet = Set.difference pathIndexSet' spanSet
   validIndexList = Set.toList $ Set.intersection bondIndexSet validIndexSet
   in List.map (\p -> Pair (index, p)) validIndexList
@@ -273,11 +274,12 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
   index = pathIndex path p_i
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex mol index
-  pathIndexSet = List.foldr (\a acc -> Set.union acc $ Set.fromList $ vertexList a)
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
                             Set.empty (path:paths)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=pathIndexList, root=(index:pathIndexList)} a)
+  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
+                                                                         , root=(U.fromList (index:pathIndexList))} a)
                          validIndexList
   in List.map (\p -> state {smiString = "("
                           , traversing=p
