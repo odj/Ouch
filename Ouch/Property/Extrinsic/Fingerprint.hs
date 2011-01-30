@@ -72,6 +72,7 @@ import Data.Set as Set
 import Data.List as List hiding (intersect)
 import Data.Map as Map
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector as V
 import Debug.Trace (trace)
 
 
@@ -100,7 +101,6 @@ inPath pg i = U.elem i $ vertexList pg
 
 pathLength :: PGraph -> Integer
 pathLength p = fromIntegral $ U.length $ vertexList p
-
 
 instance Eq PGraph where
   (==) a b = (==) (vertexList a) (vertexList b)
@@ -138,7 +138,7 @@ atomBits_RECURSIVE depth  m a =  let
   i = fromJust $ getIndexForAtom a
   f_pb = pathBits atomBits_OUCH bondBits_OUCH
   paths = findPaths depth (PGraph m U.empty U.empty) i
-  in List.foldr (\p b -> f_pb p .||. b) B.empty paths
+  in V.foldr (\p b -> f_pb p .||. b) B.empty paths
 
 
 
@@ -190,7 +190,7 @@ moleculeBits :: (Molecule -> Atom -> Builder)
 moleculeBits atomB bondB depth m = let
   pathBits_OUCH = pathBits atomB bondB
   paths = allPaths depth m
-  in List.foldr (\p b -> b .||. pathBits_OUCH p) B.empty paths
+  in V.foldr (\p b -> b .||. pathBits_OUCH p) B.empty paths
 
 
 {------------------------------------------------------------------------------}
@@ -264,27 +264,27 @@ pathBits atomB bondB p@PGraph {molecule=m, vertexList=v} = let
 -- Returns all paths up to a given depth.  Always an even numbered list.
 allPaths :: Int
          -> Molecule
-         -> [PGraph]
-allPaths depth m = List.foldr (\i p -> p `seq` p ++ findPaths depth (PGraph m U.empty U.empty) i)
-                              [] indexList
-  where indexList = Map.keys $ atomMap m
+         -> (V.Vector PGraph)
+allPaths depth m = V.foldr (\i p -> p `seq` p V.++ findPaths depth (PGraph m U.empty U.empty) i)
+                              V.empty indexList
+  where indexList = V.fromList $ Map.keys $ atomMap m
 
 -- | Returns all paths up to a depth that start at an external position of the
 -- molecule.
 allTerminalPaths :: Int
                  -> Molecule
-                 -> [PGraph]
-allTerminalPaths depth m = List.foldr (\i p -> p `seq`
-                                       p ++ findPaths depth
+                 -> V.Vector PGraph
+allTerminalPaths depth m = V.foldr (\i p -> p `seq`
+                                       p V.++ findPaths depth
                                        (PGraph m U.empty U.empty) i)
-                                       [] (allTerminalVertices m)
+                                       V.empty (maxAtomicNumber m $ allTerminalVertices m)
 
 
 -- | Returns a list of all terminal atoms in a molecule (those that have the
 -- LEAST number of vertices
 allTerminalVertices :: Molecule
-                    -> [Int]
-allTerminalVertices m = List.foldr (\a acc -> if ((snd a) == minValence)
+                    -> V.Vector Int
+allTerminalVertices m = V.fromList $ List.foldr (\a acc -> if ((snd a) == minValence)
                                               then (fst a):acc
                                               else acc) [] zippedIndex
   where indexList = Map.keys $ atomMap m
@@ -295,18 +295,29 @@ allTerminalVertices m = List.foldr (\a acc -> if ((snd a) == minValence)
         minValence = List.minimum $ valenceList
         zippedIndex = List.zip indexList valenceList
 
+maxAtomicNumber :: Molecule
+                -> V.Vector Int
+                -> V.Vector Int
+maxAtomicNumber m m_is = let
+  atomicNums = V.map (\i -> atomicNumber $ fromJust $ getAtomAtIndex m i) m_is
+  maxAN = V.maximum atomicNums
+  zippedIndex = V.zip m_is atomicNums
+  in V.fromList $ V.foldr (\a acc -> if ((snd a) == maxAN)
+                                     then (fst a):acc
+                                     else acc) [] zippedIndex
 
 {------------------------------------------------------------------------------}
 {-- longestPaths --}
 -- Returns the longest paths found in a molecule.  Because paths can go
 -- in either direction, this will always be an even numbered list.
 longestPaths :: Molecule
-             -> [PGraph]
+             -> V.Vector PGraph
 longestPaths m = let
   depth = Map.size (atomMap m)
+  --paths = allPaths depth m
   paths = allTerminalPaths depth m
-  maxLength = List.maximum $ List.map pathLength paths
-  longest = List.filter ((==maxLength) . pathLength) paths
+  maxLength = V.maximum $ V.map pathLength paths
+  longest = V.filter ((==maxLength) . pathLength) paths
   in longest
 
 {------------------------------------------------------------------------------}
@@ -320,9 +331,9 @@ longestLeastAnchoredPath :: PGraph
 longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor = let
   depth = fromIntegral $ pathLength exclude
   paths = findPathsExcluding (vToSet $ r U.++ l) depth (exclude {vertexList=U.empty}) anchor
-  nonExcludedPaths = List.filter (\a -> False == hasOverlap exclude a) paths
-  rootedPaths = List.map (\p -> p {root=(U.singleton anchor)}) nonExcludedPaths
-  output | List.length nonExcludedPaths == 0 = exclude {vertexList=U.empty}
+  nonExcludedPaths = V.filter (\a -> False == hasOverlap exclude a) paths
+  rootedPaths = V.map (\p -> p {root=(U.singleton anchor)}) nonExcludedPaths
+  output | V.length nonExcludedPaths == 0 = exclude {vertexList=U.empty}
          | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
 
@@ -331,26 +342,27 @@ longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor
 -- returns the "least" path according to atom ordering rules.  Used in selecting a
 -- path for canonicalization.
 -- Not used directly.
-findLongestLeastPath :: [PGraph]   -- ^ The paths to select from
+findLongestLeastPath :: V.Vector PGraph   -- ^ The paths to select from
                      -> Int        -- ^ The current index being compared
                      -> PGraph     -- ^ The longest least path from starting list
 --findLongestLeastPath gs i | (trace $ show gs) False = undefined
 --findLongestLeastPath gs i | (trace $ "#Paths: " ++ (show $ List.length gs)) False = undefined
-findLongestLeastPath [] i = PGraph emptyMolecule U.empty U.empty
+--findLongestLeastPath V.empty i = PGraph emptyMolecule U.empty U.empty
 findLongestLeastPath gs i = let
   gsL = pLongest gs
-  mol = molecule (gs!!0)
+  mol = molecule (V.head gs)
   ranks r acc | acc==LT || r  ==LT = LT
               | acc==EQ && r  ==GT = GT
               | acc==EQ && r  ==EQ = EQ
               | acc==GT            = GT
-  foldRanks g = List.foldl (\acc a -> ranks (ordAtom g a i) acc ) EQ gsL
-  mapRanks = List.map (\a -> foldRanks a) gsL
-  topRank = List.maximum mapRanks
-  gs' = List.filter ((==topRank) . foldRanks) gsL
-  output | List.length gsL == 0 =  PGraph emptyMolecule U.empty U.empty
-         | List.length gsL == 1 = gsL!!0
-         | pathLength (gsL!!0) == (fromIntegral i) = gsL!!0
+  foldRanks g = V.foldl (\acc a -> ranks (ordAtom g a i) acc ) EQ gsL
+  mapRanks = V.map (\a -> foldRanks a) gsL
+  topRank = V.maximum mapRanks
+  gs' = V.filter ((==topRank) . foldRanks) gsL
+  output | V.length gs == 0 = PGraph emptyMolecule U.empty U.empty
+         | V.length gsL == 0 =  PGraph emptyMolecule U.empty U.empty
+         | V.length gsL == 1 = V.head gsL
+         | pathLength (V.head gsL) == (fromIntegral i) = V.head gsL
          | otherwise = gs' `seq` findLongestLeastPath gs' (i+1)
   in  output
 
@@ -473,26 +485,26 @@ bondIndexSet p p_i = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
                                  getAtomAtIndex (molecule p) (pathIndex p p_i)
 pathIndexSet p = vToSet $ (root p) U.++ (vertexList p)
 validIndexList p p_i = Set.toList $ Set.difference (bondIndexSet p p_i) (pathIndexSet p )
-pLongest ps = List.filter (\p -> longest == pathLength p) ps
-                  where longest = List.maximum $ (List.map pathLength ps)
-branchPaths p p_i = List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
+pLongest ps = V.filter (\p -> longest == pathLength p) ps
+                  where longest = V.maximum $ (V.map pathLength ps)
+branchPaths p p_i = V.fromList $ List.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
   where pNew = p {root=(vertexList p)}
 
 
 
 
-ordPathList :: [PGraph] -> [PGraph] -> Ordering
+ordPathList :: V.Vector PGraph -> V.Vector PGraph -> Ordering
 --ordPathList p1 p2 | (trace $ "OrdPath Compare-- A: " ++ (show p1) ++ (show p2))  False = undefined
-ordPathList [] [] = EQ
-ordPathList [] p = LT
-ordPathList p [] = GT
 ordPathList ps1 ps2 = let
   ll1 = findLongestLeastPath ps1 0
   ll2 = findLongestLeastPath ps2 0
-  xp1 = List.delete ll1 ps1
-  xp2 = List.delete ll2 ps2
+  xp1 = V.filter (/=ll1) ps1
+  xp2 = V.filter (/=ll2) ps2
   comp = comparePaths ll1 ll2
-  output | comp /= EQ = comp
+  output | V.length ps1 == 0 && V.length ps2 == 0 = EQ
+         | V.length ps1 == 0 = LT
+         | V.length ps2 == 0 = GT
+         | comp /= EQ = comp
          | otherwise = ordPathList xp1 xp2
   in output
 
@@ -542,27 +554,25 @@ ordAtom p1 p2 p_i = let
 
   ordElements
 
-          | byNumber    /= EQ =  byNumber
+           | byNumber    /= EQ =  byNumber
 
-          | byIsotope   /= EQ = byIsotope
+           | byIsotope   /= EQ = byIsotope
 
-          | byNextBond /= EQ = byNextBond
+           | byNextBond /= EQ = byNextBond
 
-          | byOffPathBond /= EQ  = byOffPathBond
+           | byRootBond /= EQ = byRootBond
 
-          | byRootBond /= EQ = byRootBond
+           | byOffPathBond /= EQ  = byOffPathBond
+           | byBranchBond    /= EQ =  byBranchBond
 
+           | byVertex    /= EQ = byVertex
 
-          | byBranchBond    /= EQ =  byBranchBond
-
-          -- | byVertex    /= EQ = byVertex
-
-          | i1 == i2 = EQ
-          | byPath      /= EQ = byPath
+           | i1 == i2 = EQ
+           | byPath      /= EQ = byPath
 
          -- If all of the above are EQ, then the atoms REALLY ARE chemically equivalent
          -- and cannot be distinguished.
-         | otherwise         = EQ
+          | otherwise         = EQ
   in output
 
 
@@ -574,17 +584,17 @@ findPathsExcluding :: Set Int  -- ^ The atom index set to exclude from paths
                    -> Int      -- ^ The maximum depth to recursively add to path
                    -> PGraph   -- ^ The path we are recursively adding to
                    -> Int      -- ^ The atom index to add to the growing path
-                   -> [PGraph] -- ^ The new paths created after terminal recursion
+                   -> V.Vector PGraph -- ^ The new paths created after terminal recursion
 findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index
   pathIndexSet = Set.union exclude $ vToSet l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
-  accPath i p = p `seq` p ++ (findPathsExcluding exclude depth path' i)
-  paths | Set.size validIndexSet == 0      = [path']
-        | U.length l > depth               = [path']
-        | otherwise = Set.fold accPath [] validIndexSet
+  accPath i p = p `seq` p V.++ (findPathsExcluding exclude depth path' i)
+  paths | Set.size validIndexSet == 0      = V.singleton path'
+        | U.length l > depth               = V.singleton path'
+        | otherwise = Set.fold accPath V.empty validIndexSet
   in paths
 
 
@@ -594,17 +604,17 @@ findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index = 
 findPaths :: Int      -- ^ The maximum depth
           -> PGraph   -- ^ The path we are building up
           -> Int      -- ^ The atom indices to add to the growing path
-          -> [PGraph] -- ^ The new paths created after terminal recursion
+          -> V.Vector PGraph -- ^ The new paths created after terminal recursion
 findPaths depth path@PGraph {molecule=m, vertexList=l} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index
   pathIndexSet = vToSet l
   validIndexSet = Set.difference bondIndexSet pathIndexSet
-  accPath i p = p `seq` p ++ (findPaths depth path' i)
-  paths | Set.size validIndexSet == 0      = [path']
-        | U.length l > depth            = [path']
-        | otherwise = Set.fold accPath [] validIndexSet
+  accPath i p = p `seq` p V.++ (findPaths depth path' i)
+  paths | Set.size validIndexSet == 0   = V.singleton path'
+        | U.length l > depth            = V.singleton path'
+        | otherwise = Set.fold accPath V.empty validIndexSet
   in paths
 
 

@@ -67,6 +67,7 @@ import Data.Set as Set
 import Data.List as List
 import Data.Map as Map
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector as V
 
 
 data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
@@ -99,14 +100,14 @@ pathBits :: (Molecule -> Atom -> Builder) -> (Molecule -> Bond -> Builder) -> PG
 (.||.) :: Builder -> Builder -> Builder
 (.|||.) :: Builder -> Builder -> Builder
 (.||>.) :: Builder -> Builder -> Builder
-allPaths :: Int -> Molecule -> [PGraph]
-longestPaths :: Molecule -> [PGraph]
+allPaths :: Int -> Molecule -> V.Vector PGraph
+longestPaths :: Molecule -> V.Vector PGraph
 longestLeastAnchoredPath :: PGraph -> Int -> PGraph
-findLongestLeastPath :: [PGraph] -> Int -> PGraph
+findLongestLeastPath :: V.Vector PGraph -> Int -> PGraph
 longestLeastPath :: Molecule -> PGraph
 ordAtom :: Molecule -> Int -> Int -> Ordering
-findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> [PGraph]
-findPaths :: Int ->  PGraph -> Int -> [PGraph]
+findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> V.Vector PGraph
+findPaths :: Int ->  PGraph -> Int -> V.Vector PGraph
 pathIndex :: PGraph -> Int -> Int
 
 
