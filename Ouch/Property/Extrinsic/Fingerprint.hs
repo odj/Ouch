@@ -555,18 +555,12 @@ ordAtom p1 p2 p_i = let
   ordElements
 
            | byNumber    /= EQ =  byNumber
-
            | byIsotope   /= EQ = byIsotope
-
            | byNextBond /= EQ = byNextBond
-
            | byRootBond /= EQ = byRootBond
-
            | byOffPathBond /= EQ  = byOffPathBond
            | byBranchBond    /= EQ =  byBranchBond
-
            | byVertex    /= EQ = byVertex
-
            | i1 == i2 = EQ
            | byPath      /= EQ = byPath
 
@@ -594,7 +588,7 @@ findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index = 
   accPath i p = p `seq` p V.++ (findPathsExcluding exclude depth path' i)
   paths | Set.size validIndexSet == 0      = V.singleton path'
         | U.length l > depth               = V.singleton path'
-        | otherwise = Set.fold accPath V.empty validIndexSet
+        | otherwise = Set.fold accPath V.empty $ Set.singleton $ Set.findMax validIndexSet --validIndexSet
   in paths
 
 
@@ -614,7 +608,7 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index = let
   accPath i p = p `seq` p V.++ (findPaths depth path' i)
   paths | Set.size validIndexSet == 0   = V.singleton path'
         | U.length l > depth            = V.singleton path'
-        | otherwise = Set.fold accPath V.empty validIndexSet
+        | otherwise = Set.fold accPath V.empty $ Set.singleton $ Set.findMax validIndexSet --validIndexSet
   in paths
 
 
