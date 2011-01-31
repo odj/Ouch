@@ -34,6 +34,7 @@ module Ouch.Output.Smiles (
 
 import {-# SOURCE #-} Ouch.Property.Extrinsic.Fingerprint
 import {-# SOURCE #-} Ouch.Structure.Molecule
+import Ouch.Property.Graph
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Enumerate.Method

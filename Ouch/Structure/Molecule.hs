@@ -80,8 +80,8 @@ import Ouch.Structure.Bond
 import Ouch.Structure.Marker
 
 
-import {-# SOURCE #-}  Ouch.Property.Builder
-import {-# SOURCE #-}  Ouch.Property.Extrinsic.Fingerprint
+import {-# SOURCE #-} Ouch.Property.Builder
+import {-# SOURCE #-} Ouch.Property.Extrinsic.Fingerprint
 import {-# SOURCE #-} Ouch.Input.Smiles
 import Ouch.Output.Smiles
 import Ouch.Enumerate.Method

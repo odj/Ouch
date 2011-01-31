@@ -29,23 +29,11 @@
 -------------------------------------------------------------------------------}
 
 module Ouch.Property.Extrinsic.Fingerprint (
-    PGraph(..)
-  , pathLength
-  , inPath
-  , hasOverlap
-  , atomBits_OUCH
+    atomBits_OUCH
   , molBits_OUCH
   , molBits_N
   , molBits_ID
   , pathBits
-  , findPaths
-  , allPaths
-  , pathIndex
-  , findLongestLeastPath
-  , longestPaths
-  , longestLeastPath
-  , longestLeastAnchoredPath
-  , vToSet
   , (.||.)
   , (.|||.)
 
@@ -60,6 +48,7 @@ import Data.Word
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import {-# SOURCE #-} Ouch.Structure.Molecule
+import Ouch.Property.Graph
 import Ouch.Data.Atom
 import Ouch.Data.Bond
 import Data.Maybe
@@ -70,25 +59,12 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector as V
 
 
-data PGraph = PGraph { molecule   :: Molecule    -- ^ The molecule to apply the path
-                     , vertexList :: U.Vector Int       -- ^ The path
-                     , root       :: U.Vector Int       -- ^ The root mol paths to break recurson
-                     }
-vToSet :: (U.Unbox a, Ord a) => U.Vector a -> Set a
 
-instance Show PGraph
-instance Ord PGraph
-instance Eq PGraph
 
 atomBits_OUCH :: Molecule -> Atom -> Builder
 atomBits_RECURSIVE :: Int -> Molecule -> Atom -> Builder
 molBits_N :: Int -> Molecule -> Builder
 molBits_ID :: Int -> Molecule -> Builder
-
-
-hasOverlap :: PGraph -> PGraph -> Bool
-inPath :: PGraph -> Int -> Bool
-pathLength :: PGraph -> Integer
 
 
 
@@ -100,14 +76,6 @@ pathBits :: (Molecule -> Atom -> Builder) -> (Molecule -> Bond -> Builder) -> PG
 (.||.) :: Builder -> Builder -> Builder
 (.|||.) :: Builder -> Builder -> Builder
 (.||>.) :: Builder -> Builder -> Builder
-allPaths :: Int -> Molecule -> V.Vector PGraph
-longestPaths :: Molecule -> V.Vector PGraph
-longestLeastAnchoredPath :: PGraph -> Int -> PGraph
-findLongestLeastPath :: V.Vector PGraph -> Int -> PGraph
-longestLeastPath :: Molecule -> PGraph
-ordAtom :: Molecule -> Int -> Int -> Ordering
-findPathsExcluding :: Set Int -> Int ->  PGraph -> Int -> V.Vector PGraph
-findPaths :: Int ->  PGraph -> Int -> V.Vector PGraph
 pathIndex :: PGraph -> Int -> Int
 
 

@@ -37,7 +37,7 @@ module Ouch.Property.Ring
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
 import Ouch.Structure.Marker
-import {-# SOURCE #-} Ouch.Structure.Molecule
+import Ouch.Structure.Molecule
 import Data.Either
 import Data.Maybe
 import Data.Map as Map
