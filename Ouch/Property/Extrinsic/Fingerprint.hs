@@ -314,8 +314,8 @@ longestPaths :: Molecule
              -> V.Vector PGraph
 longestPaths m = let
   depth = Map.size (atomMap m)
-  --paths = allPaths depth m
-  paths = allTerminalPaths depth m
+  paths = allPaths depth m
+  -- paths = allTerminalPaths depth m
   maxLength = V.maximum $ V.map pathLength paths
   longest = V.filter ((==maxLength) . pathLength) paths
   in longest
@@ -588,7 +588,7 @@ findPathsExcluding exclude depth path@PGraph {molecule=m, vertexList=l} index = 
   accPath i p = p `seq` p V.++ (findPathsExcluding exclude depth path' i)
   paths | Set.size validIndexSet == 0      = V.singleton path'
         | U.length l > depth               = V.singleton path'
-        | otherwise = Set.fold accPath V.empty $ Set.singleton $ Set.findMax validIndexSet --validIndexSet
+        | otherwise = Set.fold accPath V.empty validIndexSet
   in paths
 
 
@@ -608,7 +608,7 @@ findPaths depth path@PGraph {molecule=m, vertexList=l} index = let
   accPath i p = p `seq` p V.++ (findPaths depth path' i)
   paths | Set.size validIndexSet == 0   = V.singleton path'
         | U.length l > depth            = V.singleton path'
-        | otherwise = Set.fold accPath V.empty $ Set.singleton $ Set.findMax validIndexSet --validIndexSet
+        | otherwise = Set.fold accPath V.empty validIndexSet
   in paths
 
 
