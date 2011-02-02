@@ -73,14 +73,18 @@ hasOverlap p1 p2 = let
   intersectList = intersect l1 l2
   in U.length intersectList > 0
 
+
 inPath :: PGraph -> Int -> Bool
 inPath pg i = U.elem i $ vertexList pg
+
 
 pathLength :: PGraph -> Integer
 pathLength p = fromIntegral $ U.length $ vertexList p
 
+
 intersect :: (U.Unbox a, Eq a) => U.Vector a -> U.Vector a -> U.Vector a
 intersect v1 v2 = U.filter (\e -> U.elem e v2) v1
+
 
 vToSet :: (U.Unbox a, Ord a) => U.Vector a -> Set a
 vToSet v = S.fromList $ U.toList v
@@ -89,12 +93,15 @@ vToSet v = S.fromList $ U.toList v
 instance Eq PGraph where
   (==) a b = (==) (vertexList a) (vertexList b)
 
+
 instance Show PGraph where
   show p = (show $ vertexList p) ++ "\n"
-        ++ "With root :" ++ (show $ root p)
+        -- ++ "With root :" ++ (show $ root p)
+
 
 instance Ord PGraph where
   compare a b = comparePaths a b
+
 
 {------------------------------------------------------------------------------}
 {-------------------------------Functions--------------------------------------}
@@ -104,26 +111,33 @@ instance Ord PGraph where
 allPathsForIndex :: Molecule
                  -> Int
                  -> Map Int (V.Vector PGraph)
-                 -> V.Vector PGraph
+                 -> Map Int (V.Vector PGraph)
 allPathsForIndex m m_i gMap = let
-  in undefined
+  startPath = PGraph m (U.singleton m_i) U.empty
+  in M.insert m_i (growPath gMap startPath) gMap
 
+
+pathMap :: Molecule -> Map Int (V.Vector PGraph)
+pathMap m = let
+  atoms = M.keys $ atomMap m
+  in L.foldr (allPathsForIndex m) M.empty atoms
 
 growPath :: Map Int (V.Vector PGraph)
          -> PGraph
          -> V.Vector PGraph
 growPath gMap path@PGraph {molecule=m, vertexList=l} = let
-  bondSet = bondIndexSetM m $ U.head l
+  bondSet = bondIndexSetM m $ U.last l
   indexSet = vToSet l
-  validList = S.toList $ S.difference bondSet indexSet
+  validSet = S.difference bondSet indexSet
   growPath' = growPath gMap
-  paths = L.foldr (\m_i acc -> case M.lookup m_i gMap of
-                         Just paths' -> (growPath' $ path {vertexList=U.cons m_i l}) V.++ acc
-                         Nothing -> (growPath' $ path {vertexList=U.cons m_i l}) V.++ acc
-                         ) V.empty validList
+  paths = S.fold (\m_i acc -> case M.lookup m_i gMap of
+                         -- Just paths' -> (V.map (\p -> nonexcludedCons path p) paths') V.++ acc
+                         Just paths' -> (growPath' $ path {vertexList = l U.++ (U.singleton m_i)}) V.++ acc
+                         Nothing -> (growPath' $ path {vertexList = l U.++ (U.singleton m_i)}) V.++ acc
+                         ) V.empty validSet
 
   output | pathLength path == 0 = V.singleton path
-         | L.length validList == 0 = V.singleton path
+         | S.size validSet == 0 = V.singleton path
          | otherwise = paths
   in output
 
