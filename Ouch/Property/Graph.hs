@@ -114,7 +114,7 @@ allPathsForIndex :: Molecule
                  -> Map Int (V.Vector PGraph)
 allPathsForIndex m m_i gMap = let
   startPath = PGraph m (U.singleton m_i) U.empty
-  in M.insert m_i (growPath gMap startPath) gMap
+  in M.insert m_i (removeSubpaths $ growPath gMap startPath) gMap
 
 
 pathMap :: Molecule -> Map Int (V.Vector PGraph)
@@ -131,8 +131,9 @@ growPath gMap path@PGraph {molecule=m, vertexList=l} = let
   validSet = S.difference bondSet indexSet
   growPath' = growPath gMap
   paths = S.fold (\m_i acc -> case M.lookup m_i gMap of
-                         -- Just paths' -> (V.map (\p -> nonexcludedCons path p) paths') V.++ acc
-                         Just paths' -> (growPath' $ path {vertexList = l U.++ (U.singleton m_i)}) V.++ acc
+                         Just paths' -> V.foldr (\p acc -> case (nonexcludedCons path p) of
+                                          Nothing -> acc
+                                          Just newPath -> V.cons newPath acc) acc paths'
                          Nothing -> (growPath' $ path {vertexList = l U.++ (U.singleton m_i)}) V.++ acc
                          ) V.empty validSet
 
@@ -142,22 +143,49 @@ growPath gMap path@PGraph {molecule=m, vertexList=l} = let
   in output
 
 
+-- |
+removeSubpaths :: V.Vector PGraph -> V.Vector PGraph
+removeSubpaths v1 = let
+  notSubpath p ps = V.foldr (\p' acc -> if p == p' then acc
+                                        else if (isLinearSubpath p p') then False
+                                        else acc) True ps
+  output = V.foldr (\a acc -> if notSubpath a v1
+                              then V.cons a acc
+                              else acc) V.empty v1
+  in output
+
+
+
 -- | Takes two paths, the parent and the path to concatenate
 -- creates a new path that adds the longest subset of the
 -- second path that does not contain any elements from the first path
 nonexcludedCons :: PGraph  -- ^ The path to add to
                 -> PGraph  -- ^ The path to add from
-                -> PGraph  -- ^ The new path
+                -> Maybe PGraph  -- ^ The new path
 nonexcludedCons path1@PGraph {vertexList=l1} path2@PGraph {vertexList=l2} = let
   maxIndex = U.foldr (\a acc -> case (U.elemIndex a l2) of
                         Nothing  -> acc
                         Just p_i -> if p_i < acc then p_i
                                     else acc)
                      (U.length l2) l1
-  output | U.length l1 == 0 = path1 {vertexList=l2}
-         | U.length l2 == 0 = path1
-         | otherwise = path1 {vertexList = l1 U.++ (U.slice 0 maxIndex l2)}
+  output | U.length l1 == 0 = Nothing -- path1 {vertexList=l2}
+         | U.length l2 == 0 = Nothing -- path1
+         | U.length l2 == 1 = Just $ path1 {vertexList = l1 U.++ l2}
+         | otherwise = Just $ path1 {vertexList = l1 U.++ (U.slice 0 maxIndex l2)}
   in output
+
+-- | Takes a short path and a long path and return true if
+-- the short path's elements match the long path's elements
+-- starting from the first index and going to the end.
+isLinearSubpath :: PGraph -> PGraph -> Bool
+isLinearSubpath p1@PGraph {vertexList = l1} p2@PGraph {vertexList = l2} = let
+  output | (pathLength p1) > (pathLength p2) = False
+         | p1 == p2 = True
+         | otherwise = snd $ U.foldl (\acc a -> if (snd acc) == False then acc
+                                           else if a /= (l2 U.! (fst acc)) then (0, False)
+                                           else (1+(fst acc), True))  (0, True) l1
+  in output
+
 
 
 -- | Gets all molecule indices that the given index bonds to

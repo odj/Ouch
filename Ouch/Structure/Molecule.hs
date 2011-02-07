@@ -538,8 +538,9 @@ hasClosure m = List.elem True $ List.map (isClosure) markers
 {------------------------------------------------------------------------------}
 addMolecule :: Molecule -> Molecule -> Molecule
 addMolecule m1 m2 = if (moleculeHasError m1) then m1 else
-                    if (moleculeHasError m1) then m2 else m12
+                    if (moleculeHasError m2) then m1 else m12
     where m12 = Molecule {atomMap=newMap, molMarkerSet=newMarkerSet, molPropertyMap=Map.empty}
+          m1err = giveMoleculeError m1 "Tried to added a molecule with error marker."
           newMap = Map.union (atomMap m1) incMap
           newMarkerSet = Set.union (molMarkerSet m1) (molMarkerSet m2)
           m1Length = Map.size $ atomMap m1
