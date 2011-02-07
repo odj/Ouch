@@ -41,6 +41,7 @@ module Ouch.Property.Graph
   , longestLeastPath
   , longestLeastAnchoredPath
   , comparePaths
+  , pathMap
   , vToSet
   ) where
 

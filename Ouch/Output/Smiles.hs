@@ -46,6 +46,7 @@ import Data.Set as Set
 import Data.Map as Map
 import Data.List as List
 import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector as V
 
 
 newtype Logger = Logger {logger :: [String]} deriving (Show)
@@ -65,6 +66,7 @@ data SmiWriterState = SmiWriterState
   { smiString  :: String                -- ^ The SMILES String
   , style      :: SmiStyle              -- ^ The Style to render with
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
+  , pMap       :: Map Int (V.Vector PGraph)
   , position   :: Int                   -- ^ The position on the current path
   , traversing :: PGraph                -- ^ The path currently being rendered
   , traversed  :: [PGraph]              -- ^ Paths that have already been rendered
@@ -119,10 +121,12 @@ logString l s =  Logger $ s:(logger l)
 smiNewSub :: SmiWriterState -> PGraph -> SmiWriterState
 smiNewSub state@SmiWriterState { style=st
                                , traversed=tv
-                               , closureMap=cmap} path =
+                               , closureMap=cmap
+                               , pMap=pm} path =
   SmiWriterState { smiString = "("
                  , style = st
                  , closureMap = cmap
+                 , pMap = pm
                  , position = 0
                  , traversing = path
                  , traversed = tv
@@ -139,6 +143,7 @@ smiStart m = SmiWriterState
                           , bondStyle=writeBond
                           }
   , closureMap = Map.empty
+  , pMap = pathMap m
   , position   = 0
   , traversing = longestLeastPath $ head ([m] >#> stripMol)
   , traversed  = []
