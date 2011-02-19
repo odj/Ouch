@@ -27,6 +27,7 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE BangPatterns #-}
 
 module Ouch.Structure.Molecule
     (
@@ -127,7 +128,7 @@ getAtomAtIndex m i = Map.lookup i $ atomMap m
 -- atom index.  If the molecule is flagged with an error, then returns the (corrupt)
 -- molecule unchanged.
 setAtom :: Atom -> Molecule -> Molecule
-setAtom a m  = m >>> mOut
+setAtom !a !m  = m >>> mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m
              | otherwise = output
         atomIndex = getIndexForAtom a
@@ -141,10 +142,10 @@ setAtom a m  = m >>> mOut
 -- Adds atom to top of the atom list with no bonds to the molecule.
 {------------------------------------------------------------------------------}
 addAtom :: Atom -> Molecule -> Molecule
-addAtom a m = m >>> mOut
+addAtom !a !m = m >>> mOut
     where mOut =  m {atomMap = Map.insert atomNumber newAtom $ atomMap m}
           atomNumber = Map.size $ atomMap m
-          newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
+          !newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
 
 
 addMolMarker :: Molecule -> MoleculeMarker -> Molecule
@@ -261,7 +262,7 @@ numberBondsToLonePairAtIndex m i  = numberOfBondToAtomWithProperty m i isLonePai
 -- Connects two atom positions with a new bond
 {------------------------------------------------------------------------------}
 addBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-addBond m i1 i2 b  =  m >>> mOut
+addBond !m !i1 !i2 !b  =  m >>> mOut
     where mOut | (isNothing a1 || isNothing a2) =
                     giveMoleculeError m $ "Cannot connect atoms at positions: "
                     ++ (show i1) ++ " " ++ (show i2)
@@ -445,7 +446,7 @@ hasHangingClosure m = if (moleculeHasError m) then False else output
 --cyclizeMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
+cyclizeMoleculeAtIndexesWithBond !m !i1 !i2 !b =
     let a1 = Map.lookup i1 (atomMap m)
         a2 = Map.lookup i2 (atomMap m) in
     if (moleculeHasError m) then m else case a1 of
@@ -478,7 +479,7 @@ cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
 -- invalid.
 {------------------------------------------------------------------------------}
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
-connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = m1 >>> mOut
+connectMoleculesAtIndicesWithBond !m1 !i1 !m2 !i2 !b = m1 >>> mOut
   where mOut = connectMolecules m1 i1 m2 i2 b
         connectMolecules m1 i1 m2 i2 b | m2isEmpty = m1
                                        | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
@@ -624,7 +625,7 @@ atomAtIndex m i = Map.lookup i $ atomMap m
 -- molecule is returned with a warnng string added that this operation failed
 {------------------------------------------------------------------------------}
 addMarkerToAtomAtIndex :: Molecule -> Int -> AtomMarker -> Molecule
-addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
+addMarkerToAtomAtIndex !m !i !am = if (moleculeHasError m) then m else case atom of
     Nothing -> markMolecule m warning
     Just a  -> m {atomMap = Map.insert i (markAtom a am) (atomMap m)}
     where atom = atomAtIndex m i

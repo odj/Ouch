@@ -28,6 +28,7 @@
 -------------------------------------------------------------------------------}
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Ouch.Structure.Atom (
       Atom(..)
@@ -83,8 +84,6 @@ data Atom   = Element {atomicNumber::Integer
 
 getMarkerSet :: Atom -> (Set AtomMarker)
 getMarkerSet a = atomMarkerSet a
-
-
 
 
 
@@ -155,7 +154,7 @@ occupiedValence a = output
 -- sp3 (i.e. for Boron).
 {------------------------------------------------------------------------------}
 valence :: Atom -> (Integer, Integer)
-valence a = let    grp1 = [1,2,11,19,37,55]
+valence !a = let   grp1 = [1,2,11,19,37,55]
                    grp2 = [4,12,20,38,56,88]
                    grp13 = [5,13,31,49,81]
                    grp14 = [6,14,32,50,82]
@@ -215,7 +214,7 @@ valence a = let    grp1 = [1,2,11,19,37,55]
 
 {------------------------------------------------------------------------------}
 incrementAtom :: Atom -> Int -> Atom
-incrementAtom a i = a {atomBondSet=newBondSet, atomMarkerSet=newMarkerSet}
+incrementAtom !a !i = a {atomBondSet=newBondSet, atomMarkerSet=newMarkerSet}
   where newBondSet = Set.mapMonotonic incrementBond $ atomBondSet a
         newMarkerSet = Set.insert (Label $ (+i) $ fromJust $ getIndexForAtom a ) $
                                   atomMarkerSet a
@@ -305,23 +304,23 @@ isOpen a = case a of
 
 
 hasMarker :: Atom -> AtomMarker -> Bool
-hasMarker a mk = Set.member mk $ atomMarkerSet a
+hasMarker !a !mk = Set.member mk $ atomMarkerSet a
 
 getMarker :: Atom -> AtomMarker -> Maybe AtomMarker
-getMarker a mk | hasMarker a mk = Just mk' | otherwise = Nothing
+getMarker !a !mk | hasMarker a mk = Just mk' | otherwise = Nothing
   where mk' = Set.findMax $ Set.filter (\mk' -> EQ == compare mk mk') $ atomMarkerSet a
 
 
 {------------------------------------------------------------------------------}
 removeClosureAtomMarker :: Atom -> Int -> Atom
-removeClosureAtomMarker a i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)}
+removeClosureAtomMarker !a !i = a{atomMarkerSet = (Set.delete deleteAtomMarker $ atomMarkerSet a)}
     where deleteAtomMarker = Closure i Single
 
 
 
 {------------------------------------------------------------------------------}
 getMatchingClosureNumber :: Atom -> Atom -> Maybe Int
-getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
+getMatchingClosureNumber !a1 !a2 = firstCommonAtomMarker
     where markers1 = fst $ Set.partition isClosure (atomMarkerSet a1)
           markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
           intersectionSet = Set.intersection markers1 markers2
@@ -332,7 +331,7 @@ getMatchingClosureNumber a1 a2 = firstCommonAtomMarker
 
 {------------------------------------------------------------------------------}
 getMatchingClosureBondType :: Atom -> Atom -> NewBond
-getMatchingClosureBondType a1 a2 = newClosureBond
+getMatchingClosureBondType !a1 !a2 = newClosureBond
   where markers1 = fst $ Set.partition isClosure (atomMarkerSet a1)
         markers2 = fst $ Set.partition isClosure (atomMarkerSet a2)
         intersectionSet = Set.intersection markers1 markers2
