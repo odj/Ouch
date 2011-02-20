@@ -41,7 +41,7 @@ module Ouch.Test.Methods
      , testRoundTrip
      ) where
 
-{-# LANGUAGE RecordWildCards, CPP #-}
+import Ouch (version)
 import Ouch.Structure.Molecule
 import Ouch.Structure.Atom
 import Ouch.Structure.Bond
@@ -69,6 +69,7 @@ data TestData = TestData { function :: (String -> Either String String)
                          , input :: String
                          , outcome :: String
                          }
+
 
 
 parseAtTab :: String -> [String]
@@ -121,7 +122,9 @@ testArray []   = return ()
 testArray (x:xs) = do
   let (summary, errorLog) = performTests $ snd x
   time1 <- getCurrentTime
-  putStrLn $ "\n\nTest file: " ++ fst x
+  putStrLn  "\n"
+  putStrLn  version
+  putStrLn $ "Test file: " ++ fst x
   putStrLn $ performTests (snd x) `seq` summary
   time2 <- getCurrentTime
   putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)

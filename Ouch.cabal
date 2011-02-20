@@ -22,7 +22,7 @@ data-files: README
 data-dir: ""
 extra-source-files:
 extra-tmp-files:
-exposed-modules: Ouch.Data.Atom Ouch.Data.Bond
+exposed-modules: Ouch Ouch.Data.Atom Ouch.Data.Bond
                  Ouch.Enumerate.Formula Ouch.Enumerate.Method Ouch.Input.Smiles
                  Ouch.Output.Mol Ouch.Output.SDF Ouch.Output.Smiles
                  Ouch.Property.Builder Ouch.Property.Composition
