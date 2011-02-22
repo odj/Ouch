@@ -38,6 +38,7 @@ module Ouch (
   , module Ouch.Input.Smiles
   , module Ouch.Output.Smiles
   , module Ouch.Enumerate.Method
+  , module Ouch.Property.Graph
   , version
   ) where
 
@@ -48,6 +49,7 @@ import Ouch.Structure.Marker
 import Ouch.Input.Smiles
 import Ouch.Output.Smiles hiding (position)
 import Ouch.Enumerate.Method
+import Ouch.Property.Graph
 
 
 version :: String
