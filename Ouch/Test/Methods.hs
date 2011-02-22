@@ -120,12 +120,12 @@ performTests td = (summary, errorLog)
 testArray :: [(String, [TestData])] -> IO ()
 testArray []   = return ()
 testArray (x:xs) = do
-  let (summary, errorLog) = performTests $ snd x
-  time1 <- getCurrentTime
   putStrLn  "\n"
   putStrLn  version
+  time1 <- getCurrentTime
+  let (summary, errorLog) = performTests $ snd x
   putStrLn $ "Test file: " ++ fst x
-  putStrLn $ performTests (snd x) `seq` summary
+  putStrLn $ summary
   time2 <- getCurrentTime
   putStrLn $ "\t" ++ (show $ diffUTCTime time2 time1)
                   ++ " seconds."
