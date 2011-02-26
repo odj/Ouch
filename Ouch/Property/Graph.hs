@@ -27,6 +27,8 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE BangPatterns #-}
+
 module Ouch.Property.Graph
   (
     PGraph(..)
@@ -41,7 +43,7 @@ module Ouch.Property.Graph
   , longestLeastPath
   , longestLeastAnchoredPath
   , comparePaths
-  , pathMap
+  , growPath
   , vToSet
   ) where
 
@@ -109,42 +111,21 @@ instance Ord PGraph where
 {------------------------------------------------------------------------------}
 
 
-allPathsForIndex :: Molecule
-                 -> Int
-                 -> Map Int (V.Vector PGraph)
-                 -> Map Int (V.Vector PGraph)
-allPathsForIndex m m_i gMap = let
-  startPath = PGraph m (U.singleton m_i) U.empty
-  in M.insert m_i (removeSubpaths $ growPath gMap startPath) gMap
-
-
-pathMap :: Molecule -> Map Int (V.Vector PGraph)
-pathMap m = let
-  atoms = M.keys $ atomMap m
-  in L.foldr (allPathsForIndex m) M.empty atoms
-
-growPath :: Map Int (V.Vector PGraph)
-         -> PGraph
-         -> V.Vector PGraph
-growPath gMap path@PGraph {molecule=m, vertexList=l} = let
-  bondSet = bondIndexSetM m $ U.last l
-  indexSet = vToSet l
+growPath :: Molecule
+         -> U.Vector Int
+         -> V.Vector (U.Vector Int)
+growPath m p = let
+  bondSet = bondIndexSetM m $ U.last p
+  indexSet = vToSet p
   validSet = S.difference bondSet indexSet
-  growPath' = growPath gMap
-  paths = S.fold (\m_i acc -> case M.lookup m_i gMap of
-                         Just paths' -> V.foldr (\p acc -> case (nonexcludedCons path p) of
-                                          Nothing -> acc
-                                          Just newPath -> V.cons newPath acc) acc paths'
-                         Nothing -> (growPath' $ path {vertexList = l U.++ (U.singleton m_i)}) V.++ acc
-                         ) V.empty validSet
-
-  output | pathLength path == 0 = V.singleton path
-         | S.size validSet == 0 = V.singleton path
+  paths = S.fold (\m_i acc -> (growPath m $ p U.++ (U.singleton m_i)) V.++ acc) V.empty validSet
+  output | U.length p == 0 = V.singleton p
+         | S.size validSet == 0 = V.singleton p
          | otherwise = paths
   in output
+          
 
 
--- |
 removeSubpaths :: V.Vector PGraph -> V.Vector PGraph
 removeSubpaths v1 = let
   notSubpath p ps = V.foldr (\p' acc -> if p == p' then acc
@@ -286,7 +267,7 @@ findLongestLeastPath :: V.Vector PGraph   -- ^ The paths to select from
 --findLongestLeastPath gs i | (trace $ show gs) False = undefined
 --findLongestLeastPath gs i | (trace $ "#Paths: " ++ (show $ L.length gs)) False = undefined
 --findLongestLeastPath V.empty i = PGraph emptyMolecule U.empty U.empty
-findLongestLeastPath gs i = let
+findLongestLeastPath !gs !i = let
   gsL = pLongest gs
   mol = molecule (V.head gs)
   ranks r acc | acc==LT || r  ==LT = LT
@@ -327,7 +308,7 @@ comparePaths p1 p2 = let
 -- | Finds the longest least path in a molecule.  Used for canonicalization.
 longestLeastPath :: Molecule  -- ^ The Molecule
                  -> PGraph    -- ^ The longest least path
-longestLeastPath m = let
+longestLeastPath !m = let
   paths = longestPaths m
   in paths `seq` findLongestLeastPath paths 0
 

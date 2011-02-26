@@ -68,7 +68,7 @@ data SmiWriterState = SmiWriterState
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
   , pMap       :: Map Int (V.Vector PGraph)
   , position   :: Int                   -- ^ The position on the current path
-  , traversing :: PGraph                -- ^ The path currently being rendered
+  , traversing :: !PGraph                -- ^ The path currently being rendered
   , traversed  :: [PGraph]              -- ^ Paths that have already been rendered
   , smiLogger  :: Logger                -- ^ Logger for errors and warnings
   }
@@ -143,9 +143,9 @@ smiStart m = SmiWriterState
                           , bondStyle=writeBond
                           }
   , closureMap = Map.empty
-  , pMap = pathMap m
+  , pMap = Map.empty
   , position   = 0
-  , traversing = longestLeastPath $ head ([m] >#> stripMol)
+  , traversing = longestLeastPath m
   , traversed  = []
   , smiLogger  = Logger []
   }

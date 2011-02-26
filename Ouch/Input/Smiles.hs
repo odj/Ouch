@@ -68,7 +68,7 @@ makeScaffoldFromSmiles s = case (parse pSmiles "" s) of
 -- added as needed.  If parsing fails, the 'Molecule' is returned with
 -- an internal error that gives the full text of the 'Parsec' error string
 readSmi :: String -> Molecule
-readSmi s = fillMoleculeValence $ makeScaffoldFromSmiles s
+readSmi s = makeScaffoldFromSmiles s
 
 -- Define what we can from an established lexer (any one would do)
 lexer = P.makeTokenParser haskellDef
