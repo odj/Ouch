@@ -64,6 +64,10 @@ writeSmiles = smiString . runSS . smiStart
 -- | Stores state information used while writing SMILES
 data SmiWriterState = SmiWriterState
   { smiString  :: String                -- ^ The SMILES String
+  , preprocessMethod :: Maybe Method
+  , selectStrategy :: [(Molecule -> Int -> Int)]
+  , searchStrategy :: [(Molecule -> Int -> Int)]
+  , ordStrategy :: [(PGraph -> PGraph -> Int -> Ordering)]
   , style      :: SmiStyle              -- ^ The Style to render with
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
   , pMap       :: Map Int (V.Vector PGraph)
@@ -119,37 +123,51 @@ logString l s =  Logger $ s:(logger l)
 -- | Creates a new state from an existing state
 -- to be treated as a substructure.
 smiNewSub :: SmiWriterState -> PGraph -> SmiWriterState
-smiNewSub state@SmiWriterState { style=st
-                               , traversed=tv
-                               , closureMap=cmap
-                               , pMap=pm} path =
-  SmiWriterState { smiString = "("
-                 , style = st
-                 , closureMap = cmap
-                 , pMap = pm
-                 , position = 0
-                 , traversing = path
-                 , traversed = tv
-                 , smiLogger = Logger []
-                 }
+smiNewSub state path = 
+  state  { smiString = "("
+         , position = 0
+         , traversing = path
+         , smiLogger = Logger []
+         }
 
 
 -- | Creates an initial state from a Molecule with settings
 -- that should give typically good results
 smiStart :: Molecule -> SmiWriterState
-smiStart m = SmiWriterState
+smiStart m = loadWriter fastCanonicalWriter m
+
+loadWriter :: SmiWriterState -> Molecule -> SmiWriterState
+loadWriter state m = let
+  processedMolecule = head $ [m] >#> (preprocessMethod state)
+  initialPath = initialPathForStrategy processedMolecule 
+                                       (selectStrategy state) 
+                                       (searchStrategy state) 
+                                       (ordStrategy state) 
+  in state { smiString = ""
+           , position = 0
+           , traversing = initialPath
+           , traversed = [] 
+           , smiLogger = Logger []
+           }
+
+fastCanonicalWriter = SmiWriterState
   { smiString  = ""
+  , preprocessMethod = stripMol
+  , selectStrategy = [ vertexNumberStrategy
+                    , atomTypeStrategy
+                    ]
+  , searchStrategy = [ atomTypeStrategy ]
+  , ordStrategy = []
   , style      = SmiStyle { atomStyle=writeAtom
                           , bondStyle=writeBond
                           }
   , closureMap = Map.empty
   , pMap = Map.empty
   , position   = 0
-  , traversing = longestLeastPath m
+  , traversing = emptyPath
   , traversed  = []
   , smiLogger  = Logger []
   }
-
 
 -- | Advances the rendering of the state by one atom along the path
 advanceSS :: SmiWriterState -> SmiWriterState

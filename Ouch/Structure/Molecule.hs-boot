@@ -38,9 +38,8 @@ module Ouch.Structure.Molecule
        makeMoleculeFromAtom,
        getAtomAtIndex,
        debugShow,
-       emptyMolecule
-
-
+       emptyMolecule,
+       numberBondsToHeavyAtomsAtIndex
      ) where
 
 import {-# SOURCE #-} Ouch.Structure.Atom
@@ -68,6 +67,6 @@ makeMoleculeFromAtom:: Atom -> Molecule
 bondBetweenIndices :: Molecule -> Int -> Int -> NewBond
 debugShow :: Molecule -> String
 emptyMolecule :: Molecule
-
+numberBondsToHeavyAtomsAtIndex :: Molecule -> Int -> Integer
 
 
