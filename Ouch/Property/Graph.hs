@@ -499,7 +499,7 @@ validIndexList !p !p_i = S.toList $ S.difference (bondIndexSet p p_i) (pathIndex
 pLongest ps = V.filter (\p -> longest == pathLength p) ps
                   where longest = V.maximum $ (V.map pathLength ps)
 branchPaths !p !p_i = V.fromList $ L.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
-  where pNew = p {root=(vertexList p)}
+  where pNew = p {root=(vertexList p) U.++ (root p)}
 
 
 

@@ -154,12 +154,12 @@ fastCanonicalWriter = SmiWriterState
   {-, preprocessMethod = Nothing-}
   , preprocessMethod = stripMol
   , selectStrategy = [ bottomVertextStrategy
-                     , atomTypeStrategy
                      , topBondStrategy
+                     , atomTypeStrategy
                      ]
   , searchStrategy = [ topVertexStrategy
-                     , atomTypeStrategy 
                      , topBondStrategy
+                     , atomTypeStrategy 
                      ]
   , ordStrategy = []
   , style      = SmiStyle { atomStyle=writeAtom
@@ -240,7 +240,7 @@ renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=s
                 | otherwise = show n
   pairs = findClosuresSS state
   closures = fst $ getClosureLabels cMap pairs
-  zipped = List.sortBy (\a b -> compare (fst a) (fst b)) $ List.zip closures pairs
+  zipped = List.sortBy (\a b -> compare (fst b) (fst a)) $ List.zip closures pairs
   in List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped
 
 

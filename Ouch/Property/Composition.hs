@@ -76,7 +76,7 @@ heavyAtomCount =  prop
 
 atomCount :: Property
 atomCount =  prop
-  where num m = fromIntegral $ Map.size $ Map.filter isElement $ atomMap m
+  where num m = fromIntegral $ Map.size $ Map.filter isElement $ atomMap $ fillMoleculeValence m
         prop = Property {propertyKey = "COUNT"
                        , value = Right $ IntegerValue . num
                        }
@@ -98,7 +98,8 @@ netCharge m = Just undefined
 {------------------------------------------------------------------------------}
 molecularWeight :: Property
 molecularWeight = prop
-  where mw m = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
+  where mw m = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] 
+                                                          (atomMap $ fillMoleculeValence m)
         prop = Property {propertyKey = "MOLWT"
                        , value = Right $ DoubleValue . mw
                         }
@@ -116,7 +117,7 @@ molecularFormula = prop
               -- Convert the map to a list of just the elements present, and in IUPAC order
               finalList m = catMaybes $ List.map (\e -> lookupPair e $ endMap m) molecularFormulaElements
               --  Build the final output string from the map
-              molFm m = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" (finalList m)
+              molFm m = List.foldr (\(e,n) -> if n>1 then ((e ++  (show n))++) else (e ++ ))  "" (finalList $ fillMoleculeValence m)
               -- simple little utility function which, strangely, is not already defined in Data.Map
               lookupPair k m = case v of
                   Just val -> Just (k, val)
