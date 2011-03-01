@@ -97,7 +97,7 @@ atomBits_RECURSIVE :: Int
 atomBits_RECURSIVE depth  m a =  let
   i = fromJust $ getIndexForAtom a
   f_pb = pathBits atomBits_OUCH bondBits_OUCH
-  paths = findPaths depth (PGraph m U.empty U.empty) i
+  paths = findPaths depth [] (PGraph m U.empty U.empty) i
   in V.foldr (\p b -> f_pb p .||. b) B.empty paths
 
 

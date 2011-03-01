@@ -43,12 +43,14 @@ module Ouch.Property.Graph
   , longestLeastPath
   , longestLeastAnchoredPath
   , initialPathForStrategy 
-  , vertexNumberStrategy 
+  , topVertexStrategy
+  , bottomVertextStrategy
   , atomTypeStrategy
   , comparePaths
   , growPath
   , vToSet
   , emptyPath 
+  , topBondStrategy  
   ) where
 
 
@@ -189,7 +191,7 @@ bondIndexSetM m m_i = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust
 allPaths :: Int
          -> Molecule
          -> (V.Vector PGraph)
-allPaths depth m = V.foldr (\i p -> p `seq` p V.++ findPaths depth (PGraph m U.empty U.empty) i)
+allPaths depth m = V.foldr (\i p -> p `seq` p V.++ findPaths depth [] (PGraph m U.empty U.empty) i)
                               V.empty indexList
   where indexList = V.fromList $ M.keys $ atomMap m
 
@@ -203,7 +205,7 @@ allPathsForStrategy :: Int                                 -- ^ The max depth
 allPathsForStrategy depth m selectStrategy searchStrategy = let
   indexVector = U.fromList $ M.keys $ atomMap m
   searchVector = L.foldl' (\acc strategy -> applyStrategy m strategy acc) indexVector selectStrategy
-  in U.foldr (\i p -> p `seq` p V.++ findPaths depth (PGraph m U.empty U.empty) i) V.empty searchVector
+  in U.foldr (\i p -> p `seq` p V.++ findPaths depth searchStrategy (PGraph m U.empty U.empty) i) V.empty searchVector
 
 
 
@@ -221,6 +223,8 @@ applyStrategy m strategy inputVector = let
   in output
 
 
+
+{--
 -- | Returns all paths up to a depth that start at an external position of the
 -- molecule.
 allTerminalPaths :: Int
@@ -230,6 +234,7 @@ allTerminalPaths depth m = V.foldr (\i p -> p `seq`
                                        p V.++ findPaths depth
                                        (PGraph m U.empty U.empty) i)
                                        V.empty (maxAtomicNumber m $ allTerminalVertices m)
+--}
 
 
 -- | Returns a list of all terminal atoms in a molecule (those that have the
@@ -363,9 +368,8 @@ initialPathForStrategy !m selectStrategy searchStrategy ordStrategy = let
 -- The higher number has a higher priority for selection.
 -- TODO - Move to their own module
 
-vertexNumberStrategy :: Molecule -> Int -> Int
-vertexNumberStrategy m m_i = negate $ fromIntegral $ numberBondsToHeavyAtomsAtIndex m m_i
-
+bottomVertextStrategy m m_i = negate $ topVertexStrategy m m_i
+topVertexStrategy m m_i = fromIntegral $ numberBondsToHeavyAtomsAtIndex m m_i 
 
 atomTypeStrategy :: Molecule -> Int -> Int
 atomTypeStrategy m m_i  
@@ -380,6 +384,15 @@ atomTypeStrategy m m_i
         atomSymbol = case fromJust atom of
             Element {atomicNumber = n} -> show n
             _                          -> ""
+
+topBondStrategy m m_i 
+  | isNothing atoms = 0
+  | S.size bonds == 0 = 0
+  | otherwise = S.findMax $ S.map bondKey bonds
+  where atoms = getAtomAtIndex m m_i
+        bonds = atomBondSet $ fromJust $ getAtomAtIndex m m_i
+
+
 
 {------------------------------------------------------------------------------}
 
@@ -588,19 +601,21 @@ findPathsExcluding !exclude !depth !path@PGraph {molecule=m, vertexList=l} index
 -- | Find all possible paths starting from an atom index up to specified depth.
 -- This is a utility function, not used directly.
 findPaths :: Int      -- ^ The maximum depth
+          -> [(Molecule -> Int -> Int)]
           -> PGraph   -- ^ The path we are building up
           -> Int      -- ^ The atom indices to add to the growing path
           -> V.Vector PGraph -- ^ The new paths created after terminal recursion
-findPaths !depth !path@PGraph {molecule=m, vertexList=l} index = let
+findPaths !depth searchStrategy !path@PGraph {molecule=m, vertexList=l} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index
   pathIndexSet = vToSet l
-  validIndexSet = S.difference bondIndexSet pathIndexSet
-  accPath i p = p `seq` p V.++ (findPaths depth path' i)
-  paths | S.size validIndexSet == 0   = V.singleton path'
+  validIndexVector = U.fromList $ S.toList $ S.difference bondIndexSet pathIndexSet
+  searchVector = L.foldl' (\acc strategy -> applyStrategy m strategy acc) validIndexVector searchStrategy
+  accPath i p = p `seq` p V.++ (findPaths depth searchStrategy path' i)
+  paths | U.length searchVector == 0   = V.singleton path'
         | U.length l > depth            = V.singleton path'
-        | otherwise = S.fold accPath V.empty validIndexSet
+        | otherwise = U.foldr' accPath V.empty searchVector
   in paths
 
 

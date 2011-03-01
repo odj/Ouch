@@ -13,12 +13,13 @@ main = do
   args <- getArgs
   let m = read (Prelude.head args)::Molecule
       {-ll = longestLeastPath m-}
-      p = growPath m (U.singleton 0)
-  putStrLn version
-  putStrLn $ Prelude.head args
-  putStrLn $ "Number of paths from index 0: " ++ (show $ V.length p) ++ "\n"
-  sequence_ $ V.foldr (\a acc -> (do
-      putStrLn $ show $ U.length a):acc) [] p
+      {-p = growPath m (U.singleton 0)-}
+  putStrLn $ show m
+  {-putStrLn version-}
+  {-putStrLn $ Prelude.head args-}
+  {-putStrLn $ "Number of paths from index 0: " ++ (show $ V.length p) ++ "\n"-}
+  {-sequence_ $ V.foldr (\a acc -> (do-}
+      {-putStrLn $ show $ U.length a):acc) [] p-}
   {-putStrLn $ show $ pathLength $ longestLeastPath m-}
   {-putStrLn $ show $ V.length $ longestPaths m-}
   {-sequence_ $ M.foldWithKey (\k a acc -> (do-}

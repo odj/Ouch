@@ -70,7 +70,6 @@ data SmiWriterState = SmiWriterState
   , ordStrategy :: [(PGraph -> PGraph -> Int -> Ordering)]
   , style      :: SmiStyle              -- ^ The Style to render with
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
-  , pMap       :: Map Int (V.Vector PGraph)
   , position   :: Int                   -- ^ The position on the current path
   , traversing :: !PGraph                -- ^ The path currently being rendered
   , traversed  :: [PGraph]              -- ^ Paths that have already been rendered
@@ -152,17 +151,21 @@ loadWriter state m = let
 
 fastCanonicalWriter = SmiWriterState
   { smiString  = ""
+  {-, preprocessMethod = Nothing-}
   , preprocessMethod = stripMol
-  , selectStrategy = [ vertexNumberStrategy
-                    , atomTypeStrategy
-                    ]
-  , searchStrategy = [ atomTypeStrategy ]
+  , selectStrategy = [ bottomVertextStrategy
+                     , atomTypeStrategy
+                     , topBondStrategy
+                     ]
+  , searchStrategy = [ topVertexStrategy
+                     , atomTypeStrategy 
+                     , topBondStrategy
+                     ]
   , ordStrategy = []
   , style      = SmiStyle { atomStyle=writeAtom
                           , bondStyle=writeBond
                           }
   , closureMap = Map.empty
-  , pMap = Map.empty
   , position   = 0
   , traversing = emptyPath
   , traversed  = []
@@ -172,9 +175,10 @@ fastCanonicalWriter = SmiWriterState
 -- | Advances the rendering of the state by one atom along the path
 advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
+  stateC = advanceClosuresSS state
   render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
   renderedSubpaths = findSubpathsSS state `seq` List.map runSS $ findSubpathsSS state
-  advancedState = forceRenderSS (advancePosSS $ advanceClosuresSS $ state) render
+  advancedState = forceRenderSS (advancePosSS stateC) render
   in forceRenderSS (List.foldl (<+>) advancedState renderedSubpaths) (renderBondSS state)
 
 
@@ -230,13 +234,13 @@ renderClosuresSS :: SmiWriterState -> String
 renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=st} = let
   mol = molecule path
   renderClosure (n, pair) | Map.member n cMap = renderLabel n
-                       | otherwise = (bondStyle st $ pairBondType mol pair)
-                                  ++ (renderLabel n)
+                          | otherwise = (bondStyle st $ pairBondType mol pair)
+                                     ++ (renderLabel n)
   renderLabel n | (length $ show n) > 1 = '%':(show n)
                 | otherwise = show n
   pairs = findClosuresSS state
   closures = fst $ getClosureLabels cMap pairs
-  zipped = List.zip closures pairs
+  zipped = List.sortBy (\a b -> compare (fst a) (fst b)) $ List.zip closures pairs
   in List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped
 
 
@@ -314,15 +318,16 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
 getClosureLabels :: Map Int Pair
                  -> [Pair]
                  -> ([Int], Map Int Pair)
-getClosureLabels cMap pairs = List.foldl
-  (\(closures, cMap') pair -> (closures ++ [fst $ getClosureLabel cMap' pair]
-                             , snd $ getClosureLabel cMap' pair) ) ([], cMap) pairs
+getClosureLabels cMap pairs = List.foldl'
+  (\(closures, cMap') pair -> (closures ++ [fst $ getClosureLabel cMap' closures pair]
+                             , snd $ getClosureLabel cMap' closures pair) ) ([], cMap) pairs
 
 -- | Look at the SMILES writer state and generate the required closure label
 getClosureLabel :: Map Int Pair
+                -> [Int]
                 -> Pair
                 -> (Int, Map Int Pair)
-getClosureLabel cMap pair = let
+getClosureLabel cMap exclude pair = let
   pairComplement = Pair (endAtom pair, startAtom pair)
   isPair = 1 == (Map.size $ Map.filter (==pairComplement) cMap)
   isRedundant = 1 == (Map.size $ Map.filter (==pair) cMap)
@@ -335,7 +340,7 @@ getClosureLabel cMap pair = let
   newMapRedundant = cMap
 
   -- If not, find a new closure
-  withNew = nextNum cMap
+  withNew = nextNum cMap exclude
   newMapNew = Map.insert withNew pair cMap
   output | isPair      = (withMatch, newMapMatch)
          | isRedundant = (withRedundant, newMapRedundant)
@@ -345,10 +350,12 @@ getClosureLabel cMap pair = let
 
 
 -- | Generate the next closure number
-nextNum :: Map Int Pair -> Int
-nextNum m | 0 == Map.size m = 1
-          | otherwise = Set.findMin $ Set.difference ks' ks
-  where ks = Set.fromList $ Map.keys m
+nextNum :: Map Int Pair   -- ^ The map to check against
+        -> [Int]          -- ^ Keys to exclude from consideration
+        -> Int            -- ^ The next key
+nextNum m exclude | 0 == Set.size ks = 1
+                  | otherwise = Set.findMin $ Set.difference ks' ks
+  where ks = Set.fromList $ (exclude ++ Map.keys m)
         ks' = Set.fromList [1..maxKey]
         maxKey = (+1) $ Set.findMax ks
 
