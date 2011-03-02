@@ -296,8 +296,9 @@ longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor
   depth = fromIntegral $ pathLength exclude
   paths = findPathsExcluding (vToSet $ r U.++ l) depth (exclude {vertexList=U.empty}) anchor
   nonExcludedPaths = V.filter (\a -> False == hasOverlap exclude a) paths
-  rootedPaths = V.map (\p -> p {root=(U.singleton anchor)}) nonExcludedPaths
+  rootedPaths = V.map (\p -> p {root=U.cons anchor r}) nonExcludedPaths
   output | V.length nonExcludedPaths == 0 = exclude {vertexList=U.empty}
+         {-| otherwise = findLongestLeastPath rootedPaths 0-}
          | otherwise = findLongestLeastPath nonExcludedPaths 0
   in output
 
@@ -498,8 +499,8 @@ pathIndexSet !p = vToSet $ (root p) U.++ (vertexList p)
 validIndexList !p !p_i = S.toList $ S.difference (bondIndexSet p p_i) (pathIndexSet p )
 pLongest ps = V.filter (\p -> longest == pathLength p) ps
                   where longest = V.maximum $ (V.map pathLength ps)
-branchPaths !p !p_i = V.fromList $ L.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList p p_i)
-  where pNew = p {root=(vertexList p) U.++ (root p)}
+branchPaths !p !p_i = V.fromList $ L.map (\a -> longestLeastAnchoredPath pNew a) (validIndexList pNew p_i)
+  where pNew = p {root= (U.cons (pathIndex p p_i) (root p)) U.++ (vertexList p)}
 
 
 
@@ -562,11 +563,11 @@ ordAtom !p1 !p2 !p_i = let
            | byNumber    /= EQ =  byNumber
            | byIsotope   /= EQ = byIsotope
            | byNextBond /= EQ = byNextBond
-           | byRootBond /= EQ = byRootBond
-           | byOffPathBond /= EQ  = byOffPathBond
-           | byBranchBond    /= EQ =  byBranchBond
-           | byVertex    /= EQ = byVertex
            | i1 == i2 = EQ
+           {-| byRootBond /= EQ = byRootBond-}
+           {-| byOffPathBond /= EQ  = byOffPathBond-}
+           {-| byBranchBond    /= EQ =  byBranchBond-}
+           | byVertex    /= EQ = byVertex
            | byPath      /= EQ = byPath
 
          -- If all of the above are EQ, then the atoms REALLY ARE chemically equivalent
@@ -584,11 +585,11 @@ findPathsExcluding :: Set Int  -- ^ The atom index set to exclude from paths
                    -> PGraph   -- ^ The path we are recursively adding to
                    -> Int      -- ^ The atom index to add to the growing path
                    -> V.Vector PGraph -- ^ The new paths created after terminal recursion
-findPathsExcluding !exclude !depth !path@PGraph {molecule=m, vertexList=l} index = let
+findPathsExcluding !exclude !depth !path@PGraph {molecule=m, vertexList=l, root=r} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index
-  pathIndexSet = S.union exclude $ vToSet l
+  pathIndexSet = S.union exclude $ vToSet (l U.++ r)
   validIndexSet = S.difference bondIndexSet pathIndexSet
   accPath i p = p `seq` p V.++ (findPathsExcluding exclude depth path' i)
   paths | S.size validIndexSet == 0      = V.singleton path'

@@ -158,8 +158,8 @@ fastCanonicalWriter = SmiWriterState
                      , atomTypeStrategy
                      ]
   , searchStrategy = [ topVertexStrategy
-                     , topBondStrategy
                      , atomTypeStrategy 
+                     , topBondStrategy
                      ]
   , ordStrategy = []
   , style      = SmiStyle { atomStyle=writeAtom
