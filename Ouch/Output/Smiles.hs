@@ -80,10 +80,12 @@ data SmiWriterState = SmiWriterState
 -- | Concatonates two SMILES Writer states where the second state is
 -- typically a rendered substructure of the first state.
 (<+>) :: SmiWriterState -> SmiWriterState -> SmiWriterState
-(<+>) s1 s2 = s1 { smiString=(smiString s1) ++ (smiString s2)
+(<+>) s1 s2 = s1 { smiString=(smiString s1) ++ (smiString s2)  
                  , smiLogger=Logger $ (logger $ smiLogger s1) ++ (logger $ smiLogger s2)
-                 , traversed=(traversing s2):(traversed s1)
-                 , closureMap=((closureMap s1) <@> (closureMap s2))
+                 {-, traversed=(traversing s2):(traversed s1)-}
+                 , traversed=List.filter (/= traversing s1) $ (traversing s2):((traversed s1) `List.union` (traversed s2))
+                 , closureMap=closureMap s2
+                 {-, closureMap=((closureMap s1) <@> (closureMap s2))-}
                  }
 
 (<@>) :: Map Int Pair -> Map Int Pair -> Map Int Pair
@@ -187,10 +189,8 @@ advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
   stateC = advanceClosuresSS state
   render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
-  advancedSubpathState = List.foldl' (\s subpath  -> s <+> (runSS subpath)) advancedState $ findSubpathsSS stateC
-  advancedState = forceRenderSS (advancePosSS stateC) render
-  in forceRenderSS (advancedSubpathState) (renderBondSS state)
-  {-in forceRenderSS (advancedState) (renderBondSS state)-}
+  advancedState = forceRenderSS stateC render
+  in advancePosSS $ forceRenderSS (renderSubpathsSS advancedState) (renderBondSS state)
 
 -- | Advances the state position by one atom along the path without rendering
 advancePosSS :: SmiWriterState -> SmiWriterState
@@ -304,6 +304,29 @@ runSS state | atEndSS state = if (head $ smiString state) == '('
 forceRenderSS :: SmiWriterState -> String -> SmiWriterState
 forceRenderSS state str = state `seq` state {smiString = (smiString state) ++ str}
 
+renderSubpathsSS :: SmiWriterState -> SmiWriterState
+renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
+  mol = molecule path
+  index = pathIndex path p_i
+  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
+                                           $ getAtomAtIndex mol index
+  pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
+                            Set.empty (path:paths)
+  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
+  nextIndex = head $ List.sort $ validIndexList
+  pathIndexList = Set.toList pathIndexSet
+  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
+                                                                         , root=(U.fromList (index:pathIndexList))} a) validIndexList
+  nextPath = head branchPaths
+  branchState = runSS $ state { smiString = "("
+                              , traversing=nextPath
+                              , traversed=(path:paths)
+                              , position=0
+                              } 
+  newState = state <+> branchState 
+  output | List.length branchPaths > 0 = newState <+> renderSubpathsSS newState {smiString = "" }
+         | otherwise = state
+  in output
 
 
 findSubpathsSS :: SmiWriterState -> [SmiWriterState]
@@ -396,8 +419,6 @@ writeAtom atom = let
   in output
 
 
-
-
 -- | Basic rendering of bond information for SMILES.  Similar to Show.
 writeBond :: NewBond  -- ^ The bond to render
           -> String   -- ^ The rendered string
@@ -407,15 +428,5 @@ writeBond nb = case nb of
   Triple -> "#"
   NoBond -> "."
 
-
-
-
 db m = putStrLn $ debugShow $ head ([m] >#> stripMol)
 
-
-
-
- {--
-
-
-  --}
