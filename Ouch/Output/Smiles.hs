@@ -83,8 +83,18 @@ data SmiWriterState = SmiWriterState
 (<+>) s1 s2 = s1 { smiString=(smiString s1) ++ (smiString s2)
                  , smiLogger=Logger $ (logger $ smiLogger s1) ++ (logger $ smiLogger s2)
                  , traversed=(traversing s2):(traversed s1)
-                 , closureMap=(Map.union (closureMap s1) (closureMap s2))
+                 , closureMap=((closureMap s1) <@> (closureMap s2))
                  }
+
+(<@>) :: Map Int Pair -> Map Int Pair -> Map Int Pair
+(<@>) cMap sub_cMap = let
+  removed = Map.foldWithKey (\k a acc -> case Map.lookup k sub_cMap of 
+                              Nothing -> Map.delete k acc
+                              Just a  -> acc) cMap cMap
+  {-in Map.union cMap sub_cMap-}
+  in Map.union removed sub_cMap
+
+
 
 -- | Data type to pass higher-order functions to writer
 data SmiStyle = SmiStyle
@@ -177,10 +187,10 @@ advanceSS :: SmiWriterState -> SmiWriterState
 advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
   stateC = advanceClosuresSS state
   render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
-  renderedSubpaths = findSubpathsSS state `seq` List.map runSS $ findSubpathsSS state
+  advancedSubpathState = List.foldl' (\s subpath  -> s <+> (runSS subpath)) advancedState $ findSubpathsSS stateC
   advancedState = forceRenderSS (advancePosSS stateC) render
-  in forceRenderSS (List.foldl (<+>) advancedState renderedSubpaths) (renderBondSS state)
-
+  in forceRenderSS (advancedSubpathState) (renderBondSS state)
+  {-in forceRenderSS (advancedState) (renderBondSS state)-}
 
 -- | Advances the state position by one atom along the path without rendering
 advancePosSS :: SmiWriterState -> SmiWriterState
