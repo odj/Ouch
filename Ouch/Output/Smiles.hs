@@ -107,13 +107,12 @@ data SmiStyle = SmiStyle
 
 -- | Show instance for debugging writer state
 instance Show SmiWriterState where
-  show state = "SMILES: " ++ smiString state ++ "\n"
-            ++ "POSITION: " ++ (show $ position state) ++ "\n"
+  show state = "SMILES: "     ++ smiString state           ++ "\n"
+            ++ "POSITION: "   ++ (show $ position state)   ++ "\n"
             ++ "TRAVERSING: " ++ (show $ traversing state) ++ "\n"
-            ++ "TRAVERSED:\n" ++ (show $ traversed state) ++ "\n"
-            ++ "CLOSURES: " ++ (show $ closureMap state) ++ "\n"
-            ++ "LOGS: " ++ (show $ smiLogger state) ++ "\n"
-
+            ++ "TRAVERSED:\n" ++ (show $ traversed state)  ++ "\n"
+            ++ "CLOSURES: "   ++ (show $ closureMap state) ++ "\n"
+            ++ "LOGS: "       ++ (show $ smiLogger state)  ++ "\n"
 
 
 -- | Convenience method for newtype Pair

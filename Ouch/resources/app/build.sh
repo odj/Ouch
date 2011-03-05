@@ -1,4 +1,4 @@
 rm *.hi *.o
-rm mapcount
-ghc --make mapcount.hs -O2 -o mapcount
+rm spirofractal
+ghc --make spirofractal.hs -O2 -o spirofractal
 

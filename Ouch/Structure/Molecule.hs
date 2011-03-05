@@ -34,6 +34,7 @@ module Ouch.Structure.Molecule
        Molecule(..)
      , addAtom
      , addBond
+     , addBondA
      , atomAtIndex
      , addHydrogenAtIndex
      , addLonePairAtIndex
@@ -256,7 +257,10 @@ numberBondsToHeavyAtomsAtIndex m i  = numberOfBondToAtomWithProperty m i isHeavy
 numberBondsToLonePairAtIndex :: Molecule -> Int -> Integer
 numberBondsToLonePairAtIndex m i  = numberOfBondToAtomWithProperty m i isLonePair
 
-
+addBondA :: Molecule -> Atom -> Atom -> NewBond -> Molecule
+addBondA m a1 a2 b = addBond m i1 i2 b 
+  where i1 = fromJust $ getIndexForAtom a1
+        i2 = fromJust $ getIndexForAtom a2
 
 -- addBond
 -- Connects two atom positions with a new bond
