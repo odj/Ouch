@@ -27,6 +27,8 @@
 --------------------------------------------------------------------------------
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE FlexibleInstances #-}
+
 module Ouch.Output.Smiles (
      SmiWriterState (..)
    , writeSmiles
@@ -57,18 +59,18 @@ newtype Pair = Pair {pair :: (Int, Int)} deriving (Show, Ord, Eq)
 {------------------------------------------------------------------------------}
 -- | Writes the SMILES string for a given molecule
 writeSmiles :: Molecule -> String
-writeSmiles = smiString . runSS . smiStart
+writeSmiles = smiData . runSS . smiStart
 
 
 
 -- | Stores state information used while writing SMILES
-data SmiWriterState = SmiWriterState
-  { smiString  :: String                -- ^ The SMILES String
+data SmiWriterState a = SmiWriterState
+  { smiData  :: a                -- ^ The SMILES String
   , preprocessMethod :: Maybe Method
   , selectStrategy :: [(Molecule -> Int -> Int)]
   , searchStrategy :: [(Molecule -> Int -> Int)]
   , ordStrategy :: [(PGraph -> PGraph -> Int -> Ordering)]
-  , style      :: SmiStyle              -- ^ The Style to render with
+  , style      :: SmiStyle a              -- ^ The Style to render with
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
   , position   :: Int                   -- ^ The position on the current path
   , traversing :: !PGraph                -- ^ The path currently being rendered
@@ -77,10 +79,12 @@ data SmiWriterState = SmiWriterState
   }
 
 
+
+
 -- | Concatonates two SMILES Writer states where the second state is
 -- typically a rendered substructure of the first state.
-(<+>) :: SmiWriterState -> SmiWriterState -> SmiWriterState
-(<+>) s1 s2 = s1 { smiString=(smiString s1) ++ (smiString s2)  
+(<+>) :: SmiWriterState String -> SmiWriterState String -> SmiWriterState String
+(<+>) s1 s2 = s1 { smiData=(smiData s1) ++ (smiData s2)  
                  , smiLogger=Logger $ (logger $ smiLogger s1) ++ (logger $ smiLogger s2)
                  {-, traversed=(traversing s2):(traversed s1)-}
                  , traversed=List.filter (/= traversing s1) $ (traversing s2):((traversed s1) `List.union` (traversed s2))
@@ -96,18 +100,19 @@ data SmiWriterState = SmiWriterState
   {-in Map.union cMap sub_cMap-}
   in Map.union removed sub_cMap
 
-
+(>>>) :: SmiWriterState a -> (SmiWriterState a -> SmiWriterState a) -> SmiWriterState a
+(>>>) state stateFun = state `seq` stateFun state
 
 -- | Data type to pass higher-order functions to writer
-data SmiStyle = SmiStyle
-  { atomStyle :: Atom -> String
-  , bondStyle :: NewBond -> String
+data SmiStyle a = SmiStyle 
+  { atomStyle :: Atom -> a
+  , bondStyle :: NewBond -> a
   }
 
 
 -- | Show instance for debugging writer state
-instance Show SmiWriterState where
-  show state = "SMILES: "     ++ smiString state           ++ "\n"
+instance Show (SmiWriterState String) where
+  show state = "SMILES: "     ++ smiData state           ++ "\n"
             ++ "POSITION: "   ++ (show $ position state)   ++ "\n"
             ++ "TRAVERSING: " ++ (show $ traversing state) ++ "\n"
             ++ "TRAVERSED:\n" ++ (show $ traversed state)  ++ "\n"
@@ -132,9 +137,9 @@ logString l s =  Logger $ s:(logger l)
 
 -- | Creates a new state from an existing state
 -- to be treated as a substructure.
-smiNewSub :: SmiWriterState -> PGraph -> SmiWriterState
+smiNewSub :: SmiWriterState String -> PGraph -> SmiWriterState String
 smiNewSub state path = 
-  state  { smiString = "("
+  state  { smiData = "("
          , position = 0
          , traversing = path
          , smiLogger = Logger []
@@ -143,26 +148,39 @@ smiNewSub state path =
 
 -- | Creates an initial state from a Molecule with settings
 -- that should give typically good results
-smiStart :: Molecule -> SmiWriterState
+smiStart :: Molecule -> SmiWriterState String
 smiStart m = loadWriter fastCanonicalWriter m
 
-loadWriter :: SmiWriterState -> Molecule -> SmiWriterState
+loadWriter :: SmiWriterState a -> Molecule -> SmiWriterState a
 loadWriter state m = let
   processedMolecule = head $ [m] >#> (preprocessMethod state)
   initialPath = initialPathForStrategy processedMolecule 
                                        (selectStrategy state) 
                                        (searchStrategy state) 
                                        (ordStrategy state) 
-  in state { smiString = ""
-           , position = 0
+  in state { position = 0
            , traversing = initialPath
            , traversed = [] 
            , smiLogger = Logger []
            }
 
-fastCanonicalWriter = SmiWriterState
-  { smiString  = ""
-  {-, preprocessMethod = Nothing-}
+
+emptySmiState = SmiWriterState 
+  { smiData = undefined
+  , preprocessMethod = Nothing
+  , selectStrategy = []
+  , searchStrategy = []
+  , ordStrategy = []
+  , closureMap = Map.empty
+  , style = undefined
+  , position   = 0
+  , traversing = emptyPath
+  , traversed  = []
+  , smiLogger  = Logger []
+  }
+
+fastCanonicalWriter = SmiWriterState 
+  { smiData  = ""
   , preprocessMethod = stripMol
   , selectStrategy = [ bottomVertextStrategy
                      , topBondStrategy
@@ -184,32 +202,34 @@ fastCanonicalWriter = SmiWriterState
   }
 
 -- | Advances the rendering of the state by one atom along the path
-advanceSS :: SmiWriterState -> SmiWriterState
-advanceSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
-  stateC = advanceClosuresSS state
-  render = (renderRootBondSS state) ++ (renderAtomSS state) ++ (renderClosuresSS state)
-  advancedState = forceRenderSS stateC render
-  in advancePosSS $ forceRenderSS (renderSubpathsSS advancedState) (renderBondSS state)
+advanceSS :: SmiWriterState String -> SmiWriterState String
+advanceSS state= state >>> renderRootBondSS
+                       >>> renderAtomSS
+                       >>> renderClosuresSS
+                       >>> advanceClosuresSS
+                       >>> renderSubpathsSS
+                       >>> renderBondSS
+                       >>> advancePosSS
 
 -- | Advances the state position by one atom along the path without rendering
-advancePosSS :: SmiWriterState -> SmiWriterState
+advancePosSS :: SmiWriterState a -> SmiWriterState a
 advancePosSS s = s { position = (position s) + 1 }
 
 
 -- | Logs a string to the state logger
-logSS :: SmiWriterState -> String -> SmiWriterState
+logSS :: SmiWriterState a -> String -> SmiWriterState a
 logSS s str = s { smiLogger = logString (smiLogger s) str }
 
 
 -- | Renders the atom at the current state position according to the state's style
-renderAtomSS :: SmiWriterState -> String
+renderAtomSS :: SmiWriterState String -> SmiWriterState String
 renderAtomSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
   atom = fromJust $ getAtomAtIndex (molecule path) (pathIndex path p_i)
-  in atomStyle st $ atom
+  in forceRender s (atomStyle st $ atom)
 
 
 -- | Renders the bond at the current state position according to the state's style
-renderBondSS :: SmiWriterState -> String
+renderBondSS :: SmiWriterState String -> SmiWriterState String
 renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
@@ -218,9 +238,9 @@ renderBondSS s@SmiWriterState {traversing=path, style=st, position=p_i} = let
   hasNext = p_i + 1 < (fromInteger $ pathLength path)
   bond | hasNext = bondStyle st $ (bondBetweenIndices mol index index' )
        | otherwise = ""
-  in bond
+  in forceRender s bond
 
-renderRootBondSS :: SmiWriterState -> String
+renderRootBondSS :: SmiWriterState String -> SmiWriterState String
 renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
@@ -228,9 +248,9 @@ renderRootBondSS state@SmiWriterState {traversing=path, style=st, position=p_i} 
   output | U.length r == 0 = ""
          | otherwise = renderWithRoot (U.head r)
   renderWithRoot m_i | p_i /= 0 = ""
-                     | List.head (smiString state) /= '(' = ""
+                     | List.head (smiData state) /= '(' = ""
                      | otherwise = bondStyle st $ (bondBetweenIndices mol index m_i)
-  in output
+  in forceRender state output
 
 
 pairBondType :: Molecule
@@ -239,7 +259,7 @@ pairBondType :: Molecule
 pairBondType mol pair = bondBetweenIndices mol (startAtom pair) (endAtom pair)
 
 -- | Renders the closures at the current state position according to the state's style
-renderClosuresSS :: SmiWriterState -> String
+renderClosuresSS :: SmiWriterState String -> SmiWriterState String
 renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=st} = let
   mol = molecule path
   renderClosure (n, pair) | Map.member n cMap = renderLabel n
@@ -250,17 +270,17 @@ renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=s
   pairs = findClosuresSS state
   closures = fst $ getClosureLabels cMap pairs
   zipped = List.sortBy (\a b -> compare (fst b) (fst a)) $ List.zip closures pairs
-  in List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped
+  in forceRender state (List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped)
 
 
 -- | Advances the closure state
-advanceClosuresSS :: SmiWriterState -> SmiWriterState
+advanceClosuresSS :: SmiWriterState a -> SmiWriterState a
 advanceClosuresSS state@SmiWriterState {closureMap=cMap} = state {closureMap=newMap}
   where newMap = snd $ getClosureLabels cMap (findClosuresSS state)
 
 
 -- | Generates a list of closure Pairs required at this path position
-findClosuresSS :: SmiWriterState -> [Pair]
+findClosuresSS :: SmiWriterState a -> [Pair]
 findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
@@ -280,30 +300,30 @@ findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=
 
 
 -- | Tests to see if the state is at the end of its current path
-atEndSS :: SmiWriterState -> Bool
+atEndSS :: SmiWriterState a -> Bool
 atEndSS state = (position state) == (fromIntegral $ pathLength $ traversing state)
 
 -- | Tests to see if the state is at the end of its current path
-atLastSS :: SmiWriterState -> Bool
+atLastSS :: SmiWriterState a -> Bool
 atLastSS state = (position state) + 1 == (fromIntegral $ pathLength $ traversing state)
 
 
 -- | Tests to see if the state is at the beginning of its current path
-atStartSS :: SmiWriterState -> Bool
+atStartSS :: SmiWriterState a -> Bool
 atStartSS state = (position state) == 0
 
 
-runSS :: SmiWriterState -> SmiWriterState
-runSS state | atEndSS state = if (head $ smiString state) == '('
-                              then forceRenderSS state ")"
+runSS :: SmiWriterState String -> SmiWriterState String
+runSS state | atEndSS state = if (head $ smiData state) == '('
+                              then forceRender state ")"
                               else state
-            | otherwise = advanceSS state `seq` runSS $ advanceSS state
+            | otherwise = state >>> advanceSS >>> runSS
 
 
-forceRenderSS :: SmiWriterState -> String -> SmiWriterState
-forceRenderSS state str = state `seq` state {smiString = (smiString state) ++ str}
+forceRender :: SmiWriterState String -> String -> SmiWriterState String
+forceRender state str = state `seq` state {smiData = (smiData state) ++ str}
 
-renderSubpathsSS :: SmiWriterState -> SmiWriterState
+renderSubpathsSS :: SmiWriterState String -> SmiWriterState String
 renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
@@ -317,18 +337,18 @@ renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, positio
   branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
                                                                          , root=(U.fromList (index:pathIndexList))} a) validIndexList
   nextPath = head branchPaths
-  branchState = runSS $ state { smiString = "("
+  branchState = runSS $ state { smiData = "("
                               , traversing=nextPath
                               , traversed=(path:paths)
                               , position=0
                               } 
   newState = state <+> branchState 
-  output | List.length branchPaths > 0 = newState <+> renderSubpathsSS newState {smiString = "" }
+  output | List.length branchPaths > 0 = newState <+> renderSubpathsSS newState {smiData = "" }
          | otherwise = state
   in output
 
 
-findSubpathsSS :: SmiWriterState -> [SmiWriterState]
+findSubpathsSS :: SmiWriterState String -> [SmiWriterState String]
 findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
@@ -341,7 +361,7 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
   branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
                                                                          , root=(U.fromList (index:pathIndexList))} a)
                          validIndexList
-  in List.map (\p -> state {smiString = "("
+  in List.map (\p -> state {smiData = "("
                           , traversing=p
                           , traversed=(path:paths)
                           , position=0})  branchPaths
