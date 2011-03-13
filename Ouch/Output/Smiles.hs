@@ -267,7 +267,7 @@ renderClosuresSS state@SmiWriterState {traversing=path, closureMap=cMap, style=s
                                      ++ (renderLabel n)
   renderLabel n | (length $ show n) > 1 = '%':(show n)
                 | otherwise = show n
-  pairs = findClosuresSS state
+  pairs = findClosuresSS $ (state >>> renderSubpathsSS) {closureMap = cMap}
   closures = fst $ getClosureLabels cMap pairs
   zipped = List.sortBy (\a b -> compare (fst b) (fst a)) $ List.zip closures pairs
   in forceRender state (List.foldr (\z acc -> acc ++ (renderClosure z)) "" zipped)
@@ -279,22 +279,40 @@ advanceClosuresSS state@SmiWriterState {closureMap=cMap} = state {closureMap=new
   where newMap = snd $ getClosureLabels cMap (findClosuresSS state)
 
 
--- | Generates a list of closure Pairs required at this path position
+-- | Generates a list of closure Pairs required at this path position, but does
+-- not advance the state
 findClosuresSS :: SmiWriterState a -> [Pair]
 findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
   mol = molecule path
   index = pathIndex path p_i
+
+  -- The span set makes sure that we do not add a closure label to the atom we
+  -- were just on, or the atom we are about to go to.
   spanSet | atStartSS state && atLastSS state = Set.empty
           | atStartSS state = Set.fromList [pathIndex path (p_i + 1)]
           | atLastSS state = Set.fromList [pathIndex path (p_i - 1)]
           | otherwise = Set.fromList [pathIndex path (p_i + 1), pathIndex path (p_i - 1)]
+
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex mol index
+
+  -- All indices we have seen or are going to see on this path
   pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
                             Set.empty (path:paths)
-  pathIndexSet' | U.length (root path) == 0 = pathIndexSet
-                | otherwise = Set.delete (U.head $ root path) pathIndexSet
-  validIndexSet = Set.difference pathIndexSet' spanSet
+
+  -- If we have a root path, remove the first index from consideration.  It is 
+  -- where we started from.  But ONLY if we are at the beginning of our path. 
+  -- Otherwise, we mess up spiro systems.
+  pathIndexSet_noRoot | U.length (root path) == 0 = pathIndexSet
+                      | p_i == 0 = Set.delete (U.head $ root path) pathIndexSet
+                      | otherwise = pathIndexSet
+
+  -- Remove the heads from any visited paths IF their root bond is the current position
+  pathIndexSet_noHeads = List.foldr (\a acc -> Set.delete (U.head $ vertexList a) acc) pathIndexSet_noRoot rootPaths
+    where rootPaths = List.filter (\p -> equalsRoot p) paths
+          equalsRoot p | U.length (root p) == 0 = False
+                       | otherwise = (==) index $ U.head $ root p
+  validIndexSet = Set.difference pathIndexSet_noHeads spanSet
   validIndexList = Set.toList $ Set.intersection bondIndexSet validIndexSet
   in List.map (\p -> Pair (index, p)) validIndexList
 
@@ -388,6 +406,8 @@ getClosureLabel cMap exclude pair = let
   withMatch = fst $ Map.findMax $ Map.filter (==pairComplement) cMap
   newMapMatch = Map.delete withMatch cMap
 
+  -- The original pair was already there.  This portends bad things will happen
+  -- but for now do nothing.
   withRedundant = fst $ Map.findMax $ Map.filter (==pair) cMap
   newMapRedundant = cMap
 
