@@ -1,4 +1,5 @@
 import Ouch
+import Ouch.Output.SDF
 import System.IO
 import System.Environment
 import Data.Map as M
@@ -35,4 +36,5 @@ main = do
   arg:_ <- getArgs
   let n = read arg :: Int
   let mols = L.foldl (\acc i -> acc >#> spiroMethod) [cyclopropane] [1..n]
+  {-putStrLn $ Ouch.Output.SDF.sdf mols-}
   ppList mols
