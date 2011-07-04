@@ -17,7 +17,7 @@ synopsis: A cheminformatics library
 description: A work in progress...
 category: Cheminformatics
 author: Orion Jankowski
-tested-with: GHC ==6.10.4
+tested-with: GHC ==7.0.3
 data-files: README
 data-dir: ""
 extra-source-files:

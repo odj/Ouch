@@ -70,7 +70,7 @@ data SmiWriterState a = SmiWriterState
   , preprocessMethod :: Maybe Method
   , selectStrategy :: [(Molecule -> Int -> Int)]
   , searchStrategy :: [(Molecule -> Int -> Int)]
-  , ordStrategy :: [(PGraph -> PGraph -> Int -> Ordering)]
+  , ordStrategy :: (PGraph -> PGraph -> Int -> Ordering)
   , style      :: SmiStyle a              -- ^ The Style to render with
   , closureMap :: Map Int Pair          -- ^ Closure map for matching rings
   , position   :: !Int                   -- ^ The position on the current path
@@ -93,7 +93,7 @@ data SmiWriterState a = SmiWriterState
 
 (<@>) :: Map Int Pair -> Map Int Pair -> Map Int Pair
 (<@>) cMap sub_cMap = let
-  removed = Map.foldWithKey (\k a acc -> case Map.lookup k sub_cMap of 
+  removed = Map.foldrWithKey (\k a acc -> case Map.lookup k sub_cMap of 
                               Nothing -> Map.delete k acc
                               Just a  -> acc) cMap cMap
   {-in Map.union cMap sub_cMap-}
@@ -169,7 +169,7 @@ emptySmiState = SmiWriterState
   , preprocessMethod = Nothing
   , selectStrategy = []
   , searchStrategy = []
-  , ordStrategy = []
+  , ordStrategy = \p1 p2 i -> GT
   , closureMap = Map.empty
   , style = undefined
   , position   = 0
@@ -189,7 +189,7 @@ fastCanonicalWriter = SmiWriterState
                      , atomTypeStrategy 
                      , topBondStrategy
                      ]
-  , ordStrategy = []
+  , ordStrategy = ordAtom
   , style      = SmiStyle { atomStyle=writeAtom
                           , bondStyle=writeBond
                           }
@@ -341,7 +341,12 @@ forceRender :: SmiWriterState String -> String -> SmiWriterState String
 forceRender state str = state `seq` state {smiData = (smiData state) ++ str}
 
 renderSubpathsSS :: SmiWriterState String -> SmiWriterState String
-renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
+renderSubpathsSS state@SmiWriterState { traversing=path
+                                      , traversed=paths
+                                      , position=p_i
+                                      , searchStrategy=searchStrategy
+                                      , ordStrategy=ordStrategy
+                                      } = let
   mol = molecule path
   index = pathIndex path p_i
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
@@ -351,8 +356,11 @@ renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, positio
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   nextIndex = head $ List.sort $ validIndexList
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
-                                                                         , root=(U.fromList (index:pathIndexList))} a) validIndexList
+  branchPaths = List.sortBy (comparePaths ordStrategy) $ List.map 
+      (\a -> longestLeastAnchoredPath path { vertexList=(U.fromList pathIndexList)
+                                           , root=(U.fromList (index:pathIndexList))
+                                           } 
+                                           a searchStrategy ordStrategy) validIndexList
   nextPath = head branchPaths
   branchState = runSS $ state { smiData = "("
                               , traversing=nextPath
@@ -360,13 +368,18 @@ renderSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, positio
                               , position=0
                               } 
   newState = state <+> branchState 
-  output | List.length branchPaths > 0 = newState <+> renderSubpathsSS newState {smiData = "" }
+  output | List.length branchPaths > 0 = newState <+> 
+                                         renderSubpathsSS newState {smiData = "" }
          | otherwise = state
   in output
 
 
 findSubpathsSS :: SmiWriterState String -> [SmiWriterState String]
-findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=p_i} = let
+findSubpathsSS state@SmiWriterState { traversing=path
+                                    , traversed=paths
+                                    , position=p_i
+                                    , searchStrategy=searchStrategy
+                                    , ordStrategy=ordStrategy} = let
   mol = molecule path
   index = pathIndex path p_i
   bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
@@ -375,9 +388,11 @@ findSubpathsSS state@SmiWriterState {traversing=path, traversed=paths, position=
                             Set.empty (path:paths)
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path {vertexList=(U.fromList pathIndexList)
-                                                                         , root=(U.fromList (index:pathIndexList))} a)
-                         validIndexList
+  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path { vertexList=(U.fromList pathIndexList)
+                                                                          , root=(U.fromList (index:pathIndexList))
+                                                                          } 
+                                                                          a searchStrategy ordStrategy) 
+                                                                          validIndexList
   in List.map (\p -> state {smiData = "("
                           , traversing=p
                           , traversed=(path:paths)

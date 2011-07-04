@@ -1,2 +1,3 @@
-touch Ouch.hs
-cabal install --global
+cabal build
+
+
