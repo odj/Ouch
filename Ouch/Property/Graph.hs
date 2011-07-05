@@ -317,7 +317,7 @@ findLongestLeastPath :: (PGraph -> PGraph -> Int -> Ordering) -- ^ The ordering 
                      -> V.Vector PGraph   -- ^ The paths to select from
                      -> Int        -- ^ The current index being compared
                      -> PGraph     -- ^ The longest least path from starting list
-findLongestLeastPath ordStrategy !gs !i = let
+findLongestLeastPath ordStrategy gs i = let
   gsL = pLongest gs
   mol = molecule (V.head gs)
   ranks r acc | acc==LT || r  ==LT = LT
@@ -341,7 +341,7 @@ comparePaths :: (PGraph -> PGraph -> Int -> Ordering)
              -> PGraph
              -> PGraph
              -> Ordering
-comparePaths ordStrategy !p1 !p2 = let
+comparePaths ordStrategy p1 p2 = let
   mol = molecule p1
   ranks r acc | acc==LT            = LT
               | acc==EQ && (r==LT) = LT
@@ -363,7 +363,7 @@ initialPathForStrategy :: Molecule                                  -- ^ The mol
                        -> [(Molecule -> Int -> Int)]                -- ^ Search selection strategy
                        -> (PGraph -> PGraph -> Int -> Ordering)            -- ^ Ordering strategy
                        -> PGraph                                    -- ^ The first path found
-initialPathForStrategy !m selectStrategy searchStrategy ordStrategy = let
+initialPathForStrategy m selectStrategy searchStrategy ordStrategy = let
   paths = longestPathsForStrategy m selectStrategy searchStrategy 
   in paths `seq` findLongestLeastPath ordStrategy paths 0
 
@@ -406,8 +406,8 @@ ordByRootBond :: PGraph  -- ^ The first path to compare and its root index
               -> PGraph   -- ^ The second path to compare and its root index
               -> Int      -- ^ The index to comparea
               -> Ordering -- ^ The Ord result
-ordByRootBond !p1@PGraph {root=r1}
-              !p2@PGraph {root=r2} index = let
+ordByRootBond p1@PGraph {root=r1}
+              p2@PGraph {root=r2} index = let
   mol = molecule p1
   output | index /= 0 = EQ
          | U.length r1 == 0 || U.length r2 == 0 = EQ
@@ -421,7 +421,7 @@ ordByOffPathBond :: PGraph  -- ^ The first path to compare and its root index
                  -> PGraph   -- ^ The second path to compare and its root index
                  -> Int      -- ^ The index to comparea
                  -> Ordering -- ^ The Ord result
-ordByOffPathBond !p1 !p2 index = ordBondList (offPathBondTypeList p1 index)
+ordByOffPathBond p1 p2 index = ordBondList (offPathBondTypeList p1 index)
                                            (offPathBondTypeList p2 index)
 
 
@@ -429,7 +429,7 @@ ordByBond :: PGraph  -- ^ The first path to compare and its root index
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
-ordByBond !p1 !p2 !index = ordBondList (bondTypeList p1 index)
+ordByBond p1 p2 index = ordBondList (bondTypeList p1 index)
                                     (bondTypeList p2 index)
 
 
@@ -437,14 +437,14 @@ ordBondList :: [NewBond] -> [NewBond] -> Ordering
 ordBondList [] [] = EQ
 ordBondList [] p = LT
 ordBondList p [] = GT
-ordBondList !(bl1:bls1) !(bl2:bls2) = let
+ordBondList (bl1:bls1) (bl2:bls2) = let
   output | compare bl1 bl2 /= EQ = compare bl1 bl2
          | otherwise = ordBondList bls1 bls2
   in output
 
 
 offPathBondTypeList :: PGraph -> Int -> [NewBond]
-offPathBondTypeList !path !p_i = let
+offPathBondTypeList path p_i = let
   index = pathIndex path p_i
   mol = molecule path
   bondTypeList = L.map (\a -> bondBetweenIndices mol index a) offPathList
@@ -453,7 +453,7 @@ offPathBondTypeList !path !p_i = let
   in L.sort bondTypeList
 
 bondTypeList :: PGraph -> Int -> [NewBond]
-bondTypeList !path !p_i = let
+bondTypeList path p_i = let
   index = pathIndex path p_i
   mol = molecule path
   bondTypeList = L.map (\a -> bondBetweenIndices mol index (bondsTo a))
@@ -471,7 +471,7 @@ ordByPath :: (PGraph -> PGraph -> Int -> Ordering)
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
-ordByPath ordStrategy searchStrategy !p1 !p2 !index  = ordPathList ordStrategy 
+ordByPath ordStrategy searchStrategy p1 p2 index  = ordPathList ordStrategy 
                                           (branchPaths searchStrategy ordStrategy p1 index)
                                           (branchPaths searchStrategy ordStrategy p2 index)
 
@@ -479,7 +479,7 @@ ordByNextBond :: PGraph  -- ^ The first path to compare and its root index
               -> PGraph   -- ^ The second path to compare and its root index
               -> Int      -- ^ The index to comparea
               -> Ordering -- ^ The Ord result
-ordByNextBond !p1 !p2 !index = let
+ordByNextBond p1 p2 index = let
   output | (index + 1) == (fromIntegral $ pathLength p1) = EQ
          | (index + 1) == (fromIntegral $ pathLength p2) = EQ
          | otherwise = compare (bondBetweenIndices mol m_i1 m_i1')
@@ -491,15 +491,15 @@ ordByNextBond !p1 !p2 !index = let
   m_i2' = pathIndex p2 (index + 1)
   in output
 
-bondIndexSet !p !p_i = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
+bondIndexSet p p_i = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust $
                                  getAtomAtIndex (molecule p) (pathIndex p p_i)
-pathIndexSet !p = vToSet $ (root p) U.++ (vertexList p)
-validIndexList !p !p_i = S.toList $ S.difference (bondIndexSet p p_i) (pathIndexSet p )
+pathIndexSet p = vToSet $ (root p) U.++ (vertexList p)
+validIndexList p p_i = S.toList $ S.difference (bondIndexSet p p_i) (pathIndexSet p )
 pLongest ps = V.filter (\p -> longest == pathLength p) ps
                   where longest = V.maximum $ (V.map pathLength ps)
 
 
-branchPaths searchStrategy ordStrategy !p !p_i = V.fromList $ L.map (\a -> longestLeastAnchoredPath pNew a searchStrategy ordStrategy) (validIndexList pNew p_i)
+branchPaths searchStrategy ordStrategy p p_i = V.fromList $ L.map (\a -> longestLeastAnchoredPath pNew a searchStrategy ordStrategy) (validIndexList pNew p_i)
   where pNew = p {root= (U.cons (pathIndex p p_i) (root p)) U.++ (vertexList p)}
 
 
@@ -509,7 +509,7 @@ ordPathList :: (PGraph -> PGraph -> Int -> Ordering)
             -> V.Vector PGraph 
             -> V.Vector PGraph 
             -> Ordering
-ordPathList ordStrategy !ps1 !ps2 = let
+ordPathList ordStrategy ps1 ps2 = let
   ll1 = findLongestLeastPath ordStrategy ps1 0
   ll2 = findLongestLeastPath ordStrategy ps2 0
   xp1 = V.filter (/=ll1) ps1
@@ -524,7 +524,7 @@ ordPathList ordStrategy !ps1 !ps2 = let
 
 
 pathIndex :: PGraph -> Int -> Int
-pathIndex !p !p_i  = (vertexList p) U.! p_i
+pathIndex p p_i  = (vertexList p) U.! p_i
 {-# INLINE pathIndex #-}
 
 
@@ -538,7 +538,7 @@ ordAtom :: [(Molecule -> Int -> Int)]
         -> PGraph   -- ^ The second path to compare
         -> Int      -- ^ The index to compare
         -> Ordering -- ^ The Ord result
-ordAtom searchStrategy !p1 !p2 !p_i = let
+ordAtom searchStrategy p1 p2 p_i = let
   m = molecule p1
   i1 = pathIndex p1 p_i
   i2 = pathIndex p2 p_i
@@ -589,7 +589,7 @@ findPathsExcluding :: Set Int  -- ^ The atom index set to exclude from paths
                    -> PGraph   -- ^ The path we are recursively adding to
                    -> Int      -- ^ The atom index to add to the growing path
                    -> V.Vector PGraph -- ^ The new paths created after terminal recursion
-findPathsExcluding !exclude !depth  searchStrategy !path@PGraph {molecule=m, vertexList=l, root=r} index = let
+findPathsExcluding exclude depth  searchStrategy path@PGraph {molecule=m, vertexList=l, root=r} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index
@@ -611,7 +611,7 @@ findPaths :: Int      -- ^ The maximum depth
           -> PGraph   -- ^ The path we are building up
           -> Int      -- ^ The atom indices to add to the growing path
           -> V.Vector PGraph -- ^ The new paths created after terminal recursion
-findPaths !depth searchStrategy !path@PGraph {molecule=m, vertexList=l} index = let
+findPaths depth searchStrategy path@PGraph {molecule=m, vertexList=l} index = let
   path' = path {vertexList=(l U.++ U.singleton index)}
   bondIndexSet = S.map (\a -> bondsTo a) $ atomBondSet $ fromJust
                                            $ getAtomAtIndex m index

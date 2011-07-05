@@ -113,7 +113,7 @@ data Molecule =   Molecule {atomMap::(Map Int Atom)
 -- | Infix function to filter out molecules with errors when performing
 -- some operation on a molecule of dubious origin.
 (>>>) :: Molecule -> Molecule -> Molecule
-(>>>) !mIn !mOut = if (moleculeHasError mIn) then mIn else mOut
+(>>>) mIn mOut = if (moleculeHasError mIn) then mIn else mOut
 
 emptyMolecule = Molecule Map.empty Set.empty Map.empty
 
@@ -129,7 +129,7 @@ getAtomAtIndex m i = Map.lookup i $ atomMap m
 -- atom index.  If the molecule is flagged with an error, then returns the (corrupt)
 -- molecule unchanged.
 setAtom :: Atom -> Molecule -> Molecule
-setAtom !a !m  = m >>> mOut
+setAtom a m  = m >>> mOut
   where mOut | (isJust atomIndex) /= True  =  addAtom a m
              | otherwise = output
         atomIndex = getIndexForAtom a
@@ -143,10 +143,10 @@ setAtom !a !m  = m >>> mOut
 -- Adds atom to top of the atom list with no bonds to the molecule.
 {------------------------------------------------------------------------------}
 addAtom :: Atom -> Molecule -> Molecule
-addAtom !a !m = m >>> mOut
+addAtom a m = m >>> mOut
     where mOut =  m {atomMap = Map.insert atomNumber newAtom $ atomMap m}
           atomNumber = Map.size $ atomMap m
-          !newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
+          newAtom = a {atomMarkerSet=(Set.insert (Label atomNumber) $ atomMarkerSet a) }
 
 
 addMolMarker :: Molecule -> MoleculeMarker -> Molecule
@@ -266,7 +266,7 @@ addBondA m a1 a2 b = addBond m i1 i2 b
 -- Connects two atom positions with a new bond
 {------------------------------------------------------------------------------}
 addBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-addBond !m !i1 !i2 !b  =  m >>> mOut
+addBond m i1 i2 b  =  m >>> mOut
     where mOut | (isNothing a1 || isNothing a2) =
                     giveMoleculeError m $ "Cannot connect atoms at positions: "
                     ++ (show i1) ++ " " ++ (show i2)
@@ -350,7 +350,7 @@ checkValenceAtIndex m i = True
 -- are also added and incuded in the list.
 {------------------------------------------------------------------------------}
 fillValenceAtIndex :: Molecule -> Int -> Molecule
-fillValenceAtIndex !m !i = m >>> mOut
+fillValenceAtIndex m i = m >>> mOut
   where atom  = getAtomAtIndex m i
         mOut  = case atom of
           Just _  -> output
@@ -450,7 +450,7 @@ hasHangingClosure m = if (moleculeHasError m) then False else output
 --cyclizeMoleculeAtIndexesWithBond
 {------------------------------------------------------------------------------}
 cyclizeMoleculeAtIndexesWithBond :: Molecule -> Int -> Int -> NewBond -> Molecule
-cyclizeMoleculeAtIndexesWithBond !m !i1 !i2 !b =
+cyclizeMoleculeAtIndexesWithBond m i1 i2 b =
     let a1 = Map.lookup i1 (atomMap m)
         a2 = Map.lookup i2 (atomMap m) in
     if (moleculeHasError m) then m else case a1 of
@@ -483,7 +483,7 @@ cyclizeMoleculeAtIndexesWithBond !m !i1 !i2 !b =
 -- invalid.
 {------------------------------------------------------------------------------}
 connectMoleculesAtIndicesWithBond::Molecule -> Int -> Molecule -> Int -> NewBond -> Molecule
-connectMoleculesAtIndicesWithBond !m1 !i1 !m2 !i2 !b = m1 >>> mOut
+connectMoleculesAtIndicesWithBond m1 i1 m2 i2 b = m1 >>> mOut
   where mOut = connectMolecules m1 i1 m2 i2 b
         connectMolecules m1 i1 m2 i2 b | m2isEmpty = m1
                                        | errorTest = giveMoleculeError m1 "Could not connect molecules, invalid index"
@@ -498,29 +498,29 @@ connectMoleculesAtIndicesWithBond !m1 !i1 !m2 !i2 !b = m1 >>> mOut
 
 {------------------------------------------------------------------------------}
 incrementAtomMap :: (Map Int Atom) -> Int -> (Map Int Atom)
-incrementAtomMap !map !i = Map.mapKeys (+i) $ Map.map (\a -> incrementAtom a i) map
+incrementAtomMap map i = Map.mapKeys (+i) $ Map.map (\a -> incrementAtom a i) map
 
 
 
 removeAtoms :: Molecule -> (Atom -> Bool) -> Molecule
-removeAtoms !m !f = incrementAtoms
+removeAtoms m f = incrementAtoms
   where filterMol  = m {atomMap = Map.filter ((/=True) . f) $ atomMap m}
         filterBond = filterMol `seq` Map.fold (\a acc -> setAtom (updateBondSet acc a) acc) filterMol $ atomMap filterMol
         incrementAtoms = filterBond `seq` Map.foldlWithKey f filterBond $ atomMap filterBond
-            where f !acc !i1 !a = let
+            where f acc i1 a = let
                     i2 = (Map.findIndex (fromJust $ getIndexForAtom a) $ atomMap acc)
                     in mapIndex acc i1 i2
-        mapIndex !m !i1 !i2 = newAtom `seq` mapBondxs (setAtom newAtom m') i1 i2
+        mapIndex m i1 i2 = newAtom `seq` mapBondxs (setAtom newAtom m') i1 i2
             where newAtom = incrementAtomMarker (fromJust $ getAtomAtIndex m i1) (i2 - i1)
                   m' = m {atomMap = Map.delete i1 $ atomMap m}
-                  mapBondxs !m !i1 !i2 = m {atomMap = Map.map (\a -> mapBonds a i1 i2) $ atomMap m}
-                  mapBonds !a !i1 !i2 = a {atomBondSet = Set.map (\b -> mapBond b i1 i2) $ atomBondSet a}
-                  mapBond !b !i1 !i2 | bondsTo b == i1 = b {bondsTo = i2} | otherwise = b
-                  incrementAtomMarker !a !i = markAtom a (Label $ (fromJust $ getIndexForAtom a) + i)
+                  mapBondxs m i1 i2 = m {atomMap = Map.map (\a -> mapBonds a i1 i2) $ atomMap m}
+                  mapBonds a i1 i2 = a {atomBondSet = Set.map (\b -> mapBond b i1 i2) $ atomBondSet a}
+                  mapBond b i1 i2 | bondsTo b == i1 = b {bondsTo = i2} | otherwise = b
+                  incrementAtomMarker a i = markAtom a (Label $ (fromJust $ getIndexForAtom a) + i)
 
 updateBondSet :: Molecule -> Atom -> Atom
-updateBondSet !m !a = a {atomBondSet = valid}
-    where keyIsValid !m !b = case Map.lookup (bondsTo b) $ atomMap m of
+updateBondSet m a = a {atomBondSet = valid}
+    where keyIsValid m b = case Map.lookup (bondsTo b) $ atomMap m of
                            Just _  -> True
                            Nothing -> False
           (valid, _) = Set.partition (keyIsValid m) $ atomBondSet a
@@ -575,8 +575,8 @@ makeMoleculeFromAtom a = Molecule {atomMap=(Map.singleton 0 (markAtom a $ Label 
 -- If cannot fill because of an error, adds error to molecule and gives it back.
 {------------------------------------------------------------------------------}
 fillMoleculeValence :: Molecule -> Molecule
-fillMoleculeValence !m = Map.foldrWithKey foldMol m $ atomMap m
-  where foldMol !k !atomMap' !molecule = fillValenceAtIndex molecule k
+fillMoleculeValence m = Map.foldrWithKey foldMol m $ atomMap m
+  where foldMol k atomMap' molecule = fillValenceAtIndex molecule k
 
 
 -- moleculeHasError
@@ -629,7 +629,7 @@ atomAtIndex m i = Map.lookup i $ atomMap m
 -- molecule is returned with a warnng string added that this operation failed
 {------------------------------------------------------------------------------}
 addMarkerToAtomAtIndex :: Molecule -> Int -> AtomMarker -> Molecule
-addMarkerToAtomAtIndex !m !i !am = if (moleculeHasError m) then m else case atom of
+addMarkerToAtomAtIndex m i am = if (moleculeHasError m) then m else case atom of
     Nothing -> markMolecule m warning
     Just a  -> m {atomMap = Map.insert i (markAtom a am) (atomMap m)}
     where atom = atomAtIndex m i

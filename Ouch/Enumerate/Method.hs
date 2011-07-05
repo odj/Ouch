@@ -117,7 +117,7 @@ data Method   = NoMethod     { firstApply   ::  Maybe Method
 
 
 (>#>) :: [Molecule] -> (Maybe Method) -> [Molecule]
-(>#>) !ms mMethod = case mMethod of
+(>#>) ms mMethod = case mMethod of
   Nothing  -> ms
   Just method -> case method of
     NoMethod      {} -> ms >#> (firstApply method) >#> (lastApply method)
@@ -155,7 +155,7 @@ replaceMethod ms method = let
   in ms
 
 filterMethod :: [Molecule] -> Method -> [Molecule]
-filterMethod !ms method = let
+filterMethod ms method = let
    mols = ms >#> (firstApply method)
    output = mols `seq` (molFilter method) mols
    in output `seq` output >#> (lastApply method)

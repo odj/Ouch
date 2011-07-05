@@ -134,6 +134,8 @@ testArray (x:xs) = do
                                ++ errorLog
   testArray xs
 
+{-profileArray :: [(String, [TestData])] -? IO ()-}
+
 
 
 -- Simple test function
