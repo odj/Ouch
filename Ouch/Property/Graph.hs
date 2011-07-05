@@ -317,25 +317,9 @@ findLongestLeastPath :: (PGraph -> PGraph -> Int -> Ordering) -- ^ The ordering 
                      -> V.Vector PGraph   -- ^ The paths to select from
                      -> Int        -- ^ The current index being compared
                      -> PGraph     -- ^ The longest least path from starting list
-findLongestLeastPath ordStrategy gs i = let
-  gsL = pLongest gs
-  mol = molecule (V.head gs)
-  ranks r acc | acc==LT || r  ==LT = LT
-              | acc==EQ && r  ==GT = GT
-              | acc==EQ && r  ==EQ = EQ
-              | acc==GT            = GT
-  foldRanks g = V.foldl' (\acc a -> ranks (ordStrategy g a i) acc ) EQ gsL
-  mapRanks = gsL `seq` V.map (\a -> foldRanks a) gsL
-  topRank = mapRanks `seq` V.maximum mapRanks
-  gs' = gsL `seq` V.filter ((==topRank) . foldRanks) gsL
-  output | V.length gs == 0 = PGraph emptyMolecule U.empty U.empty
-         | V.length gsL == 0 =  PGraph emptyMolecule U.empty U.empty
-         | V.length gsL == 1 = V.head gsL
-         | pathLength (V.head gsL) == (fromIntegral i) = V.head gsL
-         | otherwise = gs' `seq` findLongestLeastPath ordStrategy gs' (i+1)
-  in  output
-
-
+findLongestLeastPath ordStrategy gs i = 
+    head $ L.sortBy (comparePaths ordStrategy) $ V.toList gs
+    
 
 comparePaths :: (PGraph -> PGraph -> Int -> Ordering)
              -> PGraph
