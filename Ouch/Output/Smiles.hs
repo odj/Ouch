@@ -189,7 +189,10 @@ fastCanonicalWriter = SmiWriterState
                      , atomTypeStrategy 
                      , topBondStrategy
                      ]
-  , ordStrategy = ordAtom
+  , ordStrategy = ordAtom  [ topVertexStrategy
+                           , atomTypeStrategy 
+                           , topBondStrategy
+                           ]
   , style      = SmiStyle { atomStyle=writeAtom
                           , bondStyle=writeBond
                           }
@@ -372,31 +375,6 @@ renderSubpathsSS state@SmiWriterState { traversing=path
                                          renderSubpathsSS newState {smiData = "" }
          | otherwise = state
   in output
-
-
-findSubpathsSS :: SmiWriterState String -> [SmiWriterState String]
-findSubpathsSS state@SmiWriterState { traversing=path
-                                    , traversed=paths
-                                    , position=p_i
-                                    , searchStrategy=searchStrategy
-                                    , ordStrategy=ordStrategy} = let
-  mol = molecule path
-  index = pathIndex path p_i
-  bondIndexSet = Set.map (\a -> bondsTo a) $ atomBondSet $ fromJust
-                                           $ getAtomAtIndex mol index
-  pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
-                            Set.empty (path:paths)
-  validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
-  pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sort $ List.map (\a -> longestLeastAnchoredPath path { vertexList=(U.fromList pathIndexList)
-                                                                          , root=(U.fromList (index:pathIndexList))
-                                                                          } 
-                                                                          a searchStrategy ordStrategy) 
-                                                                          validIndexList
-  in List.map (\p -> state {smiData = "("
-                          , traversing=p
-                          , traversed=(path:paths)
-                          , position=0})  branchPaths
 
 
 getClosureLabels :: Map Int Pair

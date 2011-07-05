@@ -45,6 +45,7 @@ module Ouch.Property.Graph
   , initialPathForStrategy 
   , topVertexStrategy
   , bottomVertextStrategy
+  , firstVertexStrategy
   , atomTypeStrategy
   , comparePaths
   , growPath
@@ -111,7 +112,11 @@ instance Show PGraph where
 
 
 instance Ord PGraph where
-  compare a b = comparePaths ordAtom a b 
+  compare a b = comparePaths (ordAtom searchStrategy) a b 
+    where searchStrategy = [ topVertexStrategy
+                           , atomTypeStrategy 
+                           , topBondStrategy
+                           ]
 
 
 {------------------------------------------------------------------------------}
@@ -371,6 +376,7 @@ initialPathForStrategy !m selectStrategy searchStrategy ordStrategy = let
 
 bottomVertextStrategy m m_i = negate $ topVertexStrategy m m_i
 topVertexStrategy m m_i = fromIntegral $ numberBondsToHeavyAtomsAtIndex m m_i 
+firstVertexStrategy m m_i | m_i == 0 = 1 | otherwise = 0
 
 atomTypeStrategy :: Molecule -> Int -> Int
 atomTypeStrategy m m_i  
@@ -460,17 +466,14 @@ bondTypeList !path !p_i = let
 -- | A comparison utility for ordAtom (below) that does the recursive path
 -- comparison at a given index position
 ordByPath :: (PGraph -> PGraph -> Int -> Ordering)
+          -> [(Molecule -> Int -> Int)]
           -> PGraph  -- ^ The first path to compare and its root index
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
-ordByPath ordStrategy !p1 !p2 !index  = ordPathList ordStrategy 
-                                          (branchPaths searchStrategy ordAtom p1 index)
-                                          (branchPaths searchStrategy ordAtom p2 index)
-    where searchStrategy = [ bottomVertextStrategy
-                           , topBondStrategy
-                           , atomTypeStrategy
-                           ]
+ordByPath ordStrategy searchStrategy !p1 !p2 !index  = ordPathList ordStrategy 
+                                          (branchPaths searchStrategy ordStrategy p1 index)
+                                          (branchPaths searchStrategy ordStrategy p2 index)
 
 ordByNextBond :: PGraph  -- ^ The first path to compare and its root index
               -> PGraph   -- ^ The second path to compare and its root index
@@ -530,11 +533,12 @@ pathIndex !p !p_i  = (vertexList p) U.! p_i
 -- Ord for paths.  This function assumes the molecules in both paths are the same
 -- It cannot check for this because such a check implcitly relies on this function.
 -- Naturally, this is never used directly.
-ordAtom :: PGraph   -- ^ The first path to compare
+ordAtom :: [(Molecule -> Int -> Int)]
+        -> PGraph   -- ^ The first path to compare
         -> PGraph   -- ^ The second path to compare
         -> Int      -- ^ The index to compare
         -> Ordering -- ^ The Ord result
-ordAtom !p1 !p2 !p_i = let
+ordAtom searchStrategy !p1 !p2 !p_i = let
   m = molecule p1
   i1 = pathIndex p1 p_i
   i2 = pathIndex p2 p_i
@@ -548,7 +552,7 @@ ordAtom !p1 !p2 !p_i = let
   byRootBond = ordByRootBond p1 p2 p_i
   byOffPathBond = ordByOffPathBond p1 p2 p_i
   byNextBond = ordByNextBond p1 p2 p_i
-  byPath = ordByPath ordAtom p1 p2 p_i --This is a little bit mind bending.
+  byPath = ordByPath (ordAtom searchStrategy) searchStrategy p1 p2 p_i --This is a little bit mind bending.
   output = case atom1 of
             Element {} -> case atom2 of
               Element {} -> ordElements
