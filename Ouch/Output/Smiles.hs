@@ -85,7 +85,7 @@ data SmiWriterState a = SmiWriterState
 -- | Concatonates two SMILES Writer states where the second state is
 -- typically a rendered substructure of the first state.
 (<+>) :: SmiWriterState String -> SmiWriterState String -> SmiWriterState String
-(<+>) s1 s2 = s1 { smiData=(smiData s1) ++ (smiData s2)  
+(<+>) s1 s2 = s1 { smiData=(smiData s1) ++ (smiData s2)
                  , smiLogger=Logger $ (logger $ smiLogger s1) ++ (logger $ smiLogger s2)
                  , traversed=List.filter (/= traversing s1) $ (traversing s2):((traversed s1) `List.union` (traversed s2))
                  , closureMap=closureMap s2
@@ -93,7 +93,7 @@ data SmiWriterState a = SmiWriterState
 
 (<@>) :: Map Int Pair -> Map Int Pair -> Map Int Pair
 (<@>) cMap sub_cMap = let
-  removed = Map.foldrWithKey (\k a acc -> case Map.lookup k sub_cMap of 
+  removed = Map.foldrWithKey (\k a acc -> case Map.lookup k sub_cMap of
                               Nothing -> Map.delete k acc
                               Just a  -> acc) cMap cMap
   {-in Map.union cMap sub_cMap-}
@@ -103,7 +103,7 @@ data SmiWriterState a = SmiWriterState
 (>>>) state stateFun = stateFun state
 
 -- | Data type to pass higher-order functions to writer
-data SmiStyle a = SmiStyle 
+data SmiStyle a = SmiStyle
   { atomStyle :: Atom -> a
   , bondStyle :: NewBond -> a
   }
@@ -137,7 +137,7 @@ logString l s =  Logger $ s:(logger l)
 -- | Creates a new state from an existing state
 -- to be treated as a substructure.
 smiNewSub :: SmiWriterState String -> PGraph -> SmiWriterState String
-smiNewSub state path = 
+smiNewSub state path =
   state  { smiData = "("
          , position = 0
          , traversing = path
@@ -153,18 +153,18 @@ smiStart m = loadWriter fastCanonicalWriter m
 loadWriter :: SmiWriterState a -> Molecule -> SmiWriterState a
 loadWriter state m = let
   processedMolecule = head $ [m] >#> (preprocessMethod state)
-  initialPath = initialPathForStrategy processedMolecule 
-                                       (selectStrategy state) 
-                                       (searchStrategy state) 
-                                       (ordStrategy state) 
+  initialPath = initialPathForStrategy processedMolecule
+                                       (selectStrategy state)
+                                       (searchStrategy state)
+                                       (ordStrategy state)
   in state { position = 0
            , traversing = initialPath
-           , traversed = [] 
+           , traversed = []
            , smiLogger = Logger []
            }
 
 
-emptySmiState = SmiWriterState 
+emptySmiState = SmiWriterState
   { smiData = undefined
   , preprocessMethod = Nothing
   , selectStrategy = []
@@ -178,20 +178,25 @@ emptySmiState = SmiWriterState
   , smiLogger  = Logger []
   }
 
-fastCanonicalWriter = SmiWriterState 
+fastCanonicalWriter = SmiWriterState
   { smiData  = ""
   , preprocessMethod = stripMol
   , selectStrategy = [ bottomVertextStrategy
                      , topBondStrategy
                      , atomTypeStrategy
+                     , firstVertexStrategy
                      ]
   , searchStrategy = [ topVertexStrategy
-                     , atomTypeStrategy 
+                     , atomTypeStrategy
                      , topBondStrategy
+                     , explicitHydrogenStrategy
+                     , firstVertexStrategy
                      ]
   , ordStrategy = ordAtom  [ topVertexStrategy
-                           , atomTypeStrategy 
+                           , atomTypeStrategy
                            , topBondStrategy
+                           , explicitHydrogenStrategy
+                           , firstVertexStrategy
                            ]
   , style      = SmiStyle { atomStyle=writeAtom
                           , bondStyle=writeBond
@@ -300,10 +305,10 @@ findClosuresSS state@SmiWriterState {traversing=path, traversed=paths, position=
 
   -- All indices we have seen or are going to see on this path
   pathIndexSet = List.foldr (\a acc -> Set.union acc $ vToSet $ vertexList a)
-                            Set.empty $ (path:paths) 
+                            Set.empty $ (path:paths)
 
-  -- If we have a root path, remove the first index from consideration.  It is 
-  -- where we started from.  But ONLY if we are at the beginning of our path. 
+  -- If we have a root path, remove the first index from consideration.  It is
+  -- where we started from.  But ONLY if we are at the beginning of our path.
   -- Otherwise, we mess up spiro systems.
   pathIndexSet_noRoot | U.length (root path) == 0 = pathIndexSet
                       | p_i == 0 = Set.delete (U.head $ root path) pathIndexSet
@@ -359,19 +364,19 @@ renderSubpathsSS state@SmiWriterState { traversing=path
   validIndexList = Set.toList $ Set.difference bondIndexSet pathIndexSet
   nextIndex = head $ List.sort $ validIndexList
   pathIndexList = Set.toList pathIndexSet
-  branchPaths = List.sortBy (comparePaths ordStrategy) $ List.map 
+  branchPaths = List.sortBy (comparePaths ordStrategy) $ List.map
       (\a -> longestLeastAnchoredPath path { vertexList=(U.fromList pathIndexList)
                                            , root=(U.fromList (index:pathIndexList))
-                                           } 
+                                           }
                                            a searchStrategy ordStrategy) validIndexList
-  nextPath = head branchPaths
+  nextPath = last branchPaths
   branchState = runSS $ state { smiData = "("
                               , traversing=nextPath
                               , traversed=(path:paths)
                               , position=0
-                              } 
-  newState = state <+> branchState 
-  output | List.length branchPaths > 0 = newState <+> 
+                              }
+  newState = state <+> branchState
+  output | List.length branchPaths > 0 = newState <+>
                                          renderSubpathsSS newState {smiData = "" }
          | otherwise = state
   in output

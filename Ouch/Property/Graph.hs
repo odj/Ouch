@@ -42,16 +42,17 @@ module Ouch.Property.Graph
   , findLongestLeastPath
   , longestPaths
   , longestLeastAnchoredPath
-  , initialPathForStrategy 
+  , initialPathForStrategy
   , topVertexStrategy
   , bottomVertextStrategy
   , firstVertexStrategy
+  , explicitHydrogenStrategy
   , atomTypeStrategy
   , comparePaths
   , growPath
   , vToSet
-  , emptyPath 
-  , topBondStrategy  
+  , emptyPath
+  , topBondStrategy
   ) where
 
 
@@ -112,9 +113,9 @@ instance Show PGraph where
 
 
 instance Ord PGraph where
-  compare a b = comparePaths (ordAtom searchStrategy) a b 
+  compare a b = comparePaths (ordAtom searchStrategy) a b
     where searchStrategy = [ topVertexStrategy
-                           , atomTypeStrategy 
+                           , atomTypeStrategy
                            , topBondStrategy
                            ]
 
@@ -218,7 +219,7 @@ applyStrategy :: Molecule                                  -- ^ The Molecule
               -> (Molecule -> Int -> Int)                  -- ^ The search strategy
               -> U.Vector Int                              -- ^ The atom keys that will be filtered
               -> U.Vector Int                              -- ^ The filtered atom keys
-applyStrategy m strategy inputVector = let 
+applyStrategy m strategy inputVector = let
   results = U.map (strategy m) inputVector
   max = U.maximum results
   zippedResults = U.zip results inputVector
@@ -284,7 +285,6 @@ longestPathsForStrategy :: Molecule
 longestPathsForStrategy m selectStrategy searchStrategy = let
   depth = M.size (atomMap m)
   paths = allPathsForStrategy depth m selectStrategy searchStrategy
-  -- paths = allTerminalPaths depth m
   maxLength = paths `seq` V.maximum $ V.map pathLength paths
   longest = maxLength `seq` V.filter ((==maxLength) . pathLength) paths
   in longest
@@ -300,7 +300,7 @@ longestLeastAnchoredPath :: PGraph                        -- ^ The Path to exclu
                          -> (PGraph -> PGraph -> Int -> Ordering)  -- ^ The ordering strategy to use
                          -> PGraph                        -- ^ The resultant path
 longestLeastAnchoredPath exclude@PGraph{molecule=m, vertexList=l, root=r} anchor searchStrategy ordStrategy= let
-  depth = fromIntegral $ pathLength exclude
+  depth = M.size (atomMap m)
   paths = findPathsExcluding (vToSet $ r U.++ l) depth searchStrategy (exclude {vertexList=U.empty}) anchor
   nonExcludedPaths = V.filter (\a -> False == hasOverlap exclude a) paths
   rootedPaths = V.map (\p -> p {root=U.cons anchor r}) nonExcludedPaths
@@ -317,9 +317,9 @@ findLongestLeastPath :: (PGraph -> PGraph -> Int -> Ordering) -- ^ The ordering 
                      -> V.Vector PGraph   -- ^ The paths to select from
                      -> Int        -- ^ The current index being compared
                      -> PGraph     -- ^ The longest least path from starting list
-findLongestLeastPath ordStrategy gs i = 
-    head $ L.sortBy (comparePaths ordStrategy) $ V.toList gs
-    
+findLongestLeastPath ordStrategy gs i =
+    L.last $ L.sortBy (comparePaths ordStrategy) $ V.toList gs
+
 
 comparePaths :: (PGraph -> PGraph -> Int -> Ordering)
              -> PGraph
@@ -348,22 +348,27 @@ initialPathForStrategy :: Molecule                                  -- ^ The mol
                        -> (PGraph -> PGraph -> Int -> Ordering)            -- ^ Ordering strategy
                        -> PGraph                                    -- ^ The first path found
 initialPathForStrategy m selectStrategy searchStrategy ordStrategy = let
-  paths = longestPathsForStrategy m selectStrategy searchStrategy 
+  paths = longestPathsForStrategy m selectStrategy searchStrategy
   in paths `seq` findLongestLeastPath ordStrategy paths 0
 
 
 
 {------------------------------------------------------------------------------}
--- A few simple search strategies. 
+-- A few simple search strategies.
 -- The higher number has a higher priority for selection.
 -- TODO - Move to their own module
 
 bottomVertextStrategy m m_i = negate $ topVertexStrategy m m_i
-topVertexStrategy m m_i = fromIntegral $ numberBondsToHeavyAtomsAtIndex m m_i 
-firstVertexStrategy m m_i | m_i == 0 = 1 | otherwise = 0
+topVertexStrategy m m_i = fromIntegral $ numberBondsToHeavyAtomsAtIndex m m_i
+firstVertexStrategy m m_i = m_i
+explicitHydrogenStrategy m m_i = let 
+    explicitH = S.filter (==(ExplicitHydrogen 0)) $ atomMarkerSet $ fromJust $ getAtomAtIndex m m_i
+    output | S.size explicitH == 0 = 0
+           | otherwise = fromIntegral $ numberH $ S.findMax explicitH
+    in output
 
 atomTypeStrategy :: Molecule -> Int -> Int
-atomTypeStrategy m m_i  
+atomTypeStrategy m m_i 
   | isNothing atom = 0
   | atomSymbol == "C" = 5
   | atomSymbol == "O" = 4
@@ -376,7 +381,7 @@ atomTypeStrategy m m_i
             Element {atomicNumber = n} -> show n
             _                          -> ""
 
-topBondStrategy m m_i 
+topBondStrategy m m_i
   | isNothing atoms = 0
   | S.size bonds == 0 = 0
   | otherwise = S.findMax $ S.map bondKey bonds
@@ -455,7 +460,7 @@ ordByPath :: (PGraph -> PGraph -> Int -> Ordering)
           -> PGraph   -- ^ The second path to compare and its root index
           -> Int      -- ^ The index to comparea
           -> Ordering -- ^ The Ord result
-ordByPath ordStrategy searchStrategy p1 p2 index  = ordPathList ordStrategy 
+ordByPath ordStrategy searchStrategy p1 p2 index  = ordPathList ordStrategy
                                           (branchPaths searchStrategy ordStrategy p1 index)
                                           (branchPaths searchStrategy ordStrategy p2 index)
 
@@ -490,8 +495,8 @@ branchPaths searchStrategy ordStrategy p p_i = V.fromList $ L.map (\a -> longest
 
 
 ordPathList :: (PGraph -> PGraph -> Int -> Ordering)
-            -> V.Vector PGraph 
-            -> V.Vector PGraph 
+            -> V.Vector PGraph
+            -> V.Vector PGraph
             -> Ordering
 ordPathList ordStrategy ps1 ps2 = let
   ll1 = findLongestLeastPath ordStrategy ps1 0
@@ -546,15 +551,14 @@ ordAtom searchStrategy p1 p2 p_i = let
               _ -> compare i1 i2
 
   ordElements
-
            | byNumber    /= EQ =  byNumber
            | byIsotope   /= EQ = byIsotope
            | byNextBond /= EQ = byNextBond
-           | i1 == i2 = EQ
-           {-| byRootBond /= EQ = byRootBond-}
            {-| byOffPathBond /= EQ  = byOffPathBond-}
+           {-| byRootBond /= EQ = byRootBond-}
            {-| byBranchBond    /= EQ =  byBranchBond-}
            | byVertex    /= EQ = byVertex
+           | i1 == i2 = EQ
            | byPath      /= EQ = byPath
 
          -- If all of the above are EQ, then the atoms REALLY ARE chemically equivalent

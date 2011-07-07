@@ -1,4 +1,4 @@
-#!/bin/env runghc
+#!/usr/bin/env runghc
 -- build with 'ghc --make spiro.hs -O2 -o spiro'
 import Ouch
 import Ouch.Output.SDF
