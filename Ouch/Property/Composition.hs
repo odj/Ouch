@@ -98,7 +98,7 @@ netCharge m = Just undefined
 {------------------------------------------------------------------------------}
 molecularWeight :: Property
 molecularWeight = prop
-  where mw m = foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
+  where mw m = List.foldl (+) 0.0 $ List.map atomMW $ Map.fold (\a -> (++) [a]) [] (atomMap m)
         prop = Property {propertyKey = "MOLWT"
                        , value = Right $ DoubleValue . mw
                         }

@@ -26,8 +26,6 @@
 -- ghc --make Ouch/resources/RunTest.hs -fforce-recomp -O2 -o a.out
 -- time ./a.out tests.txt +RTS -sstderr -p -K100M
 --
-{-# LANGUAGE ForeignFunctionInterface, CPP, Generics #-}
-
 
 import Ouch.Test.Methods
 import Ouch.Text.String

@@ -7,7 +7,7 @@ license-file: COPYING
 copyright: Orion Jankowski 2010
 maintainer: Orion Jankowski odj@me.com
 build-depends: base >=3 && <5, binary -any, bytestring -any,
-               containers -any, deepseq -any, parallel <=3.1.0.1, parsec ==3.1.0,
+               containers -any, deepseq -any, parallel -any, parsec >=3.1.0,
                time -any, vector -any
 stability: Unstable
 homepage: We don't have one

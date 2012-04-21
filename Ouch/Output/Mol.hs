@@ -41,7 +41,7 @@ import Ouch.Property.Builder
 import Data.Maybe
 import Data.Char
 import Data.Set as Set
-import Data.List as List
+import qualified Data.List as List
 import Data.Map as Map
 import Control.Applicative
 
@@ -51,7 +51,7 @@ import Control.Applicative
 {------------------------------------------------------------------------------}
 
 molfile :: Molecule -> Maybe String
-molfile m = foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
+molfile m = List.foldr (\s acc -> (++) <$> s <*> acc) (Just "") lineList
   where m' = removeAtoms m isLonePair
         lineList = List.map (>>= \s -> Just $ s ++ _CR)
                  $ headerBlock m'
